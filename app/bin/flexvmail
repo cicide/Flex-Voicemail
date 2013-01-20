@@ -1,0 +1,40 @@
+#!/usr/bin/python
+"""
+Servers BoilerPlate code
+
+"""
+
+import os
+import sys
+
+
+PROG_NAME = "flexvmail"
+curdir = os.path.split(sys.path[0])
+
+twistd_path=curdir[0]+"/"+PROG_NAME
+os.chdir(twistd_path)
+
+
+def stop():
+        os.system("kill -9 `cat ../run/%s.pid`"%PROG_NAME)
+
+def start():
+        os.system("twistd --pidfile=../run/%s.pid -d %s --logfile=/dev/null -y server.py"%(PROG_NAME,twistd_path))
+
+def restart():
+        stop()
+        start()
+
+def main():
+        if sys.argv[1]== 'start':
+                start()
+        if sys.argv[1] == 'stop':
+                stop()
+        if sys.argv[1] == 'restart':
+                restart()
+
+if __name__ == "__main__":
+        try:
+                main()
+        except IndexError:
+                print "Usage: flexvmail start|stop|restart"
