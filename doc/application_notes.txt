@@ -1,0 +1,49 @@
+program flow:
+
+    program entry via asterisk AGI call to agi.py::route
+        variables passed by asterisk will be:
+            1.  ivr identifier by name (i.e. vmDeposit, vmFetch, dateAndTime, etc.)
+            2.  callerId (name, number)
+            3.  authentication information? (local extension, or known user?)
+            
+    agi::route instanciates a call object (call.Call)and passes the following:
+        1.  agi self reference
+        2.  ivr identifier by name
+        3.  callerId information
+        4.  channel information
+        
+    agi::route calls start method from instanciated call object
+    
+    call loads caller information (API call to db system)
+        * is the caller a local caller, known to the system?
+
+    call loads the requested ivr (API call to db system)
+        * how are we dealing with authentication here?  perhaps an ivr should include a field that notes whether authentication is required?  perhaps a reference to an additional ivr could be specified that would provide authentication?
+
+    call instantiates the ivr object by ivr.Ivr(ivr_def_from_dbapi) and places the instantiated object in a FILO list
+    
+    call checks pre-requisites and loads a new ivr if needed (note that we can have an infinite pre-requisite if the pre-req ivr has a pre-req itself, we should watch for and detect loops)
+
+    call instantiates the pre-requisite ivr and adds it to the FILO list of ivr objects
+    
+    when all pre-requisites have been loaded and added to the list (an ivr object with no pre-req defines the end of the pre-requisites), call pulls the last inserted object off the list...
+    
+    call executes the start method of the most junior pre-requisite and passes the following:
+        1.  call self reference
+        2.  callerId information
+        3.  argument dictionary (may be empty {})
+        
+        the ivr can return a success or fail result as well as a dictionary of values to be passed on to it's parent ivr 
+        
+    if there is no parent ivr, call should return control to the asterisk dial plan (by calling the agi.finished() method)
+    
+    if there is a parent ivr, call executes the start method of the parent ivr passing
+        1.  call self reference
+        2.  callerId information
+        3.  argument dictionary from previous ivr
+    
+        the ivr can return a success or fail result as well as a dictionary of values to be passed on to it's parent ivr
+        
+    continue walking down the ivr parent tree until no more parents exist
+    
+    

@@ -17,12 +17,11 @@ smtp_server = utils.config.get("general", "smtp_server")
 system_sounds_dir = utils.config.get("sounds", "system_dir")
 group_sounds_dir = utils.config.get("sounds", "group_dir")
 vm_files_dir = utils.config.get("sounds", "vm_dir")
-out_trunk = utils.config.get("general", "out_trunk")
 
 system_sounds_exist_cache = {}  # cache file for system sounds to prevent continuously checking - {'file_loc': timestamp}
 system_sounds_exist_cache_time = 3600 # cache system sound file checks for 1 hour
 
-#this class handles the leaving of voicemail for a member of a group
+#this class handles the leaving of voicemail
 class VmDeposit:
 
     def __init__(self):
