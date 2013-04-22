@@ -1,0 +1,7 @@
+pyramid
+sqlalchemy
+zope.sqlalchemy
+mysql-python
+pyramid_beaker
+deform
+bag
