@@ -47,6 +47,7 @@ DEFAULT CHARACTER SET = utf8;
 
 create table ivr_tree (
 id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
+name varchar(40) UNIQUE not NULL COMMENT 'Name for the tree',
 parent_id int(11) COMMENT 'parent id for this entry point',
 current_prompt_id int(11) COMMENT 'prompt to play when this step is being executed',
 parent_prompt_id int(11) COMMENT 'prompt to play when the parent is annoucing this step',
