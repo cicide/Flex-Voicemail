@@ -54,6 +54,7 @@ class User(Base):
 
     voicemails = relationship("Voicemail", backref='user', cascade="all, delete, delete-orphan")
     role = relationship("UserRole", backref='users')
+    vm_prefs = relationship("UserVmPref", uselist=False, backref='user')
 
 
     def __init__(self, username, name, extension, pin, create_date, status):
@@ -104,7 +105,7 @@ class Voicemail(Base):
         self.status = status
 
 class UserVmPref(Base):
-    __tablename__ = 'user_vm_pref'
+    __tablename__ = 'user_vm_prefs'
     id = Column(Integer, primary_key = True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     folder = Column(String(100))
@@ -125,6 +126,7 @@ class UserVmPref(Base):
 class IvrTree(Base):
     __tablename__ = 'ivr_tree'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Unicode(40), nullable=False, unique=True)
     parent_id = Column(Integer, ForeignKey('ivr_tree.id'))
     current_prompt_id = Column(Integer, ForeignKey('prompts.id'))
     parent_prompt_id = Column(Integer, ForeignKey('prompts.id'))
@@ -145,6 +147,18 @@ class Prompt(Base):
     __tablename__ = 'prompts'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(40), nullable = False)
+
+    def getFullPrompt(self, user=None):
+        listprompt = []
+        for i in self.details:
+            if i.prompt_type == 1:
+                listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
+            elif i.prompt_type == 3:
+                listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
+            elif i.prompt_type == 4:
+                listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
+        return listprompt
+
 
 class PromptDetails(Base):
     __tablename__ = 'prompt_details'
