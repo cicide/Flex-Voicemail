@@ -78,6 +78,17 @@ class LoginSchema(CSRFSchema):
                     widget=deform.widget.PasswordWidget(size=20),
                     description='Enter a password')
 
+class UserSchema(CSRFSchema):
+    username = colander.SchemaNode(colander.String(), description="Extension of the user")
+    password = colander.SchemaNode(
+                    colander.String(),
+                    validator=colander.Length(min=4, max=20),
+                    widget=deform.widget.CheckedPasswordWidget(),
+                    description='Enter a password')
+    email = colander.SchemaNode(colander.String(), title='Email',
+                    widget=deform.widget.TextInputWidget(size=40, maxlength=260, type='email'),
+                    description="The email address of the user. Example: joe@example.com")
+
 @view_config(route_name='home', renderer='home.mako', permission='admin')
 def home(request):
     return dict(user= request.user,)
@@ -124,7 +135,6 @@ def login(request):
 def logout(request):
     headers = forget(request)
     request.session.delete()
-    request.session.save()
-    return HTTPFound(location = request.route_url('home'),
+    return HTTPFound(location = request.route_url('login'),
         headers = headers)
 

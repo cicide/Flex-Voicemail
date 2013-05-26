@@ -47,6 +47,7 @@ DEFAULT CHARACTER SET = utf8;
 
 create table ivr_tree (
 id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
+name varchar(40) UNIQUE not NULL COMMENT 'Name for the tree',
 parent_id int(11) COMMENT 'parent id for this entry point',
 current_prompt_id int(11) COMMENT 'prompt to play when this step is being executed',
 parent_prompt_id int(11) COMMENT 'prompt to play when the parent is annoucing this step',
@@ -71,6 +72,7 @@ prompt_id int(11) not NULL COMMENT 'id for the prompt',
 sequence_number int(8) not NULL COMMENT 'sequence number in the prompt for this particular part',
 prompt_type int(3) NOT NULL COMMENT 'type of this prompt 1 - static file, 2 - Text-to-Speech, 3 - use User/group vm_greeting, 4 - use User/group name_recording',
 path varchar(100) COMMENT 'path for type 1',
+textprompt varchar(255) COMMENT 'text for text to speech',
 delay_before int(4) COMMENT 'delay x ms before the prompt',
 delay_after int(4) COMMENT 'delay x ms after the prompt',
 primary key(id)
