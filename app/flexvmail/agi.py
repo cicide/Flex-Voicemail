@@ -50,27 +50,32 @@ def onFailure(reason):
 def route(agi):
     def getCidInfo():
         d = agi.getVariable('CALLERID(name)')
-        return d.addCallback(GotCidName).addErrback(onFailure)
+        return d.addCallback(gotCidName).addErrback(onFailure)
 
-    def GotCidName(result):
+    def gotCidName(result):
         if not result:
             cidname = 'Unknown'
         else:
             cidname = result
         d = agi.getVariable('CALLERID(num)')
-        return d.addCallback(GotCidNum, cidname).addErrback(onFailure)
+        return d.addCallback(gotCidNum, cidname).addErrback(onFailure)
 
-    def GotCidNum(result, cidname):
+    def gotCidNum(result, cidname):
         if not result:
             cidnum = 'Unknown'
         else:
             cidnum = result
         return (cidname, cidnum)
     
+    def gotCidInfo(result):
+        log.debug(result)
+        actionRequest = agiObj.start('monkeys')
+        log.debug(actionRequest)
+    
     agiObj = astCall(agi)
     cidinfo = getCidInfo()
     log.debug(cidinfo)
-    cidinfo.addCallbacks(agiObj.start,onFailure)
+    cidinfo.addCallback(gotCidInfo).addErrback(onFailure)
 
 #setup agi service when application is started
 def getService():
