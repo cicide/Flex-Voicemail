@@ -127,7 +127,7 @@ class astCall:
                     delay = float(delaybefore)/1000
                     log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                intKeys = "".join(interrupKeys)
+                intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
                 sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
