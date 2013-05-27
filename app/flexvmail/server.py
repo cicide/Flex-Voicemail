@@ -17,7 +17,7 @@ from twisted.internet import reactor
 
 flexService = service.MultiService()
 application = service.Application("flexvm")
-familyService.setServiceParent(application)
+flexService.setServiceParent(application)
 
 def addServices():
 
