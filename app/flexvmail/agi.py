@@ -43,6 +43,10 @@ class astCall:
         #callObj.start()
         
 #routing for called agi scripts
+def onFailure(reason):
+    log.error(reason)
+    return False
+
 def route(agi):
     def getCidInfo():
         d = agi.getVariable('CALLERID(name)')
@@ -65,7 +69,8 @@ def route(agi):
     
     agiObj = astCall(agi)
     cidinfo = getCidInfo()
-    cidinfo.addCallbacks(agiObj.start,onError)
+    log.debug(cidinfo)
+    cidinfo.addCallbacks(agiObj.start,onFailure)
 
 #setup agi service when application is started
 def getService():

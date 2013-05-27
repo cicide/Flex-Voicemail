@@ -32,5 +32,4 @@ def addServices():
 #    familyService.addService(workers.getService())
 
 reactor.callWhenRunning(addServices)
-reactor.callLater(0, getData)
 #reactor.callLater(5, tryBadGroup)

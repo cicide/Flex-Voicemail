@@ -4,16 +4,16 @@ from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from random import choice
-import urllib.request as urlreq
+#import urllib.request as urlreq
 import utils
 import json
 
-wsApiServers = (('127.0.0.1',6543))
+wsApiServers = [('127.0.0.1',6543)]
 wsApiList = [] #TODO - build this list from the list of wsApiServer in the config file?
 
 log = utils.get_logger("Call")
 
-def wsApiServer:
+class wsApiServer:
     
     def __init__(self, hostname, port):
         self.hostname = hostname
@@ -49,4 +49,5 @@ def getHost():
     return choice(wsApiList)
 
 for server in wsApiServers:
+    log.debug(server)
     wsApiList.append(wsApiServer(server[0],server[1]))

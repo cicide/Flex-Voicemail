@@ -36,6 +36,7 @@ class Call:
             unum,uname = self.parseCallerId(callerId)
         if unum:
             self.user = unum
+        log.debug('call object instanced for %s' % self.callerId)
     
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
@@ -67,7 +68,7 @@ class Call:
             nextaction = result['nextaction']
         if not 'invalidaction' in result:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
-            invalidaction = {'agi', 'hangup'}
+            invalidaction = {'agi': 'hangup'}
         else:
             invalidaction = result['invalidaction']
         if not 'retries' in result:
@@ -83,6 +84,7 @@ class Call:
         pass
         
     def start(self, tree, user=None):
+        log.debug('call started')
         if not tree:
             log.error("no valid tree supplied")
             return False
