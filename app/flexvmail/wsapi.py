@@ -42,10 +42,14 @@ class wsApiServer:
     def onResponse(self, resp):
         finished = Deferred()
         resp.deliverBody(BeginningPrinter(finished))
+        finished.addCallbacks(self.getJsonResult,self.onError)
+        return finished
+    
+    def getJsonResult(self, result):
         log.debug('json decoding response')
-        log.debug(finished)
-        result = json.loads(finished)
-        return result
+        log.debug(result)
+        jsonResponse = json.loads(result)
+        return jsonResponse
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
         uParams = {'cuid': callUniqueId}

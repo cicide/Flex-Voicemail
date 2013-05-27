@@ -85,7 +85,7 @@ class Call:
             self.tree = tree
             self.cuid = self.astCall.getUid()
             self.user = self.astCall.getCidNum()
-        method = 'startCall'
+        method = 'startcall'
         actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, user=self.user, tree=tree)
         #actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return self.onActionResponse(actionRequest)
