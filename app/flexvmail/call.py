@@ -89,10 +89,10 @@ class Call:
         return actionRequest
         
         
-def newCall(astCallObj, uniqueid):
-    if not uniqueid in callMap:
-        callMap[uniqieid] = Call(astCallObj)
-        return callMap[uniqieid]
+def newCall(astCallObj, uid):
+    if not uid in callMap:
+        callMap[uid] = Call(astCallObj)
+        return callMap[uid]
     else:
         return False
         
