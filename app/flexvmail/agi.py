@@ -62,11 +62,6 @@ def route(agi):
         else:
             cidnum = result
         return (cidname, cidnum)
-
-            
-
-        
-
     
     agiObj = astCall(agi)
     cidinfo = getCidInfo()
