@@ -4,7 +4,7 @@ from twisted.internet.protocol import Protocol
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from random import choice
-#import urllib.request as urlreq
+import urllib
 import utils
 import json
 
@@ -29,10 +29,15 @@ class wsApiServer:
         return response
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
-        uParams = "cuid=%s" % callUniqueId
+        #uParams = "cuid=%s" % callUniqueId
+        #for key in kwargs:
+            #uParams = """%s&%s=%s""" % (uParams, key, kwargs[key])
+        uParams = {'cuid': callUniqueId}
         for key in kwargs:
-            uParams = """%s&%s=%s""" % (uParams, key, kwargs[key])
-        encParams = urlreq.pathname2url(uParams)
+            uParams[key] = kwargs[key]
+        #encParams = urlreq.pathname2url(uParams)
+        encParams = urllib.urlencode(uParams)
+        log.debug(encParams)
         req = """%s?%s""" % (apiMethod, encParams)
         return req
     
