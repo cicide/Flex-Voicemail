@@ -47,7 +47,7 @@ def get_config():
         _config = ConfigParser.ConfigParser()
         _config.optionxform = str
         
-        filepath = 'etc/family.conf'
+        filepath = 'etc/flexvmail.conf'
         f=open(filepath)
         _config.readfp(f)
         config_log()
