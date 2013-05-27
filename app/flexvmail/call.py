@@ -27,7 +27,7 @@ class Call:
         self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
-        log.debug('call object instanced for %s' % self.callerId)
+        log.debug('call object instanced for %s' % self.astCall.getCidNum())
     
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
