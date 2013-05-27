@@ -101,7 +101,7 @@ class astCall:
         # prompt object must have uri
         # may have delaybefore and delayafter
         if not 'delaybefore' in currPrompt:
-            delyabefore = 0
+            delaybefore = 0
         else:
             promptKeys.remove('delaybefore')
             delaybefore = currPrompt['delaybefore']
