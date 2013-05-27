@@ -134,7 +134,9 @@ class astCall:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
+                #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
+                # don't capture this error
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
                 log.error('Unknown prompt type: %s' % promptType)
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
