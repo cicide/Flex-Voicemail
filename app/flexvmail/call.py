@@ -38,6 +38,7 @@ class Call:
         return False
     
     def onActionResponse(self, result):
+        log.debug('call object handling wsapi response')
         log.debug(result)
         #results contain a number of key value pairs 
         if not 'action' in result:

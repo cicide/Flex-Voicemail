@@ -11,7 +11,7 @@ import json
 wsApiServers = [('127.0.0.1',6543)]
 wsApiList = [] #TODO - build this list from the list of wsApiServer in the config file?
 
-log = utils.get_logger("Call")
+log = utils.get_logger("WSAPI")
 
 class wsApiServer:
     
@@ -24,6 +24,7 @@ class wsApiServer:
         return False
         
     def onResponse(self, resp):
+        log.debug('json decoding response')
         log.debug(resp)
         result = json.loads(resp)
         return result
