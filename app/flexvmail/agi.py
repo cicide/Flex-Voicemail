@@ -116,13 +116,15 @@ class astCall:
         else:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
-            promptType, promtLoc = promptUri.split(':')
+            promptType, promptLoc = promptUri.split(':')
+            log.debug(promptLoc)
             if promptType == 'file':
                 sequence = fastagi.InSequence()
                 if delaybefore:
                     delay = float(delaybefore)/1000
                     sequence.append(self.agi.wait,delay)
                 intKeys = "".join(interrupKeys)
+                log.debug(promptLoc)
                 sequence.append(self.agi.streamFile,promptLoc,escapeDigits=intKeys,offset=0)
                 if delayafter:
                     delay = float(delayafter)/1000
