@@ -36,7 +36,7 @@ from bag.web.pyramid.flash_msg import FlashMessage
 import logging
 log = logging.getLogger(__name__)
 
-def returnPrompt(name=name):
+def returnPrompt(name):
     prompt = DBSession.query(Prompt).filter_by(name=name).first()
     return dict(
         action="play",
