@@ -16,8 +16,8 @@ log = utils.get_logger("Call")
 class wsApiServer:
     
     def __init__(self, hostname, port):
-        self.hostname = hostname
-        self.port = port
+        self.apiHostName = hostname
+        self.apiHostPort = port
         
     def onError(self, reason):
         log.debug(reason)
@@ -29,13 +29,9 @@ class wsApiServer:
         return response
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
-        #uParams = "cuid=%s" % callUniqueId
-        #for key in kwargs:
-            #uParams = """%s&%s=%s""" % (uParams, key, kwargs[key])
         uParams = {'cuid': callUniqueId}
         for key in kwargs:
             uParams[key] = kwargs[key]
-        #encParams = urlreq.pathname2url(uParams)
         encParams = urllib.urlencode(uParams)
         log.debug(encParams)
         req = """%s?%s""" % (apiMethod, encParams)
