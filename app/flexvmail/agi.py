@@ -4,6 +4,8 @@ from twisted.application import internet
 from twisted.internet import reactor, defer
 from starpy import fastagi
 import utils, call
+from twisted.internet.defer import setDebugging
+setDebugging(True)
 
 log = utils.get_logger("AGIService")
 
