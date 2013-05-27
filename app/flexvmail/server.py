@@ -20,16 +20,9 @@ application = service.Application("flexvm")
 flexService.setServiceParent(application)
 
 def addServices():
-
     import agi
     import ami
-    #import txdbinterface
-    #import workers
-#    import web
     flexService.addService(agi.getService())
     flexService.addService(ami.getService())
-#    familyService.addService(web.getService())
-#    familyService.addService(workers.getService())
 
 reactor.callWhenRunning(addServices)
-#reactor.callLater(5, tryBadGroup)
