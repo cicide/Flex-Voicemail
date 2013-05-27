@@ -13,6 +13,22 @@ wsApiList = [] #TODO - build this list from the list of wsApiServer in the confi
 
 log = utils.get_logger("WSAPI")
 
+class BeginningPrinter(Protocol):
+    def __init__(self, finished):
+        self.finished = finished
+        self.remaining = 1024 * 10
+
+
+    def dataReceived(self, bytes):
+        if self.remaining:
+            display = bytes[:self.remaining]
+            log.debug('Some data received: %s' % display)
+            self.remaining -= len(display)
+
+    def connectionLost(self, reason):
+        log.debug('Finished receiving body: %s, %s' % (reason.type, reason.value))
+        self.finished.callback(None)
+
 class wsApiServer:
     
     def __init__(self, hostname, port):
@@ -24,9 +40,11 @@ class wsApiServer:
         return False
         
     def onResponse(self, resp):
+        finished = Deferred()
+        resp.deliverBody(BeginningPrinter(finished))
         log.debug('json decoding response')
-        log.debug(resp)
-        result = json.loads(resp)
+        log.debug(finished)
+        result = json.loads(finished)
         return result
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
