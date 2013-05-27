@@ -36,8 +36,8 @@ from bag.web.pyramid.flash_msg import FlashMessage
 import logging
 log = logging.getLogger(__name__)
 
-def invalidRequest():
-    prompt = DBSession.query(Prompt).filter_by(name="Invalid_Request").first()
+def returnPrompt(name):
+    prompt = DBSession.query(Prompt).filter_by(name=name).first()
     return dict(
         action="play",
         prompt=prompt.getFullPrompt(),
@@ -45,7 +45,7 @@ def invalidRequest():
         )
 def userCheck(user):
     if user is None:
-        prompt = DBSession.query(Prompt).filter_by(name="User_Not_Exist").first()
+        prompt = DBSession.query(Prompt).filter_by(name=Prompt.userNotExist).first()
         return False, dict (
             action="play",
             prompt= prompt.getFullPrompt(),
@@ -62,7 +62,7 @@ def startCall(request):
     tree = request.GET.get('tree', None)
 
     if extension is None or callid is None or callerid is None or tree is None:
-        return invalidRequest()
+        return returnPrompt(name=Prompt.invalidRequest)
     # lets get the user
     user = DBSession.query(User).filter_by(extension=extension).first()
 
@@ -72,27 +72,28 @@ def startCall(request):
 
     if tree == "leaveMessage":
         if user.vm_prefs.vm_greeting:
-            prompt = DBSession.query(Prompt).filter_by(name="User_Greeting").first()
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.userGreeting).first()
         elif user.vm_prefs.vm_name_recording is not None:
-            prompt = DBSession.query(Prompt).filter_by(name="User_Name_recording").first()
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.userNameRecording).first()
         else: 
-            prompt = DBSession.query(Prompt).filter_by(name="User_Leave_Message").first()
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.userLeaveMessage).first()
         return dict (
             action="record",
             prompt= prompt.getFullPrompt(user=user),
             nextaction=request.route_url('savemessage', _query={'user': extension, 'callid':callid, 'callerid' : callerid}),
             invalidaction=request.route_url('invalidmessage'),
+            dtmf=['#',],
             folder=user.vm_prefs.folder,
         )
     elif tree == "accessMessage":
-        prompt = DBSession.query(Prompt).filter_by(name="User_Vm_Access").first()
+        prompt = DBSession.query(Prompt).filter_by(name=Prompt.userVmAccess).first()
         return dict (
             action="play",
             prompt= prompt.getFullPrompt(),
             nextaction="agi:hangup",
             )
     
-    return invalidRequest()
+    return returnPrompt(name=Prompt.invalidRequest)
 
 @view_config(route_name='savemessage', renderer='json')
 def saveMessage(request):
@@ -100,9 +101,10 @@ def saveMessage(request):
     callid = request.GET.get('uid', None)
     callerid = request.GET.get('callerid', None)
     vmfile = request.GET.get('vmfile', None)
+    duration = request.GET.get('duration', None)
 
     if extension is None or callid is None or callerid is None or vmfile is None:
-        return invalidRequest()
+        return returnPrompt(name=Prompt.invalidRequest)
 
     user = DBSession.query(User).filter_by(extension=extension).first()
     success, retdict = userCheck(user)
@@ -116,19 +118,13 @@ def saveMessage(request):
     v.create_date = datetime.datetime.utcnow()
     v.is_read = False
     v.status = 0
+    v.duration = duration
     v.user = user
     
     DBSession.add(v)
 
-    return invalidRequest()
+    return returnPrompt(name=Prompt.messageSaved)
 
 @view_config(route_name='invalidmessage', renderer='json')
 def invalidMessage(request):
-    return dict(
-        action="play",
-        prompt= {
-            'uri' : "file://%s/welcome.mp3" % request.registry.settings['voicemail.soundfile_dir'],
-            'delayafter':10,
-            },
-        nextaction = 'agi:hangup',
-       )
+    return returnPrompt(name=Prompt.invalidMessage)

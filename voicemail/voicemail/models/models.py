@@ -148,6 +148,15 @@ class Prompt(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(40), nullable = False)
 
+    invalidRequest = "Invalid_Request"
+    invalidMessage = "Invalid_Message"
+    userGreeting = "User_Greeting"
+    userNameRecdoring = "User_Name_Recording"
+    userLeaveMessage = "User_Leave_Message"
+    userNotExist = "User_Not_Exist"
+    userVmAccess = "User_Vm_Access"
+    messageSaved = "Message_Saved"
+
     def getFullPrompt(self, user=None):
         listprompt = []
         for i in self.details:
