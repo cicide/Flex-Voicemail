@@ -38,7 +38,7 @@ class wsApiServer:
     
     def wsapiCall(self, apiMethod, callUniqueId, **kwargs):
         agent = Agent(reactor)
-        req = genParameters(apiMethod, callUniqueId, **kwargs)
+        req = self.genParameters(apiMethod, callUniqueId, **kwargs)
         uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
         log.debug('requesting: %s' % uri)
         d = agent.request("GET", uri)
