@@ -87,8 +87,9 @@ class Call:
             self.user = self.astCall.getCidNum()
         method = 'startcall'
         actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, user=self.user, tree=tree)
-        #actionRequest.addCallbacks(self.onActionResponse,self.onError)
-        return self.onActionResponse(actionRequest)
+        actionRequest.addCallbacks(self.onActionResponse,self.onError)
+        return actionRequest
+        #return self.onActionResponse(actionRequest)
         
 def newCall(astCallObj, uid):
     if not uid in callMap:

@@ -27,7 +27,7 @@ class BeginningPrinter(Protocol):
 
     def connectionLost(self, reason):
         log.debug('Finished receiving body: %s, %s' % (reason.type, reason.value))
-        self.finished.callback(None)
+        self.finished.callback(reason.value)
 
 class wsApiServer:
     
