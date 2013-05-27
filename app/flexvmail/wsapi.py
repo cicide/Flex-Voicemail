@@ -43,7 +43,7 @@ class wsApiServer:
         uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
         log.debug('requesting: %s' % uri)
         d = agent.request("GET", uri)
-        d.addCallbacks(onResponse, onError)
+        d.addCallbacks(self.onResponse, self.onError)
         return d
         
 def getHost():
