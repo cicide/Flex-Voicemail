@@ -18,15 +18,12 @@ log = utils.get_logger("Call")
 smtp_server = utils.config.get("general", "smtp_server")
 
 retriesDefault = 3
-calls = {}
 callMap = {}
 
 class Call:
 
-    def __init__(self, agi, callerId, channelInfo, user=None):
-        self.agi = agi
-        self.callerId = callerId
-        self.channelInfo = channelInfo
+    def __init__(self, astCallObj):
+        self.astCall = astCallObj
         self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
@@ -83,7 +80,7 @@ class Call:
     def executeAction(self, action, response, nextAction, invalidAction, retries):
         pass
         
-    def start(self, tree, user=None):
+    def startCall(self, tree, user=None):
         log.debug('call started')
         if not tree:
             log.error("no valid tree supplied")
@@ -94,5 +91,10 @@ class Call:
         return actionRequest
         
         
-        
+def newCall(astCallObj, uniqueid):
+    if not uniqueid in callMap:
+        callMap[uniqieid] = Call(astCallObj)
+        return callMap[uniqieid]
+    else:
+        return False
         
