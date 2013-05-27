@@ -54,7 +54,7 @@ class wsApiServer:
         return jsonResponse
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
-        uParams = {'cuid': callUniqueId}
+        uParams = {'uid': callUniqueId}
         for key in kwargs:
             uParams[key] = kwargs[key]
         encParams = urllib.urlencode(uParams)

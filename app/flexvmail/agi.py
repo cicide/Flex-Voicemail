@@ -88,6 +88,7 @@ class astCall:
         return self.cidNum
     
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
+        log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
             log.error(reason)
             if not result:
@@ -132,11 +133,28 @@ class astCall:
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
     
     def actionRecord(self, prompt, folder, dtmf, retries):
+        log.debug('agi:actionRecord called')
+        log.debug(prompt)
         if len(prompt):
+            log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
         return True
 
+    def actionPlay(self, prompt, dtmf, retries):
+        log.debug('agi:actionPlay called')
+        log.debug(prompt)
+        if len(prompt):
+            log.debug('calling play prompt')
+            result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            log.debug(result)
+            return result
+        else:
+            return False
         
+    def actionHangup(self):
+        log.debug('agi:actionHangup called')
+        return self.hangup()
+    
 #routing for called agi scripts
 def onFailure(reason):
     log.error(reason)

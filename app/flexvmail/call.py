@@ -49,14 +49,22 @@ class Call:
             action = 'hangup'
         else:
             respKeys.remove('action')
-            action = result['action']
+            # fix broken reference to agi in action
+            if result['action'].split(':')[0] == 'agi':
+                action = result['action'].split(':')[1]
+            else:
+                action = result['action']
         if not 'nextaction' in result:
             log.error('missing nextaction parameter in wsapi response')
             action = 'hangup'
             nextaction = 'hangup'
         else:
             respKeys.remove('nextaction')
-            nextaction = result['nextaction']
+            # fix broken reference to agi in nextaction
+            if result['nextaction'].split(':')[0] == 'agi':
+                nextaction = result['nextaction'].split(':')[1]
+            else:
+                nextaction = result['nextaction']
         if not 'invalidaction' in result:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
             invalidaction = 'hangup'
@@ -69,9 +77,35 @@ class Call:
     def executeAction(self, action, nextAction, invalidAction, wsapiResponse, respKeys):
         log.debug('got a valid action!')
         if action == 'play':
-            return True
+            if not 'prompt' in wsapiResponse:
+                log.warning('missing record prompts, is this a straight record?')
+                prompt = []
+            else:
+                respKeys.remove('prompt')
+                prompt = wsapiResponse['prompt']
+            if not 'dtmf' in wsapiResponse:
+                log.warning('no dtmf supplied, using default of #')
+                dtmf = []
+            else:
+                respKeys.remove('dtmf')
+                dtmf = wsapiResponse['dtmf']
+            if not 'retries' in wsapiResponse:
+                if len(dtmf):
+                    log.warning('no retries supplied using default of %s' % retriesDefault)
+                    retries = retriesDefault
+                else:
+                    log.warning('no retries supplied, but message is not interruptable, so using 0')
+                    retries = 0
+            else:
+                respKeys.remove('retries')
+                retries = wsapiResponse['retries']
+            if len(respKeys):
+                log.warning('Action play: extra arguments ignored: %s' % ",".join(respKeys))
+            d = self.pbxCall.actionPlay(prompt, dtmf, retries)
+            d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
+            return d
         elif action == 'hangup':
-            return True
+            return self.pbxCall.actionHangup()
         elif action == 'record':
             # Record action requires:
             #    folder - where to store the recorded file
