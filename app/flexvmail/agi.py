@@ -81,19 +81,12 @@ class astCall:
     def onFinish(self, result=None):
         return result
         
-    #def processScript(result):
-        #if result:
-            #cidname = result[0]
-            #cidnum = result[1]
-        #else:
-            #cidname = 'Unknown'
-            #cidnum = None
-        #log.debug("cidname: %s, cidnum: %s" % (cidname, cidnum))
-        
-    #def start(scriptName):
-        #cid = getCidInfo()
-        #callObj = call.Call(agi, scriptName, cid, channelData)
-        #callObj.start()
+    def getUid(self):
+        return self.uid
+    
+    def getCidNum(self):
+        return self.cidNum
+
         
 #routing for called agi scripts
 def onFailure(reason):

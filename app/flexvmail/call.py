@@ -27,12 +27,6 @@ class Call:
         self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
-        if user:
-            self.user = user
-        else:
-            unum,uname = self.parseCallerId(callerId)
-        if unum:
-            self.user = unum
         log.debug('call object instanced for %s' % self.callerId)
     
     def parseCallerId(self, callerId):
@@ -80,11 +74,15 @@ class Call:
     def executeAction(self, action, response, nextAction, invalidAction, retries):
         pass
         
-    def startCall(self, tree, user=None):
+    def startCall(self, tree):
         log.debug('call started')
         if not tree:
             log.error("no valid tree supplied")
             return False
+        else:
+            self.tree = tree
+            self.cuid = self.astCall.getUid()
+            self.user = self.astCall.getCidNum()
         method = 'startCall'
         actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, user=self.user, tree=tree)
         actionRequest.addCallbacks(onActionResponse,onError)
