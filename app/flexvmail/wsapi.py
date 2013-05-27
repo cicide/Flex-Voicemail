@@ -17,17 +17,18 @@ class BeginningPrinter(Protocol):
     def __init__(self, finished):
         self.finished = finished
         self.remaining = 1024 * 10
+        self.display = None
 
 
     def dataReceived(self, bytes):
         if self.remaining:
-            display = bytes[:self.remaining]
-            log.debug('Some data received: %s' % display)
-            self.remaining -= len(display)
+            self.display = bytes[:self.remaining]
+            log.debug('Some data received: %s' % self.display)
+            self.remaining -= len(self.display)
 
     def connectionLost(self, reason):
         log.debug('Finished receiving body: %s, %s' % (reason.type, reason.value))
-        self.finished.callback(reason.value)
+        self.finished.callback(self.display)
 
 class wsApiServer:
     
