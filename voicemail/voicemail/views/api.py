@@ -82,7 +82,7 @@ def startCall(request):
             prompt= prompt.getFullPrompt(user=user),
             nextaction=request.route_url('savemessage', _query={'user': extension, 'callid':callid, 'callerid' : callerid}),
             invalidaction=request.route_url('invalidmessage'),
-            dtmf=['#',]
+            dtmf=['#',],
             folder=user.vm_prefs.folder,
         )
     elif tree == "accessMessage":
