@@ -24,10 +24,11 @@ class astCall:
         
     def onError(self, reason):
         log.error(reason)
+        log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
         sequence.append(self.agi.hangup)
         sequence.append(self.agi.finish)
-        return sequence().addErrback(onError)
+        return sequence()
 
     def start(self):
         args = self.agi.variables.keys()
@@ -122,12 +123,14 @@ class astCall:
                 sequence = fastagi.InSequence()
                 if delaybefore:
                     delay = float(delaybefore)/1000
+                    log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
                 intKeys = "".join(interrupKeys)
                 log.debug(promptLoc)
                 sequence.append(self.agi.streamFile,promptLoc,escapeDigits=intKeys,offset=0)
                 if delayafter:
                     delay = float(delayafter)/1000
+                    log.debug('adding delay after of %s' % delay)
                     sequence.append(self.agi.wait,delay)
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
             else:
