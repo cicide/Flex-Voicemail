@@ -72,6 +72,7 @@ class Call:
         return self.executeAction(action, response, nextaction, invalidaction, retries)
     
     def executeAction(self, action, response, nextAction, invalidAction, retries):
+        log.debug('got a valid action!')
         pass
         
     def startCall(self, tree):
@@ -85,7 +86,7 @@ class Call:
             self.user = self.astCall.getCidNum()
         method = 'startCall'
         actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, user=self.user, tree=tree)
-        actionRequest.addCallbacks(onActionResponse,onError)
+        actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         
         
