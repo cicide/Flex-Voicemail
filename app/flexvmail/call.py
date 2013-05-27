@@ -84,7 +84,7 @@ class Call:
                 respKeys.remove('prompt')
                 prompt = wsapiResponse['prompt']
             if not 'dtmf' in wsapiResponse:
-                log.warning('no dtmf supplied, using default of #')
+                log.warning('no dtmf supplied, using empty list')
                 dtmf = []
             else:
                 respKeys.remove('dtmf')
