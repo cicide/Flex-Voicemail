@@ -23,10 +23,10 @@ class wsApiServer:
         log.debug(reason)
         return False
         
-    def onResponse(self, response):
-        log.debug(response)
-        result = json.loads(response)
-        return response
+    def onResponse(self, resp):
+        log.debug(resp)
+        result = json.loads(resp)
+        return result
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
         uParams = {'cuid': callUniqueId}
