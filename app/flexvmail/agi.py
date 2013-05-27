@@ -155,6 +155,7 @@ class astCall:
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            log.debug('got play prompt result')
             log.debug(result)
             return result
         else:

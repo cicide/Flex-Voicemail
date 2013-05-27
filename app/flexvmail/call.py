@@ -102,7 +102,7 @@ class Call:
             if len(respKeys):
                 log.warning('Action play: extra arguments ignored: %s' % ",".join(respKeys))
             d = self.pbxCall.actionPlay(prompt, dtmf, retries)
-            d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
+            d.addCallback(self.onExecuteActionSuccess, nextAction) #.addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         elif action == 'hangup':
             return self.pbxCall.actionHangup()
