@@ -86,6 +86,55 @@ class astCall:
     
     def getCidNum(self):
         return self.cidNum
+    
+    def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
+        def onError(reason, promptList, interruptKeys):
+            log.error(reason)
+            if not result:
+                result = False
+            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        if not len(promptList):
+            return result
+        currPrompt = promptList.pop(0)
+        promptKeys = currPrompt.keys()
+        # prompt object must have uri
+        # may have delaybefore and delayafter
+        if not 'delaybefore' in currPrompt:
+            delyabefore = 0
+        else:
+            promptKeys.remove('delaybefore')
+            delaybefore = currPrompt['delaybefore']
+        if not 'delayafter' in currPrompt:
+            delayafter = 0
+        else:
+            promptKeys.remove('delayafter')
+            delayafter = currPrompt['delayafter']
+        if not 'uri' in currPrompt:
+            log.warning('No prompt uri provided in prompt.')
+            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        else:
+            promptKeys.remove('uri')
+            promptUri = currPrompt['uri']
+            promptType, promtLoc = promptUri.split(':')
+            if promptType == 'file':
+                sequence = fastagi.InSequence()
+                if delaybefore:
+                    delay = float(delaybefore)/1000
+                    sequence.append(self.agi.wait,delay)
+                intKeys = "".join(interrupKeys)
+                sequence.append(self.agi.streamFile,promptLoc,escapeDigits=intKeys,offset=0)
+                if delayafter:
+                    delay = float(delayafter)/1000
+                    sequence.append(self.agi.wait,delay)
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
+            else:
+                log.error('Unknown prompt type: %s' % promptType)
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+    
+    def actionRecord(self, prompt, folder, dtmf, retries):
+        if len(prompt):
+            result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+        return True
 
         
 #routing for called agi scripts
