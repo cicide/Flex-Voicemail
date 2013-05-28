@@ -151,7 +151,7 @@ class Prompt(Base):
     invalidRequest = "Invalid_Request"
     invalidMessage = "Invalid_Message"
     userGreeting = "User_Greeting"
-    userNameRecdoring = "User_Name_Recording"
+    userNameRecording = "User_Name_Recording"
     userLeaveMessage = "User_Leave_Message"
     userNotExist = "User_Not_Exist"
     userVmAccess = "User_Vm_Access"
