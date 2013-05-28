@@ -62,6 +62,7 @@ def startCall(request):
     tree = request.GET.get('tree', None)
 
     if extension is None or callid is None or callerid is None or tree is None:
+        log.debug("Missing parameters entension %s, callid %s, callerid %s tree %s" % (extension, callid, callerid, tree))
         return returnPrompt(name=Prompt.invalidRequest)
     # lets get the user
     user = DBSession.query(User).filter_by(extension=extension).first()
@@ -93,6 +94,7 @@ def startCall(request):
             nextaction="agi:hangup",
             )
     
+    log.debug("Invalid Request")
     return returnPrompt(name=Prompt.invalidRequest)
 
 @view_config(route_name='savemessage', renderer='json')
