@@ -4,6 +4,8 @@ from twisted.application import internet
 from twisted.internet import reactor, defer
 from starpy import fastagi
 import utils, call
+from twisted.internet.defer import setDebugging
+setDebugging(True)
 
 log = utils.get_logger("AGIService")
 
@@ -24,10 +26,11 @@ class astCall:
         
     def onError(self, reason):
         log.error(reason)
+        log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
         sequence.append(self.agi.hangup)
         sequence.append(self.agi.finish)
-        return sequence().addErrback(onError)
+        return sequence()
 
     def start(self):
         args = self.agi.variables.keys()
@@ -86,8 +89,83 @@ class astCall:
     
     def getCidNum(self):
         return self.cidNum
+    
+    def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
+        log.debug('agi:playPromptList called')
+        def onError(reason, promptList, interruptKeys):
+            log.error(reason)
+            if not result:
+                result = False
+            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        if not len(promptList):
+            return result
+        currPrompt = promptList.pop(0)
+        promptKeys = currPrompt.keys()
+        # prompt object must have uri
+        # may have delaybefore and delayafter
+        if not 'delaybefore' in currPrompt:
+            delaybefore = 0
+        else:
+            promptKeys.remove('delaybefore')
+            delaybefore = currPrompt['delaybefore']
+        if not 'delayafter' in currPrompt:
+            delayafter = 0
+        else:
+            promptKeys.remove('delayafter')
+            delayafter = currPrompt['delayafter']
+        if not 'uri' in currPrompt:
+            log.warning('No prompt uri provided in prompt.')
+            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        else:
+            promptKeys.remove('uri')
+            promptUri = currPrompt['uri']
+            promptType, promptLoc = promptUri.split(':')
+            log.debug(promptLoc)
+            if promptType == 'file':
+                sequence = fastagi.InSequence()
+                if delaybefore:
+                    delay = float(delaybefore)/1000
+                    log.debug('adding delay before of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                intKeys = str("".join(interrupKeys))
+                log.debug(promptLoc)
+                log.debug(intKeys)
+                sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                if delayafter:
+                    delay = float(delayafter)/1000
+                    log.debug('adding delay after of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
+                # don't capture this error
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+            else:
+                log.error('Unknown prompt type: %s' % promptType)
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+    
+    def actionRecord(self, prompt, folder, dtmf, retries):
+        log.debug('agi:actionRecord called')
+        log.debug(prompt)
+        if len(prompt):
+            log.debug('calling play prompt')
+            result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+        return True
 
+    def actionPlay(self, prompt, dtmf, retries):
+        log.debug('agi:actionPlay called')
+        log.debug(prompt)
+        if len(prompt):
+            log.debug('calling play prompt')
+            result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            log.debug('got play prompt result')
+            log.debug(result)
+            return result
+        else:
+            return False
         
+    def actionHangup(self):
+        log.debug('agi:actionHangup called')
+        return self.hangup()
+    
 #routing for called agi scripts
 def onFailure(reason):
     log.error(reason)

@@ -13,7 +13,7 @@ wsApiList = [] #TODO - build this list from the list of wsApiServer in the confi
 
 log = utils.get_logger("WSAPI")
 
-class BeginningPrinter(Protocol):
+class wsapiResponse(Protocol):
     def __init__(self, finished):
         self.finished = finished
         self.remaining = 1024 * 10
@@ -23,11 +23,12 @@ class BeginningPrinter(Protocol):
     def dataReceived(self, bytes):
         if self.remaining:
             self.display = bytes[:self.remaining]
-            log.debug('Some data received: %s' % self.display)
+            #log.debug('Some data received: %s' % self.display)
             self.remaining -= len(self.display)
 
     def connectionLost(self, reason):
-        log.debug('Finished receiving body: %s, %s' % (reason.type, reason.value))
+        #log.debug('Finished receiving body: %s, %s' % (reason.type, reason.value))
+        log.debug('Response received: %s' % self.display)
         self.finished.callback(self.display)
 
 class wsApiServer:
@@ -42,7 +43,7 @@ class wsApiServer:
         
     def onResponse(self, resp):
         finished = Deferred()
-        resp.deliverBody(BeginningPrinter(finished))
+        resp.deliverBody(wsapiResponse(finished))
         finished.addCallbacks(self.getJsonResult,self.onError)
         return finished
     
@@ -53,7 +54,7 @@ class wsApiServer:
         return jsonResponse
     
     def genParameters(self, apiMethod, callUniqueId, **kwargs):
-        uParams = {'cuid': callUniqueId}
+        uParams = {'uid': callUniqueId}
         for key in kwargs:
             uParams[key] = kwargs[key]
         encParams = urllib.urlencode(uParams)
