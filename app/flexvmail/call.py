@@ -41,7 +41,7 @@ class Call:
         log.debug('call object handling wsapi response')
         log.debug(result)
         if not result:
-            log.debug('invalid result.')
+            log.error('invalid or empty wsapi result.')
             return False
         respKeys = result.keys()
         log.debug(respKeys)
