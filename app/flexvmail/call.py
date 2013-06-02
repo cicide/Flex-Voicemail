@@ -40,6 +40,9 @@ class Call:
     def onActionResponse(self, result):
         log.debug('call object handling wsapi response')
         log.debug(result)
+        if not result:
+            log.debug('invalid result.')
+            return False
         respKeys = result.keys()
         log.debug(respKeys)
         #results contain a number of key value pairs
@@ -162,7 +165,7 @@ class Call:
             self.cuid = self.pbxCall.getUid()
             self.user = self.callerId = self.pbxCall.getCidNum()
         method = 'startcall'
-        actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, callerId = self.callerId, user=self.user, tree=tree)
+        actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, callerid = self.callerId, user=self.user, tree=tree)
         actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         #return self.onActionResponse(actionRequest)
