@@ -12,8 +12,13 @@ requires = [
     'transaction',
     'pyramid_tm',
     'pyramid_debugtoolbar',
+    'pyramid_beaker',
+    'mysql-python',
     'zope.sqlalchemy',
     'waitress',
+    'bag',
+    'deform',
+    'paste',
     ]
 
 setup(name='voicemail',
