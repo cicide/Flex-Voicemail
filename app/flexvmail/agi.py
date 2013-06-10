@@ -172,6 +172,7 @@ class astCall:
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            result.addCallback(onPromptSuccess, folder, dtmf, retries, beep).addErrback(onError)
             log.debug('returned from play prompt')
             log.debug(result)
             return result
