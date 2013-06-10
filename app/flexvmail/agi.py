@@ -64,8 +64,8 @@ class astCall:
             self.call = newCall
             result = self.call.startCall(self.script)
             if result:
-                log.debug('Terminating call.')
-                result.addCallbacks(self.onError,self.onError)
+                #log.debug('Terminating call.')
+                #result.addCallbacks(self.onError,self.onError)
                 return result
             else:
                 return self.onError('nothing')
