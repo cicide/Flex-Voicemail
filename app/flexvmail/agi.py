@@ -25,6 +25,7 @@ class astCall:
         self.intType = 'asterisk'
         
     def onError(self, reason):
+        log.debug('entering agi:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
@@ -63,6 +64,7 @@ class astCall:
             self.call = newCall
             result = self.call.startCall(self.script)
             if result:
+                log.debug('Terminating call.')
                 result.addCallbacks(self.onError,self.onError)
                 return result
             else:
@@ -93,6 +95,7 @@ class astCall:
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
+            log.debug('entering: agi:playPromptList:onError')
             log.error(reason)
             if not result:
                 result = False
