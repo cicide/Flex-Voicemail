@@ -165,7 +165,7 @@ class astCall:
             log.debug('entered agi:actionRecord:onPromptSuccess')
             log.debug(result)
             #fix this - figure out the correct file number
-            file_loc = '%/msg0000.wav'
+            file_loc = '%s/msg0000.wav' % folder
             result = self.agi.recordFile(file_loc, 'wav', dtmf, 300, beep=beep)
             result.addCallback(onRecordSuccess, file_loc, folder, dtmf, retries, beep).addErrback(onError)
             return result
