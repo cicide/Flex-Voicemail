@@ -162,6 +162,9 @@ class Prompt(Base):
         for i in self.details:
             if i.prompt_type == 1:
                 listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
+            elif i.prompt_type == 2:
+                extension = user.extension
+                listprompt.append({'tts':list(extension), 'delayafter':i.delay_after})
             elif i.prompt_type == 3:
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
