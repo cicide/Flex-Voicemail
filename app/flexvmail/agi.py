@@ -120,6 +120,9 @@ class astCall:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
+            # Normalize the file location by removing the extra / at the beginning
+            if promptLoc[:2] == '//':
+                promptLoc = promptLoc[1:]
             log.debug(promptLoc)
             if promptType == 'file':
                 sequence = fastagi.InSequence()
@@ -154,8 +157,6 @@ class astCall:
     def actionPlay(self, prompt, dtmf, retries):
         log.debug('agi:actionPlay called')
         log.debug(prompt)
-        if prompt[:2] == '//':
-            prompt = prompt[1:]
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
