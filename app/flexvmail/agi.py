@@ -120,9 +120,9 @@ class astCall:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
-            # Normalize the file location by removing the extra / at the beginning
+            # Normalize the file location by removing the extra / at the beginning and any file type from the end
             if promptLoc[:2] == '//':
-                promptLoc = promptLoc[1:]
+                promptLoc = promptLoc[1:].split('.')[0]
             log.debug(promptLoc)
             if promptType == 'file':
                 sequence = fastagi.InSequence()
