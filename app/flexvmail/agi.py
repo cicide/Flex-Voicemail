@@ -169,7 +169,7 @@ class astCall:
             tmpFolder = folder.split(':/')[1]
             tmp_file_loc = '%s/msg0000' % str(tmpFolder)
             result = self.agi.recordFile(tmp_file_loc, 'wav', dtmf, 300, beep=beep)
-            result.addCallback(onRecordSuccess, file_loc, folder, dtmf, retries, beep).addErrback(onError)
+            result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
             return result
         if len(prompt):
             log.debug('calling play prompt')
