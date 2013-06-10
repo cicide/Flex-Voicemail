@@ -137,6 +137,7 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
                 # don't capture this error
+                log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
                 log.error('Unknown prompt type: %s' % promptType)
@@ -153,6 +154,8 @@ class astCall:
     def actionPlay(self, prompt, dtmf, retries):
         log.debug('agi:actionPlay called')
         log.debug(prompt)
+        if prompt[:2] == '//':
+            prompt = prompt[1:]
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)

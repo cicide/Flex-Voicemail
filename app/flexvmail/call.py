@@ -81,7 +81,7 @@ class Call:
         log.debug('got a valid action!')
         if action == 'play':
             if not 'prompt' in wsapiResponse:
-                log.warning('missing record prompts, is this a straight record?')
+                log.warning('missing play prompt.  What should I do, play silence?')
                 prompt = []
             else:
                 respKeys.remove('prompt')
@@ -148,6 +148,8 @@ class Call:
             d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries)
             d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
             return d
+        else:
+            log.debug('Unknown action type %s' % action)
         
     def onExecuteActionSuccess(self, result, nextAction):
         return True
