@@ -101,6 +101,7 @@ class astCall:
                 result = False
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         if not len(promptList):
+            log.debug('prompt list is empty, returning')
             return result
         currPrompt = promptList.pop(0)
         promptKeys = currPrompt.keys()
@@ -155,6 +156,9 @@ class astCall:
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            log.debug('returned from play prompt')
+            log.debug(result)
+            return result
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
