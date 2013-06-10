@@ -167,8 +167,8 @@ class astCall:
             #fix this - figure out the correct file number
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
-            file_loc = '%s/msg0000' % str(tmpFolder)
-            result = self.agi.recordFile(file_loc, 'wav', dtmf, 300, beep=beep)
+            tmp_file_loc = '%s/msg0000' % str(tmpFolder)
+            result = self.agi.recordFile(tmp_file_loc, 'wav', dtmf, 300, beep=beep)
             result.addCallback(onRecordSuccess, file_loc, folder, dtmf, retries, beep).addErrback(onError)
             return result
         if len(prompt):
