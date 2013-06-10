@@ -150,9 +150,25 @@ class astCall:
                 log.error('Unknown prompt type: %s' % promptType)
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
     
-    def actionRecord(self, prompt, folder, dtmf, retries):
+    def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
         log.debug('agi:actionRecord called')
         log.debug(prompt)
+        def onError(reason):
+            log.debug('got error in agi:actionRecord')
+            log.error(reason)
+            return self.onError(reason)
+        def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
+            log.debug('entering: agi:actionRecord:onRecordSuccess')
+            log.debug(result)
+            return result
+        def onPromptSuccess(result, folder, dtmf, retries, beep):
+            log.debug('entered agi:actionRecord:onPromptSuccess')
+            log.debug(result)
+            #fix this - figure out the correct file number
+            file_loc = '%/msg0000.wav'
+            result = agi.recordFile(file_loc, 'wav', dtmf, 300, beep=beep)
+            result.addCallback(onRecordSuccess, file_loc, folder, dtmf, retries, beep).addErrback(onError)
+            return result
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
