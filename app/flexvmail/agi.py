@@ -120,6 +120,7 @@ class astCall:
         if 'tts' in currPrompt:
             log.debug('found a tts prompt')
             ttsString = currPrompt['tts']
+            log.debug(ttsString)
             if len(ttsString) < 1:
                 log.warning('got zero length tts prompt')
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
@@ -127,32 +128,34 @@ class astCall:
                 ttsLocSeq = []
                 for ttsValue in ttsString:
                     if str(ttsValue) in ['0','1','2','3','4','5','6','7','8','9']:
+                        log.debug('found a digit: %s' % ttsValue)
                         ttsLoc = '/var/lib/asterisk/sounds/en/digits/%s' % str(ttsValue)
                     elif ttsValue in ['a','b','c','d','e','f','g','h','i','j','l',
                                       'm','n','o','p','q','r','s','t','u','v','w',
                                       'x','y','z','#',"*"]:
+                        log.debug('found a letter: %s' % ttsValue)
                         ttsLoc = '/var/lib/asterisk/sounds/en/letters/%s' % str(ttsValue)
                     else:
                         ttsLoc = None
                         log.error('Unknown tts string %s' % ttsValue)
                     if ttsLoc:
                         ttsLocSeq.append(ttsLoc)
-                    if len(ttsLocSeq):
-                        sequence = fastagi.InSequence()
-                        if delaybefore:
-                            delay = float(delaybefore)/1000
-                            log.debug('adding delay before of %s' % delay)
+                if len(ttsLocSeq):
+                    sequence = fastagi.InSequence()
+                    if delaybefore:
+                        delay = float(delaybefore)/1000
+                        log.debug('adding delay before of %s' % delay)
+                        sequence.append(self.agi.wait,delay)
+                    intKeys = str("".join(interrupKeys))
+                    while len(ttsLocSeq):
+                        promptLoc = ttsLocSeq.pop(0)
+                        sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                        if delayafter:
+                            delay = float(delayafter)/1000
+                            log.debug('adding delay after of %s' % delay)
                             sequence.append(self.agi.wait,delay)
-                        intKeys = str("".join(interrupKeys))
-                        while len(ttsLocSeq):
-                            promptLoc = ttsLocSeq.pop(0)
-                            sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
-                            if delayafter:
-                                delay = float(delayafter)/1000
-                                log.debug('adding delay after of %s' % delay)
-                                sequence.append(self.agi.wait,delay)
-                        log.debug('playing tts prompt.')
-                        return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+                    log.debug('playing tts prompt.')
+                    return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
