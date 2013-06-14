@@ -61,6 +61,7 @@ class wsApiServer:
             log.debug(encParams)
             return encParams
         if formedUri:
+            log.debug('got a formedUI')
             #formedUri received for formatting
             if kwargs:
                 encParams = encodeArgs({}, kwargs)
@@ -69,6 +70,7 @@ class wsApiServer:
                 req = """%s""" % formedUri
             return req
         elif apiMethod:
+            log.debug('got an apiMethod')
             #forumedUri and apiMethod cannot both be non null at the same time
             uParams = {'uid': callUniqueId}
             if kwargs:
@@ -82,7 +84,8 @@ class wsApiServer:
             return False
     
     def wsapiCall(self, formedUri, apiMethod, callUniqueId, **kwargs):
-        req = self.genParameters(None, apiMethod, callUniqueId, **kwargs)
+        log.debug('entered: wsapi:wsapiCall')
+        req = self.genParameters(formedUri, apiMethod, callUniqueId, **kwargs)
         uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
         return self.wsapiRequest(uri)
     

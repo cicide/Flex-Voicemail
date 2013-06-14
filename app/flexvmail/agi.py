@@ -23,6 +23,7 @@ class astCall:
     def __init__(self, agi):
         self.agi = agi
         self.intType = 'asterisk'
+        self.mediaType = 'wav'
         
     def onError(self, reason):
         log.debug('entering agi:onError')
@@ -201,7 +202,7 @@ class astCall:
             log.debug(result)
             response = {}
             response['result'] = result
-            response['vmfile'] = file_loc
+            response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
             return response
@@ -212,7 +213,7 @@ class astCall:
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
             tmp_file_loc = '%s/msg0000' % str(tmpFolder)
-            result = self.agi.recordFile(tmp_file_loc, 'wav', dtmf, 300, beep=beep)
+            result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
             result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
             return result
         if len(prompt):
