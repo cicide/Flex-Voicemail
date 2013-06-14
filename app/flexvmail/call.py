@@ -153,22 +153,19 @@ class Call:
         
     def onExecuteActionSuccess(self, result, nextAction):
         log.debug('entered: call:onExecuteActionSuccess')
-        #log.debug(result)
-        #log.debug(nextAction)
+        log.debug(result)
+        log.debug(nextAction)
         if 'type' in result:
             log.debug('found a valid result type of: %s' % result['type'])
             resType = result['type']
             if resType == 'record':
-                log.debug('found a record result type: %s' % result['file_loc'])
-                #vmFile = str(result['file_loc'])
-                #log.debug('vmFile set to: %s' % vmFile)
+                log.debug('found a record result type')
+                vmFile = str(result['vmfile'])
+                log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
                 log.debug('act set to: %s' % act)
-                log.debug('creating action request')
-                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=result['file_loc'])
-                log.debug('adding callbacks to action request')
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
-                log.debug('returning action request deferred')
                 return actionRequest
             elif resType == 'play':
                 log.debug('found a play result type')
