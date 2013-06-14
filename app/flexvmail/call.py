@@ -159,10 +159,12 @@ class Call:
             resType = result['type']
             if resType == 'record':
                 log.debug('found a record result type')
-                vmfile = str(result['file_loc'])
-                action = str(nextAction)
+                vmFile = str(result['file_loc'])
+                log.debug('vmFile set to: %s' % vmFile)
+                act = str(nextAction)
+                log.debug('act set to: %s' % action)
                 log.debug('creating action request')
-                actionRequest = self.wsApiHost.wsapiCall(action, None, None, vmfile=vmfile)
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile)
                 log.debug('adding callbacks to action request')
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 log.debug('returning action request deferred')
