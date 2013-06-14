@@ -199,7 +199,12 @@ class astCall:
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
-            return result
+            response = {}
+            response['result'] = result
+            response['vmfile'] = file_loc
+            response['vmfolder'] = folder
+            response['type'] = 'record'
+            return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             log.debug('entered agi:actionRecord:onPromptSuccess')
             log.debug(result)
