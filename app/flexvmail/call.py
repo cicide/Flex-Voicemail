@@ -152,17 +152,18 @@ class Call:
             log.debug('Unknown action type %s' % action)
         
     def onExecuteActionSuccess(self, result, nextAction):
-        log.debug(result)
-        log.debug(nextAction)
+        log.debug('entered: call:onExecuteActionSuccess')
+        #log.debug(result)
+        #log.debug(nextAction)
         if 'type' in result:
             log.debug('found a valid result type of: %s' % result['type'])
             resType = result['type']
             if resType == 'record':
-                log.debug('found a record result type')
+                log.debug('found a record result type: %s' % result['file_loc'])
                 #vmFile = str(result['file_loc'])
                 #log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
-                log.debug('act set to: %s' % action)
+                log.debug('act set to: %s' % act)
                 log.debug('creating action request')
                 actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=result['file_loc'])
                 log.debug('adding callbacks to action request')
