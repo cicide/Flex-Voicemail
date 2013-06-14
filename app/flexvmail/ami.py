@@ -58,14 +58,15 @@ class DialerProtocol(AMIProtocol):
         digit = event['digit']
         uid = event['uniqueid']
         dtmf_begin = event['begin']
-        if dtmf_begin in ('Yes', 'yes'):
-            cuid = '%s-%s' % (self.host_id, uid)
-            if cuid not in call.calls:
-                log.debug("got dtmf capture for call id %s that isn't in active calls" % cuid)
-                pass
-            else:
-                d = defer.maybeDeferred(call.calls[cuid].captureDTMF, digit)
-                d.addCallbacks(onSuccess, onFailure)
+        log.debug('got dtmf event: %s' % event)
+        #if dtmf_begin in ('Yes', 'yes'):
+            #cuid = '%s-%s' % (self.host_id, uid)
+            #if cuid not in call.calls:
+                #log.debug("got dtmf capture for call id %s that isn't in active calls" % cuid)
+                #pass
+            #else:
+                #d = defer.maybeDeferred(call.calls[cuid].captureDTMF, digit)
+                #d.addCallbacks(onSuccess, onFailure)
 
     def onDialEvent(self, ami, event):
         log.debug("got dial event: %s" % event)

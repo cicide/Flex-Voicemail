@@ -53,23 +53,54 @@ class wsApiServer:
         jsonResponse = json.loads(result)
         return jsonResponse
     
-    def genParameters(self, apiMethod, callUniqueId, **kwargs):
-        uParams = {'uid': callUniqueId}
-        for key in kwargs:
-            uParams[key] = kwargs[key]
-        encParams = urllib.urlencode(uParams)
-        log.debug(encParams)
-        req = """%s?%s""" % (apiMethod, encParams)
-        return req
+    def genParameters(self, formedUri, apiMethod, callUniqueId, **kwargs):
+        def encodeArgs(uParams, kwargs):
+            for key in kwargs:
+                uParams[key] = kwargs[key]
+            encParams = urllib.urlencode(uParams)
+            log.debug(encParams)
+            return encParams
+        if formedUri:
+            log.debug('got a formedUI')
+            #formedUri received for formatting
+            if kwargs:
+                encParams = encodeArgs({}, kwargs)
+                req = """%s&%s""" % (formedUri, encParams)
+            else:
+                req = """%s""" % formedUri
+            return req
+        elif apiMethod:
+            log.debug('got an apiMethod')
+            #forumedUri and apiMethod cannot both be non null at the same time
+            uParams = {'uid': callUniqueId}
+            if kwargs:
+                encParams = encodeArgs(uParams, kwargs)
+            else:
+                encParams = encodeArgs(uParams, {})
+            req = """%s?%s""" % (apiMethod, encParams)
+            return req
+        else:
+            log.error('Got neither a formedUri or apiMethod for encoding.')
+            return False
     
-    def wsapiCall(self, apiMethod, callUniqueId, **kwargs):
-        agent = Agent(reactor)
-        req = self.genParameters(apiMethod, callUniqueId, **kwargs)
-        uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
-        log.debug('requesting: %s' % uri)
-        d = agent.request("GET", uri)
-        d.addCallbacks(self.onResponse, self.onError)
-        return d
+    def wsapiCall(self, formedUri, apiMethod, callUniqueId, **kwargs):
+        log.debug('entered: wsapi:wsapiCall')
+        req = self.genParameters(formedUri, apiMethod, callUniqueId, **kwargs)
+        if formedUri:
+            uri = req
+        else:
+            uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
+        return self.wsapiRequest(uri)
+    
+    def wsapiRequest(self, uri):
+        if uri:
+            agent = Agent(reactor)
+            log.debug('requesting: %s' % uri)
+            d = agent.request("GET", uri)
+            d.addCallbacks(self.onResponse, self.onError)
+            return d
+        else:
+            return False
         
 def getHost():
     return choice(wsApiList)

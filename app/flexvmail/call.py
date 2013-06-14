@@ -81,7 +81,7 @@ class Call:
         log.debug('got a valid action!')
         if action == 'play':
             if not 'prompt' in wsapiResponse:
-                log.warning('missing record prompts, is this a straight record?')
+                log.warning('missing play prompt.  What should I do, play silence?')
                 prompt = []
             else:
                 respKeys.remove('prompt')
@@ -148,13 +148,40 @@ class Call:
             d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries)
             d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
             return d
+        else:
+            log.debug('Unknown action type %s' % action)
         
     def onExecuteActionSuccess(self, result, nextAction):
-        return True
+        log.debug('entered: call:onExecuteActionSuccess')
+        log.debug(result)
+        log.debug(nextAction)
+        if 'type' in result:
+            log.debug('found a valid result type of: %s' % result['type'])
+            resType = result['type']
+            if resType == 'record':
+                log.debug('found a record result type')
+                vmFile = str(result['vmfile'])
+                log.debug('vmFile set to: %s' % vmFile)
+                act = str(nextAction)
+                log.debug('act set to: %s' % act)
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile)
+                actionRequest.addCallbacks(self.onActionResponse,self.onError)
+                return actionRequest
+            elif resType == 'play':
+                log.debug('found a play result type')
+                return True
+            else:
+                log.debug('unknown result type')
+                return False
+            return True
+        else:
+            log.debug('No type found for successful action.')
+            return False
+        
     
     def onExecuteActionFailure(self, reason, invalidAction):
         return False
-    
+
     def startCall(self, tree):
         log.debug('call started')
         if not tree:
@@ -165,7 +192,7 @@ class Call:
             self.cuid = self.pbxCall.getUid()
             self.user = self.callerId = self.pbxCall.getCidNum()
         method = 'startcall'
-        actionRequest = self.wsApiHost.wsapiCall(method, self.cuid, callerid = self.callerId, user=self.user, tree=tree)
+        actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId, user=self.user, tree=tree)
         actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         #return self.onActionResponse(actionRequest)

@@ -23,8 +23,10 @@ class astCall:
     def __init__(self, agi):
         self.agi = agi
         self.intType = 'asterisk'
+        self.mediaType = 'wav'
         
     def onError(self, reason):
+        log.debug('entering agi:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
@@ -63,7 +65,8 @@ class astCall:
             self.call = newCall
             result = self.call.startCall(self.script)
             if result:
-                result.addCallbacks(self.onError,self.onError)
+                #log.debug('Terminating call.')
+                #result.addCallbacks(self.onError,self.onError)
                 return result
             else:
                 return self.onError('nothing')
@@ -93,11 +96,13 @@ class astCall:
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
+            log.debug('entering: agi:playPromptList:onError')
             log.error(reason)
             if not result:
                 result = False
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         if not len(promptList):
+            log.debug('prompt list is empty, returning')
             return result
         currPrompt = promptList.pop(0)
         promptKeys = currPrompt.keys()
@@ -113,13 +118,52 @@ class astCall:
         else:
             promptKeys.remove('delayafter')
             delayafter = currPrompt['delayafter']
-        if not 'uri' in currPrompt:
-            log.warning('No prompt uri provided in prompt.')
-            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
-        else:
+        if 'tts' in currPrompt:
+            log.debug('found a tts prompt')
+            ttsString = currPrompt['tts']
+            log.debug(ttsString)
+            if len(ttsString) < 1:
+                log.warning('got zero length tts prompt')
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+            else:
+                ttsLocSeq = []
+                for ttsValue in ttsString:
+                    if str(ttsValue) in ['0','1','2','3','4','5','6','7','8','9']:
+                        log.debug('found a digit: %s' % ttsValue)
+                        ttsLoc = '/var/lib/asterisk/sounds/en/digits/%s' % str(ttsValue)
+                    elif ttsValue in ['a','b','c','d','e','f','g','h','i','j','l',
+                                      'm','n','o','p','q','r','s','t','u','v','w',
+                                      'x','y','z','#',"*"]:
+                        log.debug('found a letter: %s' % ttsValue)
+                        ttsLoc = '/var/lib/asterisk/sounds/en/letters/%s' % str(ttsValue)
+                    else:
+                        ttsLoc = None
+                        log.error('Unknown tts string %s' % ttsValue)
+                    if ttsLoc:
+                        ttsLocSeq.append(ttsLoc)
+                if len(ttsLocSeq):
+                    sequence = fastagi.InSequence()
+                    if delaybefore:
+                        delay = float(delaybefore)/1000
+                        log.debug('adding delay before of %s' % delay)
+                        sequence.append(self.agi.wait,delay)
+                    intKeys = str("".join(interrupKeys))
+                    while len(ttsLocSeq):
+                        promptLoc = ttsLocSeq.pop(0)
+                        sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                        if delayafter:
+                            delay = float(delayafter)/1000
+                            log.debug('adding delay after of %s' % delay)
+                            sequence.append(self.agi.wait,delay)
+                    log.debug('playing tts prompt.')
+                    return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+        elif 'uri' in currPrompt:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
+            # Normalize the file location by removing the extra / at the beginning and any file type from the end
+            if promptLoc[:2] == '//':
+                promptLoc = promptLoc[1:].split('.')[0]
             log.debug(promptLoc)
             if promptType == 'file':
                 sequence = fastagi.InSequence()
@@ -137,17 +181,48 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
                 # don't capture this error
+                log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
                 log.error('Unknown prompt type: %s' % promptType)
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        else:
+            log.warning('No prompt uri provided in prompt.')
+            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
     
-    def actionRecord(self, prompt, folder, dtmf, retries):
+    def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
         log.debug('agi:actionRecord called')
         log.debug(prompt)
+        def onError(reason):
+            log.debug('got error in agi:actionRecord')
+            log.error(reason)
+            return self.onError(reason)
+        def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
+            log.debug('entering: agi:actionRecord:onRecordSuccess')
+            log.debug(result)
+            response = {}
+            response['result'] = result
+            response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
+            response['vmfolder'] = folder
+            response['type'] = 'record'
+            return response
+        def onPromptSuccess(result, folder, dtmf, retries, beep):
+            log.debug('entered agi:actionRecord:onPromptSuccess')
+            log.debug(result)
+            #fix this - figure out the correct file number
+            #figure out the actual location for the record folder
+            tmpFolder = folder.split(':/')[1]
+            tmp_file_loc = '%s/msg0000' % str(tmpFolder)
+            result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
+            result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
+            return result
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            result.addCallback(onPromptSuccess, folder, dtmf, retries, beep).addErrback(onError)
+            log.debug('returned from play prompt')
+            log.debug(result)
+            return result
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
