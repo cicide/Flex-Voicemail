@@ -86,7 +86,10 @@ class wsApiServer:
     def wsapiCall(self, formedUri, apiMethod, callUniqueId, **kwargs):
         log.debug('entered: wsapi:wsapiCall')
         req = self.genParameters(formedUri, apiMethod, callUniqueId, **kwargs)
-        uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
+        if formedUri:
+            uri = req
+        else:
+            uri = "http://%s:%s/%s" % (self.apiHostName, self.apiHostPort, req)
         return self.wsapiRequest(uri)
     
     def wsapiRequest(self, uri):
