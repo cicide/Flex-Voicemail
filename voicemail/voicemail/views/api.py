@@ -106,11 +106,13 @@ def saveMessage(request):
     duration = request.GET.get('duration', None)
 
     if extension is None or callid is None or callerid is None or vmfile is None:
+        log.debug("Invalid parameters extension %s callid %s callerid %s vmfile %s duraiton %s", extension, callid, callerid, vmfile, duration)
         return returnPrompt(name=Prompt.invalidRequest)
 
     user = DBSession.query(User).filter_by(extension=extension).first()
     success, retdict = userCheck(user)
     if not success:
+        log.debug("User Not Found extension %s callid %s callerid %s vmfile %s duraiton %s", extension, callid, callerid, vmfile, duration)
         return retdict
 
     # time to create a voicemail for this user
