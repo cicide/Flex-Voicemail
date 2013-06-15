@@ -81,7 +81,7 @@ def startCall(request):
         return dict (
             action="record",
             prompt= prompt.getFullPrompt(user=user),
-            nextaction=request.route_url('savemessage', _query={'user': extension, 'callid':callid, 'callerid' : callerid}),
+            nextaction=request.route_url('savemessage', _query={'user': extension, 'uid':callid, 'callerid' : callerid}),
             invalidaction=request.route_url('invalidmessage'),
             dtmf=['#',],
             folder=user.vm_prefs.folder,
