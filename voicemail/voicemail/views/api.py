@@ -18,6 +18,7 @@ from ..models.models import (
     DBSession,
     User,
     Prompt,
+    Voicemail,
     )
 
 from pyramid.httpexceptions import (
@@ -103,7 +104,7 @@ def saveMessage(request):
     callid = request.GET.get('uid', None)
     callerid = request.GET.get('callerid', None)
     vmfile = request.GET.get('vmfile', None)
-    duration = request.GET.get('duration', None)
+    duration = request.GET.get('duration', '0')
 
     if extension is None or callid is None or callerid is None or vmfile is None:
         log.debug("Invalid parameters extension %s callid %s callerid %s vmfile %s duraiton %s", extension, callid, callerid, vmfile, duration)
