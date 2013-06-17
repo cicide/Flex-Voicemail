@@ -205,6 +205,7 @@ class astCall:
             response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
+            #write out the msgxxxx.txt file here
             return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             log.debug('entered agi:actionRecord:onPromptSuccess')
@@ -212,6 +213,7 @@ class astCall:
             #fix this - figure out the correct file number
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
+            msgFile = getMsgNum(tmpFolder) #this needs to be done in a thread
             tmp_file_loc = '%s/msg0000' % str(tmpFolder)
             result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
             result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
@@ -249,6 +251,103 @@ def onFailure(reason):
 def route(agi):
     agiObj = astCall(agi)
     return agiObj.start()
+
+
+def getMsgNum(directory):
+    """ get the next message number. """
+    msgCount = []
+    for dname,dnames,fnames in os.walk(directory):
+        for filename in fnames:
+            fname,ftype = filename.split('.')
+            if ftype == 'txt':
+                if fname[:3] == 'msg' and len(fname) == 7:
+                    msgCount.append(int(fname[3:]))
+    if not len(msgCount):
+        newMsgNum = 0
+    else:
+        newMsgNum = max(msgCount) + 1
+    return 'msg%s.txt' % str(newMsgNum).zfill(4)
+
+def genMsgFile(acct, 
+               context, 
+               macrocontext, 
+               exten, 
+               rdnis, 
+               priority,
+               callerchan,
+               callerid,
+               origdate,
+               origtime,
+               category,
+               msg_id,
+               flag,
+               duration):
+    
+    def _getMsgNum(directory):
+        """ get the next message number. """
+        msgCount = []
+        for dname,dnames,fnames in os.walk(directory):
+            for filename in fnames:
+                fname,ftype = filename.split('.')
+                if ftype == 'txt':
+                    if fname[:3] == 'msg' and len(fname) == 7:
+                        msgCount.append(int(fname[3:]))
+        if not len(msgCount):
+            newMsgNum = 0
+        else:
+            newMsgNum = max(msgCount) + 1
+        return 'msg%s.txt' % str(newMsgNum).zfill(4)
+
+    def _writeMsgFile(filepath,
+                     acct, 
+                     context, 
+                     macrocontext, 
+                     exten, 
+                     rdnis, 
+                     priority,
+                     callerchan,
+                     callerid,
+                     origdate,
+                     origtime,
+                     category,
+                     msg_id,
+                     flag,
+                     duration):
+        fileLines = []
+        fileLines.append(';\n')
+        fileLines.append('; Message Information file\n')
+        fileLines.append(';\n')
+        fileLines.append('[message]\n')
+        fileLines.append('origmailbox=%s\n' % acct)
+        fileLines.append('context=%s\n' % context)
+        fileLines.append('macrocontext=%s\n' % macrocontext)
+        fileLines.append('exten=%s\n' % exten)
+        fileLines.append('rdnis=%s\n' % rdnis)
+        fileLines.append('priority=%s\n' % priority)
+        fileLines.append('callerchan=%s\n' % callerchan)
+        fileLines.append('callerid=%s\n' % callerid)
+        fileLines.append('origdate=%s\n' % origdate)
+        fileLines.append('origtime=%s\n' % origtime)
+        fileLines.append('category=%s\n' % category)
+        fileLines.append('msg_id=%s\n' % msg_id)
+        fileLines.append('flag=%s\n' % flag)
+        fileLines.append('duration=%s\n' % duration)
+        newFile = open(filepath, 'w', mode=0666)
+        for row in fileLines:
+            newFile.write(row)
+        newFile.close()
+        return filepath
+    
+    # figure out the next sequential message file
+    directory = '/var/spool/asterisk/voicemail/default/%s/INBOX' % acct
+    msgFileName = _getMsgNum(directory)
+    log.debug('new message file: %s' % msgFileName)
+    filepath = '%s/%s' % (directory,msgFileName)
+    e = _writeMsgFile(filepath, acct, context, macrocontext, exten, rdnis, 
+                    priority, callerchan, callerid, 
+                    origdate, origtime, category, msg_id, 
+                    flag, duration)
+    return e
 
 #setup agi service when application is started
 def getService():
