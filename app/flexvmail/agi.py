@@ -219,7 +219,7 @@ class astCall:
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
             if len(result) == 3:
-                duration = int(result[2])/1000
+                duration = (int(result[2])/10000)+1
             else:
                 duration = 0
             response = {}
@@ -253,7 +253,8 @@ class astCall:
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
             msgFile = getMsgNum(tmpFolder) #this needs to be done in a thread
-            tmp_file_loc = '%s/msg0000' % str(tmpFolder)
+            tmp_file_loc = '%s/%s' % (str(tmpFolder),str(msgFile))
+            log.debug('recording to location %s' % tmp_file_loc)
             result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
             result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
             return result
@@ -306,7 +307,7 @@ def getMsgNum(directory):
         newMsgNum = 0
     else:
         newMsgNum = max(msgCount) + 1
-    return 'msg%s.txt' % str(newMsgNum).zfill(4)
+    return 'msg%s' % str(newMsgNum).zfill(4)
 
 def genMsgFile(filepath,
                acct, 
