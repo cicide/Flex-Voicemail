@@ -230,24 +230,21 @@ class astCall:
             vmFile = '%s.txt' % file_loc
             log.debug('calling message write for %s' % vmFile)
             #write out the msgxxxx.txt file here
-            try:
-                d = genMsgFile(vmFile, 
-                           self.user, 
-                           self.context, 
-                           '', 
-                           self.extension, 
-                           self.rdnis, 
-                           self.priority, 
-                           self.channel, 
-                           self.callerid, 
-                           'date time hack for now', 
-                           self.origtime, 
-                           '', 
-                           self.msg_id, 
-                           '', 
-                           str(duration))
-            except:
-                log.debug('ugh, a silent error!')
+            d = genMsgFile(vmFile, 
+                       self.user, 
+                       self.context, 
+                       '', 
+                       self.extension, 
+                       self.rdnis, 
+                       self.priority, 
+                       self.channel, 
+                       self.callerid, 
+                       'date time hack for now', 
+                       self.origtime, 
+                       '', 
+                       self.msg_id, 
+                       '', 
+                       str(duration))
             return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             log.debug('entered agi:actionRecord:onPromptSuccess')
