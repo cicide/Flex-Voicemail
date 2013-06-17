@@ -305,7 +305,8 @@ def getMsgNum(directory):
         newMsgNum = max(msgCount) + 1
     return 'msg%s.txt' % str(newMsgNum).zfill(4)
 
-def genMsgFile(acct, 
+def genMsgFile(filepath,
+               acct, 
                context, 
                macrocontext, 
                exten, 
@@ -377,10 +378,12 @@ def genMsgFile(acct,
         return filepath
     
     # figure out the next sequential message file
-    directory = '/var/spool/asterisk/voicemail/default/%s/INBOX' % acct
-    msgFileName = _getMsgNum(directory)
-    log.debug('new message file: %s' % msgFileName)
-    filepath = '%s/%s' % (directory,msgFileName)
+    #directory = '/var/spool/asterisk/voicemail/default/%s/INBOX' % acct
+    #directory = filepath
+    #msgFileName = _getMsgNum(directory)
+    #log.debug('new message file: %s' % msgFileName)
+    #filepath = '%s/%s' % (directory,msgFileName)
+    log.debug('creating message file: %s' % filepath)
     e = _writeMsgFile(filepath, acct, context, macrocontext, exten, rdnis, 
                     priority, callerchan, callerid, 
                     origdate, origtime, category, msg_id, 
