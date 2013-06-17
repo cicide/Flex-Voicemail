@@ -292,6 +292,7 @@ def route(agi):
 
 def getMsgNum(directory):
     """ get the next message number. """
+    log.debug('entering get message number for: %s' % directory)
     msgCount = []
     for dname,dnames,fnames in os.walk(directory):
         for filename in fnames:
@@ -351,6 +352,7 @@ def genMsgFile(filepath,
                      msg_id,
                      flag,
                      duration):
+        log.debug('entering: _writeMsgFile')
         fileLines = []
         fileLines.append(';\n')
         fileLines.append('; Message Information file\n')
@@ -375,8 +377,10 @@ def genMsgFile(filepath,
         for row in fileLines:
             newFile.write(row)
         newFile.close()
+        log.debug('leaving _writeMsgFile')
         return filepath
     
+    log.debug('entering generate message file')
     # figure out the next sequential message file
     #directory = '/var/spool/asterisk/voicemail/default/%s/INBOX' % acct
     #directory = filepath
