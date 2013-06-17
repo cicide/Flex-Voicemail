@@ -375,7 +375,7 @@ def genMsgFile(filepath,
         fileLines.append('flag=%s\n' % flag)
         fileLines.append('duration=%s\n' % duration)
         log.debug('writing out %s' % filepath)
-        newFile = open(filepath, 'w', mode=0666)
+        newFile = open(filepath, 'w')
         for row in fileLines:
             newFile.write(row)
         newFile.close()
