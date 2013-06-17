@@ -227,8 +227,10 @@ class astCall:
             response['vmfolder'] = folder
             response['type'] = 'record'
             vmFile = '%s.txt'
+            log.debug('calling message write for %s' % vmFile)
             #write out the msgxxxx.txt file here
-            d = genMsgFile(vmFile, 
+            try:
+                d = genMsgFile(vmFile, 
                            self.user, 
                            self.context, 
                            '', 
@@ -243,6 +245,8 @@ class astCall:
                            self.msg_id, 
                            '', 
                            str(duration))
+            except:
+                log.debug('ugh, a silent error!')
             return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             log.debug('entered agi:actionRecord:onPromptSuccess')
