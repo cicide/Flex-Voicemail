@@ -18,6 +18,7 @@ from ..models.models import (
     DBSession,
     User,
     Prompt,
+    Voicemail,
     )
 
 from pyramid.httpexceptions import (
@@ -81,7 +82,7 @@ def startCall(request):
         return dict (
             action="record",
             prompt= prompt.getFullPrompt(user=user),
-            nextaction=request.route_url('savemessage', _query={'user': extension, 'callid':callid, 'callerid' : callerid}),
+            nextaction=request.route_url('savemessage', _query={'user': extension, 'uid':callid, 'callerid' : callerid}),
             invalidaction=request.route_url('invalidmessage'),
             dtmf=['#',],
             folder=user.vm_prefs.folder,
@@ -103,14 +104,16 @@ def saveMessage(request):
     callid = request.GET.get('uid', None)
     callerid = request.GET.get('callerid', None)
     vmfile = request.GET.get('vmfile', None)
-    duration = request.GET.get('duration', None)
+    duration = request.GET.get('duration', '0')
 
     if extension is None or callid is None or callerid is None or vmfile is None:
+        log.debug("Invalid parameters extension %s callid %s callerid %s vmfile %s duraiton %s", extension, callid, callerid, vmfile, duration)
         return returnPrompt(name=Prompt.invalidRequest)
 
     user = DBSession.query(User).filter_by(extension=extension).first()
     success, retdict = userCheck(user)
     if not success:
+        log.debug("User Not Found extension %s callid %s callerid %s vmfile %s duraiton %s", extension, callid, callerid, vmfile, duration)
         return retdict
 
     # time to create a voicemail for this user

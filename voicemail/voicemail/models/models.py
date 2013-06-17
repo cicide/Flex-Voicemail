@@ -94,7 +94,7 @@ class Voicemail(Base):
     cid_name = Column(String(80))
     cid_number = Column(String(20))
 
-    def __init__(self, path, cid_name, cid_number, duration, user, create_date, is_read = False, status = 0):
+    def __init__(self, path = None, cid_name = None, cid_number = None, duration = 0, user = None, create_date = None, is_read = False, status = 0):
         self.path = path
         self.cid_name = cid_name
         self.cid_number = cid_number
