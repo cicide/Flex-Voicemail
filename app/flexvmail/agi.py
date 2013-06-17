@@ -5,6 +5,9 @@ from twisted.internet import reactor, defer
 from starpy import fastagi
 import utils, call
 from twisted.internet.defer import setDebugging
+import time
+import datetime
+
 setDebugging(True)
 
 log = utils.get_logger("AGIService")
@@ -41,8 +44,22 @@ class astCall:
         log.debug("in route with agi %s" % self.agi)
         self.cidName = self.agi.variables['agi_calleridname']
         self.cidNum = self.agi.variables['agi_callerid']
+        self.callerid = '"%s" <%s>' % (self.cidName, self.cidNum)
+        #this is a major hack
+        self.user = self.cidNum
+        #fix this - should come from the agi call
         self.uid = self.agi.variables['agi_uniqueid']
         self.channel = self.agi.variables['agi_channel']
+        self.rdnis = self.agi.variables['agi_rdnis']
+        self.context = self.agi.variables['agi_context']
+        self.language = self.agi.variables['agi_language']
+        self.accountcode = self.agi.variables['agi_accountcode']
+        self.dnid = self.agi.variables['agi_dnid']
+        self.extension = self.agi.variables['agi_extension']
+        self.threadid = self.agi.variables['agi_threadid']
+        self.priority = self.agi.variables['agi_priority']
+        self.origtime = str(time.time())
+        self.msg_id = '%s-%s' % (self.uid,self.threadid)
         self.args = {}
         if 'agi_arg1' in self.agi.variables:
             self.args[1] = self.agi.variables['agi_arg1']
@@ -200,12 +217,32 @@ class astCall:
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
+            if len(result) == 3:
+                duration = int(result[2])/1000
+            else:
+                duration = 0
             response = {}
             response['result'] = result
             response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
+            vmFile = '%s.txt'
             #write out the msgxxxx.txt file here
+            d = genMsgFile(vmFile, 
+                           self.user, 
+                           self.context, 
+                           '', 
+                           self.extension, 
+                           self.rdnis, 
+                           self.priority, 
+                           self.channel, 
+                           self.callerid, 
+                           'date time hack for now', 
+                           self.origtime, 
+                           '', 
+                           self.msg_id, 
+                           '', 
+                           str(duration))
             return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             log.debug('entered agi:actionRecord:onPromptSuccess')
