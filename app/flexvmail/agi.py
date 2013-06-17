@@ -227,7 +227,7 @@ class astCall:
             response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
-            vmFile = '%s.txt'
+            vmFile = '%s.txt' % file_loc
             log.debug('calling message write for %s' % vmFile)
             #write out the msgxxxx.txt file here
             try:
