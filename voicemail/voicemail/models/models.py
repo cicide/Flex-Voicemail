@@ -156,6 +156,7 @@ class Prompt(Base):
     userNotExist = "User_Not_Exist"
     userVmAccess = "User_Vm_Access"
     messageSaved = "Message_Saved"
+    helpMenu = "Help_Menu"
 
     def getFullPrompt(self, user=None):
         listprompt = []
