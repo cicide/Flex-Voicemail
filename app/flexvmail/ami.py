@@ -3,6 +3,7 @@
 from twisted.application import internet, service
 from twisted.internet import reactor, defer
 from starpy.manager import AMIFactory, AMIProtocol
+import os
 import utils, call
 
 log = utils.get_logger("AMIService")
