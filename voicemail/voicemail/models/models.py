@@ -56,6 +56,9 @@ class User(Base):
     role = relationship("UserRole", backref='users')
     vm_prefs = relationship("UserVmPref", uselist=False, backref='user')
 
+    unreadCount = 0
+    readCount = 0
+
 
     def __init__(self, username, name, extension, pin, create_date, status):
         self.username = username
@@ -64,6 +67,20 @@ class User(Base):
         self.pin = pin
         self.create_date = create_date
         self.status = status
+
+    def getReadCount(self):
+        readCount = 0
+        for i in self.voicemails:
+           if i.is_read: 
+               readCount = readCount + 1
+        return readCount
+
+    def getUnreadCount(self):
+        unreadCount = 0
+        for i in self.voicemails:
+           if not i.is_read: 
+               unreadCount = unreadCount + 1
+        return unreadCount
 
 class UserRole(Base):
     __tablename__ = 'user_roles'
@@ -157,6 +174,7 @@ class Prompt(Base):
     userVmAccess = "User_Vm_Access"
     messageSaved = "Message_Saved"
     helpMenu = "Help_Menu"
+    vmSummary = "VM_Summary"
 
     def getFullPrompt(self, user=None):
         listprompt = []
@@ -164,13 +182,43 @@ class Prompt(Base):
             if i.prompt_type == 1:
                 listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
             elif i.prompt_type == 2:
-                extension = user.extension
-                listprompt.append({'tts':list(extension), 'delayafter':i.delay_after})
+                if path == "Extension":
+                    extension = user.extension
+                    listprompt.append({'tts':list(extension), 'delayafter':i.delay_after})
+                elif path == "Unread-Count":
+                    listprompt.extend(self._getSubPrompt(count=user.getUnreadCount(), new=1))
+                elif path == "Read-Count":
+                    listprompt.extend(self._getSubPrompt(count=user.getReadCount(), new=0))
             elif i.prompt_type == 3:
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
                 listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
         return listprompt
+    
+    def _getSubPrompt(self, count, new=0):
+        retlist = []
+        if count == 0:
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-no.wav', 'delayafter' : 2}) 
+           if new:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+           else:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+        elif count == 1:
+           retlist.append({'tts':'1', 'delayafter' : 2}) 
+           if new:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+           else:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-message.wav', 'delayafter' : 2}) 
+        else:
+           retlist.append({'tts':'%s'%count, 'delayafter' : 2}) 
+           if new:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+           else:
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+        return retlist
 
 
 class PromptDetails(Base):

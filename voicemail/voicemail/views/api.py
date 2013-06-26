@@ -150,7 +150,14 @@ def handleKey(request):
         if key == "1":
             return returnPrompt(name=Prompt.invalidRequest)
         elif key =="2":
-            return returnPrompt(name=Prompt.invalidRequest)
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.vmSummary).first()
+            return dict (
+                action="play",
+                prompt= prompt.getFullPrompt(),
+                nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'vmaccess'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['0','*3','#','23'],
+                )
         elif key =="3":
             return returnPrompt(name=Prompt.invalidRequest)
         elif key =="*4":
