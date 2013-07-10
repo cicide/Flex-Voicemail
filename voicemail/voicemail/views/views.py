@@ -105,6 +105,7 @@ class UserSchema(CSRFSchema):
     role = colander.SchemaNode(
                     colander.String(),
                     widget=deferred_choices_widget,
+                    missing = '',
                     )
 
 @view_config(route_name='home', renderer='home.mako', permission='admin')
