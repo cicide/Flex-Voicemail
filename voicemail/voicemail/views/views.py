@@ -58,6 +58,14 @@ def deferred_csrf_validator(node, kw):
                                    'Invalid cross-site scripting token')
     return validate_csrf
 
+@colander.deferred
+def deferred_choices_widget(node,kw):
+    choices = (
+    ('', '- Select -'),
+    ('admin', 'Admin'),
+    )
+    return deform.widget.SelectWidget(values=choices)
+
 def user_DoesExist(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
         raise colander.Invalid(node, 'User already exist.!!')
@@ -94,6 +102,10 @@ class UserSchema(CSRFSchema):
                     description='Extension')
     pin = colander.SchemaNode(colander.String(), 
               description='PIN')
+    role = colander.SchemaNode(
+                    colander.String(),
+                    widget=deferred_choices_widget,
+                    )
 
 @view_config(route_name='home', renderer='home.mako', permission='admin')
 def home(request):
