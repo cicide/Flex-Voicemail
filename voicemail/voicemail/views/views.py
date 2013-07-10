@@ -58,10 +58,14 @@ def deferred_csrf_validator(node, kw):
                                    'Invalid cross-site scripting token')
     return validate_csrf
 
-def user_exist(node,username):
-    if DBSession.query(User).filter_by(username=username).count() > 0:
+def user_DoesExist(node,appstruct):
+    if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
         raise colander.Invalid(node, 'User already exist.!!')
 
+def user_DoesNotExist(node,appstruct):
+    if DBSession.query(User).filter_by(username=appstruct['username']).count() == 0:
+        raise colander.Invalid(node, 'User does not exist.!!')
+    
 class CSRFSchema(colander.Schema):
     csrf_token = colander.SchemaNode(
         colander.String(),
@@ -83,8 +87,7 @@ class LoginSchema(CSRFSchema):
 
 class UserSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String(), 
-                   description="Extension of the user",
-                   validator = user_exist)
+                   description="Extension of the user")
     name = colander.SchemaNode(colander.String(), 
                    description='Full name')
     extension = colander.SchemaNode(colander.String(), 

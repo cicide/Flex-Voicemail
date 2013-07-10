@@ -6,7 +6,7 @@
         <p>Welcome ${user.name}</p>
         <ul>
         <li> <a href="/user/add"> Add user </a> </li>
-        <li> Modify </li> 
+        <li> <a href="/user/edit"> Edit user </a </li> 
         <li> Remove </li>
         <li> Search </li>
         </ul>
