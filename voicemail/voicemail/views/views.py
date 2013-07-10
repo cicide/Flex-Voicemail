@@ -58,6 +58,9 @@ def deferred_csrf_validator(node, kw):
                                    'Invalid cross-site scripting token')
     return validate_csrf
 
+def user_exist(node,username):
+    if DBSession.query(User).filter_by(username=username).count() > 0:
+        raise colander.Invalid(node, 'User already exist.!!')
 
 class CSRFSchema(colander.Schema):
     csrf_token = colander.SchemaNode(
@@ -79,15 +82,15 @@ class LoginSchema(CSRFSchema):
                     description='Enter a password')
 
 class UserSchema(CSRFSchema):
-    username = colander.SchemaNode(colander.String(), description="Extension of the user")
-    password = colander.SchemaNode(
-                    colander.String(),
-                    validator=colander.Length(min=4, max=20),
-                    widget=deform.widget.CheckedPasswordWidget(),
-                    description='Enter a password')
-    email = colander.SchemaNode(colander.String(), title='Email',
-                    widget=deform.widget.TextInputWidget(size=40, maxlength=260, type='email'),
-                    description="The email address of the user. Example: joe@example.com")
+    username = colander.SchemaNode(colander.String(), 
+                   description="Extension of the user",
+                   validator = user_exist)
+    name = colander.SchemaNode(colander.String(), 
+                   description='Full name')
+    extension = colander.SchemaNode(colander.String(), 
+                    description='Extension')
+    pin = colander.SchemaNode(colander.String(), 
+              description='PIN')
 
 @view_config(route_name='home', renderer='home.mako', permission='admin')
 def home(request):
@@ -101,7 +104,7 @@ def login(request):
     referrer = request.url
     if referrer == login_url:
         referrer = '/' # never use the login form itself as came_from
-    schema = LoginSchema()
+    schema = LoginSchema().bind(request=request)
     form = deform.Form(schema, action=login_url, buttons=('Login',))
     defaults = {}
     defaults['came_from'] = request.params.get('came_from', referrer)
@@ -112,7 +115,7 @@ def login(request):
         except deform.ValidationFailure, e:
             log.exception('in form validated')
             return {'form':e.render()}
-
+ 
         login = appstruct['username']
         password = appstruct['password']
         came_from = appstruct['came_from']

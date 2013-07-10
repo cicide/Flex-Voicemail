@@ -60,12 +60,11 @@ class User(Base):
     readCount = 0
 
 
-    def __init__(self, username, name, extension, pin, create_date, status):
+    def __init__(self, username, name, extension, pin, status):
         self.username = username
         self.name = name
         self.extension = extension
         self.pin = pin
-        self.create_date = create_date
         self.status = status
 
     def getReadCount(self):
