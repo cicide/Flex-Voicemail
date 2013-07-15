@@ -1,0 +1,344 @@
+-- MySQL dump 10.13  Distrib 5.6.10, for osx10.7 (x86_64)
+--
+-- Host: 173.11.68.146    Database: voicemail
+-- ------------------------------------------------------
+-- Server version	5.1.69
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `beaker_cache`
+--
+
+DROP TABLE IF EXISTS `beaker_cache`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `beaker_cache` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `namespace` varchar(255) NOT NULL,
+  `accessed` datetime NOT NULL,
+  `created` datetime NOT NULL,
+  `data` blob NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `namespace` (`namespace`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `beaker_cache`
+--
+
+LOCK TABLES `beaker_cache` WRITE;
+/*!40000 ALTER TABLE `beaker_cache` DISABLE KEYS */;
+INSERT INTO `beaker_cache` VALUES (12,'c4152caa1e9f4e5c9960ee2da9f1817e','2013-04-15 21:26:56','2013-04-15 21:23:03','Ä}q.'),(13,'6ed5627f1e4b4a0f88ff4c56b3b8be17','2013-04-15 21:26:56','2013-04-15 21:26:56','Ä}qUsession}q(U_accessed_timeqGA‘[4ƒÎBU_creation_timeqGA‘[4ƒ	us.'),(14,'aee1433403624f0d9596c5773c87d974','2013-04-18 01:50:33','2013-04-18 01:50:27','Ä}qUsession}q(U_accessed_timeqGA‘[Ïˆ;zNUuserqcvoicemail.models.models\nUser\nq)Åq}qU_sa_instance_stateqcsqlalchemy.orm.state\nInstanceState\nq	)Åq\n}q(Uclass_qhUmodifiedq\râUcommitted_stateq}qUinstanceqhU	callablesq}q(Uusernameh\nUstatush\nUcreate_dateh\nUnameh\nU	extensionh\nU\nlast_loginh\nUpinh\nUidh\nuUparentsq}qUkeyqhäÖÜqUexpiredqàUpendingq}qubsbU_creation_timeq\ZGA‘[ÏÙ åmus.'),(15,'efa82429e97f44a5a7cd16132d23e2f2','2013-04-18 10:33:38','2013-04-18 10:33:36','Ä}qUsession}q(U_accessed_timeqGA‘\\úöOU_creation_timeqGA‘\\õﬂoóus.'),(16,'3c18c323c59f4e6585a91753c066cb3f','2013-04-18 18:31:44','2013-04-18 17:49:52','Ä}qUsession}q(U_accessed_timeqGA‘\\\'ü˘ﬁπU_creation_timeqGA‘\\%,.•us.');
+/*!40000 ALTER TABLE `beaker_cache` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `group_vm_prefs`
+--
+
+DROP TABLE IF EXISTS `group_vm_prefs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `group_vm_prefs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `group_id` int(11) NOT NULL COMMENT 'group id for this record',
+  `folder` varchar(100) NOT NULL COMMENT 'path to the vm folder',
+  `deliver_vm` tinyint(1) DEFAULT '0' COMMENT '0 - donotdeliver, 1 - deliver',
+  `attach_vm` tinyint(1) DEFAULT '0' COMMENT '0 - donot attach, 1 - attach',
+  `notification_method` int(3) DEFAULT NULL COMMENT '1-email, 2-sms',
+  `email` varchar(100) DEFAULT NULL COMMENT 'this is where the vms will be emailed',
+  `sms_addr` varchar(80) DEFAULT NULL COMMENT ' SMS address',
+  `ivr_tree_id` int(11) DEFAULT NULL COMMENT 'which ivr to use id of the entry point in ivr table',
+  `vm_greeting` varchar(100) DEFAULT NULL COMMENT 'Path to the greeting recording',
+  `vm_name_recording` varchar(100) DEFAULT NULL COMMENT 'path to the recorded name',
+  `last_changed` datetime NOT NULL COMMENT 'date time when the record was last changed',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `group_vm_prefs`
+--
+
+LOCK TABLES `group_vm_prefs` WRITE;
+/*!40000 ALTER TABLE `group_vm_prefs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `group_vm_prefs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `groups`
+--
+
+DROP TABLE IF EXISTS `groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `groups` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `name` varchar(40) NOT NULL COMMENT 'name of the group',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `groups`
+--
+
+LOCK TABLES `groups` WRITE;
+/*!40000 ALTER TABLE `groups` DISABLE KEYS */;
+/*!40000 ALTER TABLE `groups` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ivr_tree`
+--
+
+DROP TABLE IF EXISTS `ivr_tree`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `ivr_tree` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `name` varchar(40) NOT NULL COMMENT 'Name for the tree',
+  `parent_id` int(11) DEFAULT NULL COMMENT 'parent id for this entry point',
+  `current_prompt_id` int(11) DEFAULT NULL COMMENT 'prompt to play when this step is being executed',
+  `parent_prompt_id` int(11) DEFAULT NULL COMMENT 'prompt to play when the parent is annoucing this step',
+  `dtmf_len` int(5) DEFAULT NULL COMMENT 'no of dtmf keys to accept for this step',
+  `dtmf_key` char(1) DEFAULT NULL COMMENT 'Which key results in this option from the parent',
+  `timeout` int(5) DEFAULT NULL COMMENT 'time to wait for input in ms',
+  `is_interruptable` tinyint(1) DEFAULT NULL COMMENT 'Can the prompt be interrupted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ivr_tree`
+--
+
+LOCK TABLES `ivr_tree` WRITE;
+/*!40000 ALTER TABLE `ivr_tree` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ivr_tree` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `prompt_details`
+--
+
+DROP TABLE IF EXISTS `prompt_details`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `prompt_details` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `prompt_id` int(11) NOT NULL COMMENT 'id for the prompt',
+  `sequence_number` int(8) NOT NULL COMMENT 'sequence number in the prompt for this particular part',
+  `prompt_type` int(3) NOT NULL COMMENT 'type of this prompt 1 - static file, 2 - Text-to-Speech, 3 - use User/group vm_greeting, 4 - use User/group name_recording',
+  `path` varchar(100) DEFAULT NULL COMMENT 'path for type 1',
+  `delay_before` int(4) DEFAULT NULL COMMENT 'delay x ms before the prompt',
+  `delay_after` int(4) DEFAULT NULL COMMENT 'delay x ms after the prompt',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `prompt_details`
+--
+
+LOCK TABLES `prompt_details` WRITE;
+/*!40000 ALTER TABLE `prompt_details` DISABLE KEYS */;
+INSERT INTO `prompt_details` VALUES (1,1,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-invalid.wav',NULL,10),(2,2,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-invalidmailbox.wav',NULL,10),(3,3,1,4,'',NULL,10),(4,4,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-theperson.wav',NULL,2),(5,4,2,3,'',NULL,10),(6,4,3,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-isunavail.wav',NULL,10),(7,5,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-theperson.wav',NULL,10),(8,6,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-savedm.wav',NULL,10),(9,7,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-invalid.wav',NULL,10),(10,8,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-tmenu-activity.wav',NULL,10),(11,5,2,2,'Extension',NULL,10),(12,5,3,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-isunavail.wav',NULL,10),(13,5,4,1,'file://var/lib/asterisk/sounds/en/macp/mc-input-leavemessage.wav',NULL,10),(14,9,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-tmenu-activity-help.wav',NULL,10),(15,10,1,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-youhave.wav',NULL,2),(16,10,2,2,'Unread-Count',NULL,2),(17,10,3,1,'file://var/lib/asterisk/sounds/en/macp/mc-message-and.wav',NULL,2),(18,10,4,2,'Read-Count',NULL,2);
+/*!40000 ALTER TABLE `prompt_details` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `prompts`
+--
+
+DROP TABLE IF EXISTS `prompts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `prompts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `name` varchar(40) NOT NULL COMMENT 'Name for the prompt',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `prompts`
+--
+
+LOCK TABLES `prompts` WRITE;
+/*!40000 ALTER TABLE `prompts` DISABLE KEYS */;
+INSERT INTO `prompts` VALUES (1,'Invalid_Request'),(2,'User_Not_Exist'),(3,'User_Greeting'),(4,'User_Name_recording'),(5,'User_Leave_Message'),(6,'Message_Saved'),(7,'Invalid_Message'),(8,'User_Vm_Access'),(9,'Help_Menu'),(10,'VM_summary'),(11,'VM_Summary');
+/*!40000 ALTER TABLE `prompts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_groups`
+--
+
+DROP TABLE IF EXISTS `user_groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_groups` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `user_id` int(11) NOT NULL COMMENT 'User id for the user record',
+  `group_id` int(11) NOT NULL COMMENT 'Group to which the user belongs',
+  `primary_group` tinyint(1) DEFAULT NULL COMMENT 'Is this the primary group for the user',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_groups`
+--
+
+LOCK TABLES `user_groups` WRITE;
+/*!40000 ALTER TABLE `user_groups` DISABLE KEYS */;
+/*!40000 ALTER TABLE `user_groups` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_roles`
+--
+
+DROP TABLE IF EXISTS `user_roles`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_roles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `user_id` int(11) NOT NULL COMMENT 'User id for the user record',
+  `role_name` varchar(20) DEFAULT NULL COMMENT 'Role associated with the user',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_roles`
+--
+
+LOCK TABLES `user_roles` WRITE;
+/*!40000 ALTER TABLE `user_roles` DISABLE KEYS */;
+INSERT INTO `user_roles` VALUES (1,1,'Admin');
+/*!40000 ALTER TABLE `user_roles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_vm_prefs`
+--
+
+DROP TABLE IF EXISTS `user_vm_prefs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `user_vm_prefs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the record',
+  `user_id` int(11) NOT NULL COMMENT 'user id for this record',
+  `folder` varchar(100) NOT NULL COMMENT 'path to the vm folder',
+  `deliver_vm` tinyint(1) DEFAULT '0' COMMENT '0 - donotdeliver, 1 - deliver',
+  `attach_vm` tinyint(1) DEFAULT '0' COMMENT '0 - donot attach, 1 - attach',
+  `notification_method` int(3) DEFAULT NULL COMMENT '1-email, 2-sms',
+  `email` varchar(100) DEFAULT NULL COMMENT 'this is where the vms will be emailed',
+  `sms_addr` varchar(80) DEFAULT NULL COMMENT ' SMS address',
+  `ivr_tree_id` int(11) DEFAULT NULL COMMENT 'which ivr to use id of the entry point in ivr table',
+  `vm_greeting` varchar(100) DEFAULT NULL COMMENT 'Path to the greeting recording',
+  `vm_name_recording` varchar(100) DEFAULT NULL COMMENT 'path to the recorded name',
+  `greeting_prompt_id` int(11) DEFAULT NULL COMMENT 'prompt id for the greeting',
+  `last_changed` datetime NOT NULL COMMENT 'date time when the record was last changed',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_vm_prefs`
+--
+
+LOCK TABLES `user_vm_prefs` WRITE;
+/*!40000 ALTER TABLE `user_vm_prefs` DISABLE KEYS */;
+INSERT INTO `user_vm_prefs` VALUES (1,1,'file://home/xyleolabs/vm/1',0,0,NULL,'ritesh@xyleolabs.com',NULL,NULL,NULL,NULL,NULL,'2013-05-19 19:34:02');
+/*!40000 ALTER TABLE `user_vm_prefs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the user in the vm system',
+  `extension` varchar(10) NOT NULL COMMENT 'Extension in the asterisk system',
+  `pin` varchar(10) NOT NULL COMMENT 'Pin for the user to access the VM',
+  `username` varchar(100) NOT NULL COMMENT 'login user id  could be email',
+  `name` varchar(80) DEFAULT NULL COMMENT 'Name of the user',
+  `create_date` datetime NOT NULL COMMENT 'When the user was created',
+  `last_login` datetime DEFAULT NULL,
+  `status` int(3) NOT NULL COMMENT 'Active or not',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users`
+--
+
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (1,'1111','1111','ritesh@xyleolabs.com','Ritesh Bansal','2013-04-09 05:02:40','2013-04-18 08:50:33',0);
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `voicemails`
+--
+
+DROP TABLE IF EXISTS `voicemails`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `voicemails` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique id for the vm',
+  `user_id` int(11) NOT NULL COMMENT 'user id to whom the vm belongs',
+  `duration` int(7) NOT NULL COMMENT 'duration of voicemail in milliseconds',
+  `create_date` datetime NOT NULL COMMENT 'date time when the vm was left',
+  `path` varchar(256) NOT NULL COMMENT 'path to the vm',
+  `is_read` tinyint(1) NOT NULL COMMENT 'read = 0, unread = 1',
+  `status` int(3) NOT NULL COMMENT 'status whether deleted or not. May hold more statues',
+  `read_on` datetime DEFAULT NULL COMMENT 'date when this was read',
+  `deleted_on` datetime DEFAULT NULL COMMENT 'date when this was deleted',
+  `cid_name` varchar(80) DEFAULT NULL COMMENT 'CallerID name of the person leaving VM',
+  `cid_number` varchar(20) DEFAULT NULL COMMENT 'CallerID for the person leaving VM',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `voicemails`
+--
+
+LOCK TABLES `voicemails` WRITE;
+/*!40000 ALTER TABLE `voicemails` DISABLE KEYS */;
+INSERT INTO `voicemails` VALUES (1,1,0,'2013-06-15 02:02:20','file://home/xyleolabs/vm/1/1.mp3',0,0,NULL,NULL,NULL,'1111'),(2,1,0,'2013-06-17 01:33:21','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(3,1,0,'2013-06-17 02:03:23','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(4,1,0,'2013-06-17 02:07:52','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(5,1,0,'2013-06-17 02:12:55','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(6,1,0,'2013-06-17 02:16:24','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(7,1,0,'2013-06-17 02:20:47','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(8,1,0,'2013-06-17 02:23:01','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(9,1,0,'2013-06-17 02:28:02','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(10,1,0,'2013-06-17 02:28:23','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0000.wav',0,0,NULL,NULL,NULL,'1111'),(11,1,0,'2013-06-17 02:36:56','file://home/xyleolabs/vm/1//home/xyleolabs/vm/1/msg0001.wav',0,0,NULL,NULL,NULL,'1111');
+/*!40000 ALTER TABLE `voicemails` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2013-07-04  5:32:38

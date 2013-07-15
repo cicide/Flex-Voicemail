@@ -87,12 +87,14 @@ def startCall(request):
             dtmf=['#',],
             folder=user.vm_prefs.folder,
         )
-    elif tree == "accessMessage":
+    elif tree == "accessMenu":
         prompt = DBSession.query(Prompt).filter_by(name=Prompt.userVmAccess).first()
         return dict (
             action="play",
             prompt= prompt.getFullPrompt(),
-            nextaction="agi:hangup",
+            nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'main'}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1','2','3','5', '7', '*4'],
             )
     
     log.debug("Invalid Request")
@@ -129,6 +131,72 @@ def saveMessage(request):
     DBSession.add(v)
 
     return returnPrompt(name=Prompt.messageSaved)
+
+@view_config(route_name='handlekey', renderer='json')
+def handleKey(request):
+    extension = request.GET.get('user', None)
+    key = request.GET.get('key', None)
+    menu = request.GET.get('menu', None)
+    if extension is None or key is None or menu is None:
+        log.debug("Invalid parameters extension %s key %s menu %s", extension, key, menu)
+        return returnPrompt(name=Prompt.invalidRequest)
+
+    user = DBSession.query(User).filter_by(extension=extension).first()
+    success, retdict = userCheck(user)
+    if not success:
+        log.debug("User Not Found extension %s", extension)
+        return retdict
+    if menu == "main":
+        if key == "1":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="2":
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.vmSummary).first()
+            return dict (
+                action="play",
+                prompt= prompt.getFullPrompt(),
+                nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'vmaccess'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['0','*3','#','23'],
+                )
+        elif key =="3":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="*4":
+            return returnHelpMenu(request=request, user=user)
+        elif key =="5":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="7":
+            return returnPrompt(name=Prompt.invalidRequest)
+    elif menu == "help":
+        if key == "1":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="2":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="3":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="5":
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key =="*7":
+            prompt = DBSession.query(Prompt).filter_by(name=Prompt.userVmAccess).first()
+            return dict (
+                action="play",
+                prompt= prompt.getFullPrompt(),
+                nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'main'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1','2','3','5', '7', '*4'],
+                )
+        elif key =="7":
+            return returnPrompt(name=Prompt.invalidRequest)
+    return returnPrompt(name=Prompt.invalidRequest)
+
+def returnHelpMenu(request=None, user=None):
+    prompt = DBSession.query(Prompt).filter_by(name=Prompt.helpMenu).first()
+    return dict(
+            action="play",
+            prompt= prompt.getFullPrompt(),
+            nextaction=request.route_url('handlekey', _query={'user': user.extension, 'menu': 'help'}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1','2','3','5', '7', '*7'],
+            )
 
 @view_config(route_name='invalidmessage', renderer='json')
 def invalidMessage(request):

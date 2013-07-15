@@ -5,3 +5,5 @@ mysql-python
 pyramid_beaker
 deform
 bag
+twisted
+starpy
