@@ -88,12 +88,9 @@ class UserRole(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
 
 
-    def __init__(self, name, extension, pin, create_date, status):
-        self.name = name
-        self.extension = extension
-        self.pin = pin
-        self.create_date = create_date
-        self.status = status
+    def __init__(self, name, user_id):
+        self.role_name = name
+        self.user_id = user_id
 
 
 class Voicemail(Base):

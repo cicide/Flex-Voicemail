@@ -43,11 +43,13 @@ class UsersView(object):
                            pin=appstruct['pin'], 
                            status=1)
 
-            if appstruct['role'] == 'admin':
-                newuser.role = [DBSession.query(UserRole).filter_by(role_name= appstruct['role']).first()]
-                
             DBSession.add(newuser)
             DBSession.flush()
+            if appstruct['role'] == 'admin':
+                 user_role = UserRole('Admin', newuser.id)
+                 DBSession.add(user_role)
+                 DBSession.flush()
+
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
     
@@ -73,8 +75,8 @@ class UsersView(object):
             
             user = DBSession.query(User).filter_by(username=appstruct['username']).first()
             if appstruct['role'] == 'admin':
-                user.role = [DBSession.query(UserRole).filter_by(role_name= appstruct['role']).first()]
-                
+                user_role = UserRole('Admin', user.id)
+                DBSession.add(user_role)
             DBSession.flush()
             return dict(form=form.render(appstruct={'success':'User edited successfully'}))
         return dict(form=form.render(appstruct={}))
