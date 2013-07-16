@@ -181,12 +181,12 @@ class Prompt(Base):
             if i.prompt_type == 1:
                 listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
             elif i.prompt_type == 2:
-                if path == "Extension":
+                if i.path == "Extension":
                     extension = user.extension
                     listprompt.append({'tts':list(extension), 'delayafter':i.delay_after})
-                elif path == "Unread-Count":
+                elif i.path == "Unread-Count":
                     listprompt.extend(self._getSubPrompt(count=user.getUnreadCount(), new=1))
-                elif path == "Read-Count":
+                elif i.path == "Read-Count":
                     listprompt.extend(self._getSubPrompt(count=user.getReadCount(), new=0))
             elif i.prompt_type == 3:
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
