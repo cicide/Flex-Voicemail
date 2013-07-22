@@ -4,7 +4,7 @@ log = logging.getLogger(__name__)
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
-
+from pyramid.renderers import render_to_response
 
 
 
@@ -14,7 +14,7 @@ from ..models.models import (
     UserRole,
     )
 
-from .views import UserSchema, user_DoesExist, user_DoesNotExist
+from .views import UserSchema, user_DoesExist
 
 class UsersView(object):
     
@@ -55,42 +55,56 @@ class UsersView(object):
     
     @view_config(route_name='edit_user', permission='admin', renderer='edit_user.mako')
     def edit_user(self):
-        schema = UserSchema(validator = user_DoesNotExist).bind(request=self.request)
-        form = deform.Form(schema, action=self.request.route_url('edit_user'), buttons=('Save','Cancel'))
+        userid = self.request.matchdict['userid']
+        user = DBSession.query(User).filter_by(id=userid).first()
+        user_role = DBSession.query(UserRole).filter_by(user_id=userid).first()
+        
+        schema = UserSchema().bind(request=self.request)
+        form = deform.Form(schema, action=self.request.route_url('edit_user', userid=userid), buttons=('Save','Cancel'))
         
         if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('home'))
+            return HTTPFound(location = self.request.route_url('list_users', action='edit'))
         
         if 'Save' in self.request.params:
             appstruct = None
             try:
+                if user.username != self.request.POST['username']:
+                    schema.validator = user_DoesExist
                 appstruct = form.validate(self.request.POST.items())
+                
             except deform.ValidationFailure, e:
                 log.exception('in form validated')
                 return {'form':e.render()}
-
-            DBSession.query(User).filter_by(username=appstruct['username']).update({'name':appstruct['name'], 
-                                          'extension':appstruct['extension'],
-                                          'pin':appstruct['pin']})
             
-            user = DBSession.query(User).filter_by(username=appstruct['username']).first()
-            if appstruct['role'] == 'admin':
-                user_role = UserRole('Admin', user.id)
+            user.username = appstruct['username']
+            user.name = appstruct['name']
+            user.extension = appstruct['extension']
+            user.pin = appstruct['pin']
+            DBSession.add(user) 
+            if 'admin' in appstruct['role'] and user_role is None:
+                user_role = UserRole('Admin', userid)
                 DBSession.add(user_role)
+            elif user_role:
+                DBSession.delete(user_role)
             DBSession.flush()
-            return dict(form=form.render(appstruct={'success':'User edited successfully'}))
-        return dict(form=form.render(appstruct={}))
+            return HTTPFound(location =self.request.route_url('list_users',action='edit'))
+        return dict(form=form.render(appstruct=user.__dict__))
     
-    @view_config(route_name='list_users', permission='admin', renderer='delete_user.mako')
+    @view_config(route_name='list_users', permission='admin')
     def list_users(self):
         users = DBSession.query(User).all()
-        return dict(users = users)
+        users_dict = dict(users = users)
+        if self.request.matchdict['action'] == 'delete':
+            return render_to_response('delete_user_list.mako',users_dict, request=self.request)
+        return render_to_response('edit_user_list.mako',users_dict, request=self.request)
+       
     
     @view_config(route_name='delete_user', permission='admin')
     def delete_user(self):
-        username = self.request.matchdict['username']
-        DBSession.query(User).filter_by(username=username).delete()
+        userid = self.request.matchdict['userid']
+        DBSession.query(User).filter_by(id=userid).delete()
+        DBSession.query(UserRole).filter_by(user_id=userid).delete()
         DBSession.flush()
-        return HTTPFound(location = self.request.route_url('list_users'))
+        return HTTPFound(location = self.request.route_url('list_users', action='delete'))
         
         

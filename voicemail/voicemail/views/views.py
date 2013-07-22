@@ -68,12 +68,8 @@ def deferred_choices_widget(node,kw):
 
 def user_DoesExist(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
-        raise colander.Invalid(node, 'User already exist.!!')
+        raise colander.Invalid(node, 'Username already exist.!!')
 
-def user_DoesNotExist(node,appstruct):
-    if DBSession.query(User).filter_by(username=appstruct['username']).count() == 0:
-        raise colander.Invalid(node, 'User does not exist.!!')
-    
 class CSRFSchema(colander.Schema):
     csrf_token = colander.SchemaNode(
         colander.String(),
