@@ -74,3 +74,21 @@ class UserSchema(CSRFSchema):
                     widget=deferred_choices_widget,
                     missing = '',
                     )
+    
+class VMPrefSchema(CSRFSchema):
+    folder = colander.SchemaNode(colander.String(), 
+                   description="Folder")
+    deliver_vm = colander.SchemaNode(colander.Boolean(),
+                    description="Deliver VM")
+    attach_vm = colander.SchemaNode(colander.Boolean(),
+                    description="Attach VM")
+    email = colander.SchemaNode(colander.String(),
+                    validator=colander.Email(),
+                    description="Email")
+    sms_addr = colander.SchemaNode(colander.String(),
+                    description="SMS Address")
+    vm_greeting = colander.SchemaNode(colander.String(),
+                    description="VM Greeting")
+    vm_name_recording = colander.SchemaNode(colander.String(),
+                    description="VM Name Recording")
+

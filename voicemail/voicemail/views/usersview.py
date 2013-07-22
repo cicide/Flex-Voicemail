@@ -1,3 +1,4 @@
+import os
 import deform
 import logging
 log = logging.getLogger(__name__)
@@ -14,16 +15,58 @@ from ..models.models import (
     UserVmPref,
     )
 
-from ..schemas import UserSchema, user_DoesExist
+from ..schemas import (
+    UserSchema, 
+    user_DoesExist,
+    VMPrefSchema,
+    )
 
 class UsersView(object):
     
     def __init__(self, request):
         self.request = request
     
-    
-    def save_vmpref(self, user):
-        pass
+    def create_vmpref(self,user):
+        directory = os.path.join("/home/abdul/xyleolabs/vm/",str(user.id))
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        vmpref = DBSession.query(UserVmPref).filter_by(id=user.id).first()
+        if vmpref is None:
+            vmpref = UserVmPref(user_id=user.id, folder=directory)
+            DBSession.add(vmpref)
+            DBSession.flush()
+        
+            
+    @view_config(route_name='edit_vmpref', permission='admin', renderer='vmpref_edit.mako')
+    def edit_vmpref(self):
+        userid = self.request.matchdict['userid']
+        vmpref = DBSession.query(UserVmPref).filter_by(user_id=userid).first()
+        schema = VMPrefSchema().bind(request=self.request)
+        form = deform.Form(schema, action=self.request.route_url('edit_vmpref', userid=userid), buttons=('Save','Cancel'))
+        
+        if 'Cancel' in self.request.params:
+            return HTTPFound(location = self.request.route_url('list_users'))
+        
+        if 'Save' in self.request.params:
+            appstruct = None
+            try:
+                appstruct = form.validate(self.request.POST.items())
+            except deform.ValidationFailure, e:
+                log.exception('in form validated')
+                return {'form':e.render()}
+            
+            vmpref.folder = appstruct['folder']
+            vmpref.deliver_vm = appstruct['deliver_vm']
+            vmpref.attach_vm = appstruct['attach_vm']
+            vmpref.email = appstruct['email']
+            vmpref.sms_addr = appstruct['sms_addr']
+            vmpref.vm_greeting = appstruct['vm_greeting']
+            vmpref.vm_name_recording = appstruct['vm_name_recording']
+            DBSession.add(vmpref)
+            DBSession.flush()
+            return HTTPFound(location = self.request.route_url('list_users'))
+        return dict(form=form.render(appstruct=vmpref.__dict__))
+        
         
     @view_config(route_name='add_user', permission='admin', renderer='add_user.mako')
     def add_user(self):
@@ -53,7 +96,7 @@ class UsersView(object):
                  user_role = UserRole('Admin', newuser.id)
                  DBSession.add(user_role)
                  DBSession.flush()
-            self.save_vmpref(newuser);
+            self.create_vmpref(newuser)
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
     

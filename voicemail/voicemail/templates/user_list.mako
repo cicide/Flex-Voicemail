@@ -3,7 +3,7 @@
 <%def name="title()">Edit User</%def>
 <div id="details">
 	<a href="/">Back</a>
-	<table border='1' style="float: left;">
+	<table border='2' style="float: left;">
 		<tr>
 			<th>ID</th>
 			<th>Name</th>
@@ -22,7 +22,7 @@
         	<td>${user.extension}</td>
         	<td>${user.pin}</td>
         	<td>${user.status}</td>
-        	<td><a href="#">Add Pref</a> / <a href="#">Edit Pref</a></td>
+        	<td><a href="/vmpref/edit/${user.id}">Edit</a></td>
         	<td><a href="/user/edit/${user.id}">Edit</a> / <a href="/user/delete/${user.id}">Delete</a></td>
         </tr>
 		% endfor
