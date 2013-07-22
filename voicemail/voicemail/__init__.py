@@ -32,7 +32,7 @@ def main(global_config, **settings):
     config.add_route('logout', '/logout')
     config.add_route('add_user', '/user/add')
     config.add_route('edit_user', '/user/edit/{userid}')
-    config.add_route('list_users', '/users/list/{action}')
+    config.add_route('list_users', '/users/list')
     config.add_route('delete_user', '/user/delete/{userid}')
     config.add_route('startcall', '/startcall')
     config.add_route('savemessage', '/savemessage')

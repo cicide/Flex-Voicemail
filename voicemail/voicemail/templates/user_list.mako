@@ -1,9 +1,9 @@
 <%inherit file="/base.mako" />
 <%namespace name="defs" file="/defs.mako"/>
-<%def name="title()">Delete User</%def>
+<%def name="title()">Edit User</%def>
 <div id="details">
 	<a href="/">Back</a>
-	<table border='1'>
+	<table border='1' style="float: left;">
 		<tr>
 			<th>ID</th>
 			<th>Name</th>
@@ -11,7 +11,8 @@
 			<th>Extension</th>
 			<th>Pin</th>
 			<th>Status</th>
-			<th>Delete</th>
+			<th>VM pref </th>
+			<th>Action</th>
 		</tr>
 		% for user in users:
 		<tr>
@@ -21,7 +22,8 @@
         	<td>${user.extension}</td>
         	<td>${user.pin}</td>
         	<td>${user.status}</td>
-        	<td><a href="/user/delete/${user.id}">X</a></td>
+        	<td><a href="#">Add Pref</a> / <a href="#">Edit Pref</a></td>
+        	<td><a href="/user/edit/${user.id}">Edit</a> / <a href="/user/delete/${user.id}">Delete</a></td>
         </tr>
 		% endfor
 	</table>

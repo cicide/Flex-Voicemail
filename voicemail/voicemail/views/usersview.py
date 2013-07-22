@@ -4,7 +4,6 @@ log = logging.getLogger(__name__)
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
-from pyramid.renderers import render_to_response
 
 
 
@@ -12,6 +11,7 @@ from ..models.models import (
     DBSession,
     User,
     UserRole,
+    UserVmPref,
     )
 
 from .views import UserSchema, user_DoesExist
@@ -21,6 +21,10 @@ class UsersView(object):
     def __init__(self, request):
         self.request = request
     
+    
+    def save_vmpref(self, user):
+        pass
+        
     @view_config(route_name='add_user', permission='admin', renderer='add_user.mako')
     def add_user(self):
         schema = UserSchema(validator = user_DoesExist).bind(request=self.request)
@@ -49,7 +53,7 @@ class UsersView(object):
                  user_role = UserRole('Admin', newuser.id)
                  DBSession.add(user_role)
                  DBSession.flush()
-
+            self.save_vmpref(newuser);
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
     
@@ -63,7 +67,7 @@ class UsersView(object):
         form = deform.Form(schema, action=self.request.route_url('edit_user', userid=userid), buttons=('Save','Cancel'))
         
         if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('list_users', action='edit'))
+            return HTTPFound(location = self.request.route_url('list_users'))
         
         if 'Save' in self.request.params:
             appstruct = None
@@ -87,16 +91,14 @@ class UsersView(object):
             elif user_role:
                 DBSession.delete(user_role)
             DBSession.flush()
-            return HTTPFound(location =self.request.route_url('list_users',action='edit'))
+            return HTTPFound(location =self.request.route_url('list_users'))
         return dict(form=form.render(appstruct=user.__dict__))
     
-    @view_config(route_name='list_users', permission='admin')
+    @view_config(route_name='list_users', permission='admin', renderer='user_list.mako')
     def list_users(self):
         users = DBSession.query(User).all()
-        users_dict = dict(users = users)
-        if self.request.matchdict['action'] == 'delete':
-            return render_to_response('delete_user_list.mako',users_dict, request=self.request)
-        return render_to_response('edit_user_list.mako',users_dict, request=self.request)
+        return dict(users = users)
+        
        
     
     @view_config(route_name='delete_user', permission='admin')
@@ -105,6 +107,6 @@ class UsersView(object):
         DBSession.query(User).filter_by(id=userid).delete()
         DBSession.query(UserRole).filter_by(user_id=userid).delete()
         DBSession.flush()
-        return HTTPFound(location = self.request.route_url('list_users', action='delete'))
+        return HTTPFound(location = self.request.route_url('list_users'))
         
         
