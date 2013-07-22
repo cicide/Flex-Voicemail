@@ -14,7 +14,7 @@ from ..models.models import (
     UserVmPref,
     )
 
-from .views import UserSchema, user_DoesExist
+from ..schemas import UserSchema, user_DoesExist
 
 class UsersView(object):
     
