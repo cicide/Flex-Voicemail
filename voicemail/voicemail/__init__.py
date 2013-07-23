@@ -35,6 +35,7 @@ def main(global_config, **settings):
     config.add_route('list_users', '/users/list')
     config.add_route('delete_user', '/user/delete/{userid}')
     config.add_route('edit_vmpref', '/vmpref/edit/{userid}')
+    config.add_route('view_vm', '/vm/view')
     config.add_route('startcall', '/startcall')
     config.add_route('savemessage', '/savemessage')
     config.add_route('handlekey', '/handlekey')

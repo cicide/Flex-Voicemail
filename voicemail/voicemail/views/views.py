@@ -34,7 +34,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-@view_config(route_name='home', renderer='home.mako', permission='admin')
+@view_config(route_name='home', renderer='home.mako')
 def home(request):
     return dict(user= request.user,)
 
