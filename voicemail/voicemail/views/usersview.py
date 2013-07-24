@@ -1,11 +1,11 @@
 import os
+import ConfigParser
 import deform
 import logging
 log = logging.getLogger(__name__)
 
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound
-
 
 
 from ..models.models import (
@@ -27,7 +27,13 @@ class UsersView(object):
         self.request = request
     
     def create_vmpref(self,user):
-        directory = os.path.join("/home/abdul/xyleolabs/vm/",str(user.id))
+        dirname = os.path.dirname
+        SITE_ROOT = dirname(dirname(dirname(dirname(__file__))))
+        path = os.path.join(SITE_ROOT,'app/etc/flexvmail.conf')
+        config = ConfigParser.ConfigParser()
+        config.read(path)
+        vm_dir = config.get("sounds", 'vm_dir')
+        directory = os.path.join(vm_dir,str(user.id))
         if not os.path.exists(directory):
             os.makedirs(directory)
         vmpref = DBSession.query(UserVmPref).filter_by(id=user.id).first()
