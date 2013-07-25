@@ -61,6 +61,7 @@ class wsApiServer:
         
     def onResponse(self, resp):
         log.debug('entered wsapi:wsApiServer: onResponse')
+        log.debug(resp)
         finished = Deferred()
         resp.deliverBody(wsapiResponse(finished))
         finished.addCallbacks(self.getJsonResult,self.onError)
