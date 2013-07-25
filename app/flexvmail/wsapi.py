@@ -129,9 +129,6 @@ class wsApiServer:
         else:
             return False
 
-def getNewHost():
-    return wsApiServer(wsApiServers[0][0],wsApiServers[0][1])
-
 def getHost():
     return choice(wsApiList)
 

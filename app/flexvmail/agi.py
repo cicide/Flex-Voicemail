@@ -112,6 +112,7 @@ class astCall:
         return self.cidNum
     
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
+        log.debug(result)
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
             log.debug('entering: agi:playPromptList:onError')

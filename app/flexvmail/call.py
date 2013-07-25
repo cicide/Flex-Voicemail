@@ -24,8 +24,7 @@ class Call:
 
     def __init__(self, pbxCallObj):
         self.pbxCall = pbxCallObj
-        #self.wsApiHost = wsapi.getHost()
-        self.wsApiHost = wsapi.getNewHost()
+        self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
@@ -179,14 +178,10 @@ class Call:
             log.debug('got a result with no type')
             log.debug(nextAction[:4])
             if nextAction[:4] == 'http':
-                log.debug('getting new wsapi host')
                 #log.debug('executing action: ' % nextAction)
-                wsApiHost = wsapi.getNewHost()
-                log.debug('got new host')
-                log.debug(wsApiHost)
                 nact = str(nextAction)
-                actionRequest = wsApiHost.wsapiCall(nact, None, None, key=2)
-                #actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
+                # key=2 is just for testing, we need to get keyword args from the calling method
+                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None, key=2)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             else:
