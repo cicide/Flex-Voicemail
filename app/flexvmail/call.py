@@ -24,7 +24,8 @@ class Call:
 
     def __init__(self, pbxCallObj):
         self.pbxCall = pbxCallObj
-        self.wsApiHost = wsapi.getHost()
+        #self.wsApiHost = wsapi.getHost()
+        self.wsApiHost = wsapi.getNewHost()
         self.tree = None
         self.user = None
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
@@ -178,10 +179,12 @@ class Call:
             log.debug('got a result with no type')
             log.debug(nextAction[:4])
             if nextAction[:4] == 'http':
-                log.debug('ugh')
+                log.debug('getting new wsapi host')
                 #log.debug('executing action: ' % nextAction)
                 wsApiHost = wsapi.getNewHost()
-                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None, key=2)
+                log.debug('got new host')
+                log.debug(wsApiHost)
+                actionRequest = wsApiHost.wsapiCall(nextAction, None, None, key=2)
                 #actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
