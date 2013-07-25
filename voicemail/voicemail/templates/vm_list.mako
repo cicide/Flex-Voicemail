@@ -32,7 +32,7 @@
 				<td>${vm.cid_number}</td>
 				<td>
 					<a href="/vm/play/${vm.id}">Play</a>
-					<a href="#">Download</a>
+					<a href="/vm/download/${vm.id}">Download</a>
 					<a href="#">Delete</a>
 				</td>
 			</tr>
