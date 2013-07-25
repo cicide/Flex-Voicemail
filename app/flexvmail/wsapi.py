@@ -60,6 +60,7 @@ class wsApiServer:
         return False
         
     def onResponse(self, resp):
+        log.debug('entered wsapi:wsApiServer: onResponse')
         finished = Deferred()
         resp.deliverBody(wsapiResponse(finished))
         finished.addCallbacks(self.getJsonResult,self.onError)
@@ -111,10 +112,12 @@ class wsApiServer:
         return self.wsapiRequest(uri)
     
     def wsapiRequest(self, uri):
+        log.debug('entered: wsapi:wsapiRequest')
         if uri:
             agent = Agent(reactor)
             log.debug('requesting: %s' % uri)
             d = agent.request("GET", uri)
+            log.debug('request sent')
             d.addCallbacks(self.onResponse, self.onError)
             return d
         else:
