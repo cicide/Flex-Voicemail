@@ -116,6 +116,7 @@ class wsApiServer:
         log.debug('entered: wsapi:wsapiRequest')
         if uri:
             agent = Agent(reactor)
+            log.debug(agent)
             log.debug('requesting: %s' % uri)
             d = agent.request("GET", uri)
             log.debug('request sent')
