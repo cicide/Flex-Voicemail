@@ -36,6 +36,8 @@ log = logging.getLogger(__name__)
 
 @view_config(route_name='home', renderer='home.mako')
 def home(request):
+    if request.user is None:
+        return HTTPFound(location = request.route_url('login'))
     return dict(user= request.user,)
 
 
