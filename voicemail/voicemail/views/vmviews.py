@@ -1,6 +1,6 @@
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
-from pyramid.response import FileResponse
+from pyramid.response import FileResponse, Response
 
 from ..models.models import (
     DBSession,
@@ -29,6 +29,29 @@ class VoicemailView(object):
             vm = DBSession.query(Voicemail).filter_by(id=vm_id, user_id=logged_user.id).first()
         except:
             pass
-        return FileResponse(vm.path, self.request) if vm else HTTPNotFound()
+        finally:
+            if vm is None:
+                return HTTPNotFound()
+        return FileResponse(vm.path, self.request)
+    
+    @view_config(route_name='download_vm')
+    def vm_download(self):
+        logged_user = self.request.user
+        vm_id = self.request.matchdict['vmid']
+        vm = None
+        try:
+            vm = DBSession.query(Voicemail).filter_by(id=vm_id, user_id=logged_user.id).first()
+        except:
+            pass
+        finally:
+            if vm is None:
+                return HTTPNotFound()
+        filename = vm.path.split('/')[len(vm.path.split('/'))-1:].pop()
+        response = Response(
+                             content_disposition='attachment; filename=%s' % (filename),
+                             content_encoding='binary',
+                             body_file = open(vm.path)
+                             )
+        return response
         
     

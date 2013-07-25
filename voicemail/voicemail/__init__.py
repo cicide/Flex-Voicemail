@@ -37,6 +37,7 @@ def main(global_config, **settings):
     config.add_route('edit_vmpref', '/vmpref/edit/{userid}')
     config.add_route('view_vm', '/vm/view')
     config.add_route('play_vm', '/vm/play/{vmid}')
+    config.add_route('download_vm', '/vm/download/{vmid}')
     config.add_route('startcall', '/startcall')
     config.add_route('savemessage', '/savemessage')
     config.add_route('handlekey', '/handlekey')
