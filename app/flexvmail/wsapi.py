@@ -130,7 +130,7 @@ class wsApiServer:
             return False
 
 def getNewHost():
-    return wsApiServers(wsApiServers[0][0],wsApiServers[0][1])
+    return wsApiServer(wsApiServers[0][0],wsApiServers[0][1])
 
 def getHost():
     return choice(wsApiList)
