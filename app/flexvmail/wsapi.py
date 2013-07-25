@@ -2,7 +2,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import Protocol
 from twisted.web import server, resource
-from twisted.web.client import Agent
+from twisted.web.client import Agent, HTTPConnectionPool
 from twisted.web.http_headers import Headers
 from urlparse import urlparse
 from random import choice
@@ -54,6 +54,9 @@ class wsApiServer:
     def __init__(self, hostname, port):
         self.apiHostName = hostname
         self.apiHostPort = port
+        self.pool = HTTPConnectionPool(reactor, persistent=True)
+        self.pool.retryAutomatically = False
+        self.pool.maxPersistentPerHost = 1
         
     def onError(self, reason):
         log.debug(reason)
@@ -115,7 +118,7 @@ class wsApiServer:
     def wsapiRequest(self, uri):
         log.debug('entered: wsapi:wsapiRequest')
         if uri:
-            agent = Agent(reactor)
+            agent = Agent(reactor, pool=self.pool)
             log.debug(agent)
             log.debug('requesting: %s' % uri)
             d = agent.request("GET", uri)
