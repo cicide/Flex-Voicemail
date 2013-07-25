@@ -128,9 +128,10 @@ class wsApiServer:
             return d
         else:
             return False
-        
-def getHost():
-    return choice(wsApiList)
+
+def getNewHost():
+    return wsApiServers(wsApiServers[0])
+    #return choice(wsApiList)
 
 for server in wsApiServers:
     log.debug(server)

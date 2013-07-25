@@ -180,7 +180,9 @@ class Call:
             if nextAction[:4] == 'http':
                 log.debug('ugh')
                 #log.debug('executing action: ' % nextAction)
-                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
+                wsApiHost = wsapi.getNewHost()
+                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None, key=2)
+                #actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             else:
