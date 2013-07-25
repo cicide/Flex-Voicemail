@@ -184,7 +184,8 @@ class Call:
                 wsApiHost = wsapi.getNewHost()
                 log.debug('got new host')
                 log.debug(wsApiHost)
-                actionRequest = wsApiHost.wsapiCall(nextAction, None, None, key=2)
+                nact = str(nextAction)
+                actionRequest = wsApiHost.wsapiCall(nact, None, None, key=2)
                 #actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
