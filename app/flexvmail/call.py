@@ -178,14 +178,14 @@ class Call:
             log.debug('got a result with no type')
             log.debug(nextAction[:4])
             if nextAction[:4] == 'http':
-                log.debug('executing action: ' % nextAction)
+                log.debug('ugh')
+                #log.debug('executing action: ' % nextAction)
                 actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             else:
                 log.debug('unknown next action')
                 return False
-                    
         else:
             log.debug('No type found for successful action.')
             return False
