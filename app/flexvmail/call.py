@@ -181,7 +181,7 @@ class Call:
                 #log.debug('executing action: ' % nextAction)
                 nact = str(nextAction)
                 # key=2 is just for testing, we need to get keyword args from the calling method
-                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None, key=2)
+                actionRequest = self.wsApiHost.wsapiCall(nact, None, None, key=2)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             else:
