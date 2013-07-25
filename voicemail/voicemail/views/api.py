@@ -91,7 +91,7 @@ def startCall(request):
         prompt = DBSession.query(Prompt).filter_by(name=Prompt.userVmAccess).first()
         return dict (
             action="play",
-            prompt= prompt.getFullPrompt(),
+            prompt= prompt.getFullPrompt(user=user),
             nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'main'}),
             invalidaction=request.route_url('invalidmessage'),
             dtmf=['1','2','3','5', '7', '*4'],
@@ -153,7 +153,7 @@ def handleKey(request):
             prompt = DBSession.query(Prompt).filter_by(name=Prompt.vmSummary).first()
             return dict (
                 action="play",
-                prompt= prompt.getFullPrompt(),
+                prompt= prompt.getFullPrompt(user=user),
                 nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'vmaccess'}),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['0','*3','#','23'],
@@ -179,7 +179,7 @@ def handleKey(request):
             prompt = DBSession.query(Prompt).filter_by(name=Prompt.userVmAccess).first()
             return dict (
                 action="play",
-                prompt= prompt.getFullPrompt(),
+                prompt= prompt.getFullPrompt(user=user),
                 nextaction=request.route_url('handlekey', _query={'user': extension, 'menu': 'main'}),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['1','2','3','5', '7', '*4'],
@@ -192,7 +192,7 @@ def returnHelpMenu(request=None, user=None):
     prompt = DBSession.query(Prompt).filter_by(name=Prompt.helpMenu).first()
     return dict(
             action="play",
-            prompt= prompt.getFullPrompt(),
+            prompt= prompt.getFullPrompt(user=user),
             nextaction=request.route_url('handlekey', _query={'user': user.extension, 'menu': 'help'}),
             invalidaction=request.route_url('invalidmessage'),
             dtmf=['1','2','3','5', '7', '*7'],
