@@ -176,12 +176,16 @@ class Call:
             return True
         elif result:
             log.debug('got a result with no type')
-            if nextAction:
-                if nextAction[:4] == 'http':
-                    log.debug('executing action: ' % nextAction)
-                    actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
-                    actionRequest.addCallbacks(self.onActionResponse,self.onError)
-                    return actionRequest
+            log.debug(nextAction[:4])
+            if nextAction[:4] == 'http':
+                log.debug('executing action: ' % nextAction)
+                actionRequest = self.wsApiHost.wsapiCall(nextAction, None, None)
+                actionRequest.addCallbacks(self.onActionResponse,self.onError)
+                return actionRequest
+            else:
+                log.debug('unknown next action')
+                return False
+                    
         else:
             log.debug('No type found for successful action.')
             return False
