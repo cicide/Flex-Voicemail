@@ -131,7 +131,9 @@ class wsApiServer:
 
 def getNewHost():
     return wsApiServers(wsApiServers[0])
-    #return choice(wsApiList)
+
+def getHost():
+    return choice(wsApiList)
 
 for server in wsApiServers:
     log.debug(server)
