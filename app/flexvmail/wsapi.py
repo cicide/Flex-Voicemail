@@ -54,10 +54,10 @@ class wsApiServer:
     def __init__(self, hostname, port):
         self.apiHostName = hostname
         self.apiHostPort = port
-        self.pool = HTTPConnectionPool(reactor, persistent=True)
-        self.pool.retryAutomatically = False
-        self.pool.maxPersistentPerHost = 100
-        self.pool.cachedConnectionTimeout = 15
+        self.pool = HTTPConnectionPool(reactor, persistent=False)
+        #self.pool.retryAutomatically = False
+        #self.pool.maxPersistentPerHost = 100
+        #self.pool.cachedConnectionTimeout = 2
         
     def onError(self, reason):
         log.debug(reason)
