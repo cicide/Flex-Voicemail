@@ -179,7 +179,8 @@ class astCall:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
-            # Normalize the file location by removing the extra / at the beginning and any file type from the end
+            # format the file location for asterisk by removing the extra / at the beginning 
+            # and any file type from the end
             if promptLoc[:2] == '//':
                 promptLoc = promptLoc[1:].split('.')[0]
             log.debug(promptLoc)
@@ -252,7 +253,7 @@ class astCall:
             #fix this - figure out the correct file number
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
-            msgFile = getMsgNum(tmpFolder) #this needs to be done in a thread
+            msgFile = getMsgNum(tmpFolder) #this needs to be done in a defer to thread
             tmp_file_loc = '%s/%s' % (str(tmpFolder),str(msgFile))
             log.debug('recording to location %s' % tmp_file_loc)
             result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
