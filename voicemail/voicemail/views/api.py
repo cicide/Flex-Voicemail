@@ -71,7 +71,7 @@ def startCall(request):
     success, retdict = userCheck(user)
     if not success:
         return retdict
-
+    
     if tree == "leaveMessage":
         if user.vm_prefs.vm_greeting:
             prompt = DBSession.query(Prompt).filter_by(name=Prompt.userGreeting).first()
@@ -121,7 +121,7 @@ def saveMessage(request):
     # time to create a voicemail for this user
     v = Voicemail()
     v.cid_number = callerid
-    v.path = user.vm_prefs.folder+ '/' + vmfile
+    v.path =  vmfile # Altered because vmfile already have filepath and hence getting vm listed in our web app.
     v.create_date = datetime.datetime.utcnow()
     v.is_read = False
     v.status = 0
