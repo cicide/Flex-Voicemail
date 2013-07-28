@@ -190,7 +190,7 @@ class astCall:
                 speakNum = speakNum - 20
             else:
                 log.debug('we should never ever ever arrive here')
-        return numList
+        return speakList
     
 
     
