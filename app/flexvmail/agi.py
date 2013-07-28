@@ -11,6 +11,7 @@ import datetime
 import os
 
 setDebugging(True)
+testMode = True
 
 log = utils.get_logger("AGIService")
 
@@ -25,10 +26,20 @@ system_sounds_exist_cache_time = 3600 # cache system sound file checks for 1 hou
 
 class astCall:
 
-    def __init__(self, agi):
+    def __init__(self, agi, testMode=False):
         self.agi = agi
         self.intType = 'asterisk'
         self.mediaType = 'wav'
+        if testMode:
+            result = self.runTest
+        
+    def runTest(self):
+        test = [3,14,22,41,74,89,90,107,666,12872,123675,2636849,871934999,21734653461]
+        log.debug('Testing sayNumber')
+        for x in test:
+            log.debug('Saying %s' % x)
+            testSay = self.sayNumber(x)
+            log.debug(x)
         
     def onError(self, reason):
         log.debug('entering agi:onError')
@@ -506,6 +517,11 @@ def genMsgFile(filepath,
                     flag, duration)
     return e
 
+def test():
+    if testMode:
+        a = astCall(None, True)
+        a.runTest()
+        
 #setup agi service when application is started
 def getService():
     f = fastagi.FastAGIFactory(route)
