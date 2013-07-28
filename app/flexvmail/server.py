@@ -15,6 +15,8 @@ twistdlog.start()
 from twisted.application import service
 from twisted.internet import reactor
 
+testMode = True
+
 flexService = service.MultiService()
 application = service.Application("flexvm")
 flexService.setServiceParent(application)
@@ -25,4 +27,10 @@ def addServices():
     flexService.addService(agi.getService())
     flexService.addService(ami.getService())
 
+def runTests():
+    import call
+    call.runTests()
+    
 reactor.callWhenRunning(addServices)
+if testMode:
+    reactor.callWhenRunning(runTests)

@@ -517,7 +517,7 @@ def genMsgFile(filepath,
                     flag, duration)
     return e
 
-def test():
+def runTests():
     if testMode:
         a = astCall(None, True)
         a.runTest()
