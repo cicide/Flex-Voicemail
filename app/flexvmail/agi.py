@@ -428,7 +428,7 @@ class astCall:
                 else:
                     # we don't match, but we haven't reached max length
                     waitDelay = interKeyDelay - (time.time() - last) + 0.1
-                    d = task.deferLater(waitDelay, onKeyBuffCheck)
+                    d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
                     d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
                     return d                    
 
@@ -469,7 +469,7 @@ class astCall:
                     else:
                         # we need to wait to see if the user is going to enter more keys
                         waitDelay = interKeyDelay - (time.time() - last) + 0.1
-                        d = task.deferLater(waitDelay, onKeyBuffCheck)
+                        d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
                         d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
                         return d
                 else:
