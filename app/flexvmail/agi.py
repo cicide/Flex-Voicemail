@@ -399,7 +399,17 @@ class astCall:
         def onPlayed(result, prompt, dtmf, retries):
             log.debug('got play prompt result')
             log.debug(result)
-            return result
+            asciCode = result[0][0]
+            if not asciCode:
+                if retries:
+                    retries -= 1
+                    d = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+                    d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
+                    return d
+                else:
+                    return result
+            else:
+                return chr(asciCode)
         def onError(reason):
             log.error(reason)
             return False
