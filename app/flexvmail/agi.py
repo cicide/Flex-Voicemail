@@ -403,7 +403,7 @@ class astCall:
             if not asciCode:
                 if retries:
                     retries -= 1
-                    d = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+                    d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
                     d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
                     return d
                 else:
@@ -417,8 +417,8 @@ class astCall:
         log.debug(prompt)
         if len(prompt):
             log.debug('calling play prompt')
-            d = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
-            d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
+            d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
+            d.addCallback(onPlayed, prompt[:], dtmf, retries).addErrback(onError)
             return d
         else:
             return False
