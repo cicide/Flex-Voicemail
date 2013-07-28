@@ -133,6 +133,8 @@ class DialerProtocol(AMIProtocol):
         chan = event['channel']
         state = event['channelstate']
         cuid = '%s-%s' % (self.host_id, uid)
+        if not str(uid) in dtmfBuffer:
+            dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
         #if cuid not in chan_map:
             #chan_map[cuid] = {'chan': chan, 'ami': self}
         #log.debug('New channel at %s' % cuid)
@@ -338,6 +340,7 @@ def purgeDtmfBuffer(uid):
         return True
     else:
         log.debug('requested purge on unknown dtmf buffer for %s' % uid)
+        dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer' : []}
         return False
         
 def fetchDtmfBuffer(uid):

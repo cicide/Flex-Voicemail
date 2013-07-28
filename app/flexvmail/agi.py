@@ -416,6 +416,7 @@ class astCall:
                 else:
                     return False
             else:
+                keyBuff = result[1]
                 last = keyBuff['last']
                 buff = keyBuff['buffer']
                 keyVal = ''.join(buff)
