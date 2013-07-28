@@ -45,12 +45,19 @@ class DialerProtocol(AMIProtocol):
         self.ami = ami
         self.host_id = self.factory.hostname
         #create a list in the factory for tracking of active calls should we lose connection so we can clear the maps out
+        log.debug('registering User Events')
         ami.registerEvent('UserEvent', self.onUserEvent)
+        log.debug('registering Hangups')
         ami.registerEvent('Hangup', self.onHangup)
+        log.debug('registering New Channels')
         ami.registerEvent('Newchannel', self.onNewChannel)
+        log.debug('registering New States')
         ami.registerEvent('Newstate', self.onNewState)
+        log.debug('registering Dial')
         ami.registerEvent('Dial', self.onDialEvent)
+        log.debug('registering Bridge')
         ami.registerEvent('Bridge', self.onBridgeEvent)
+        log.debug('registering dtmf')
         ami.registerEvent('DTMF', self.onDtmf)
 
     def onDtmf(self, ami, event):
@@ -66,7 +73,7 @@ class DialerProtocol(AMIProtocol):
         if dtmf_begin in ('Yes', 'yes'):
             if str(uid) in dtmfBuffer:
                 dtmfBuffer[str(uid)]['last'] = time.time()
-                dtmfBuffer[str(uid)].append(str(digit))
+                dtmfBuffer[str(uid)]['buffer'].append(str(digit))
             else:
                 dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
                 
