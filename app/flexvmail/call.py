@@ -217,3 +217,5 @@ def newCall(pbxCallObj, uid):
     else:
         return False
         
+def runTests():
+    pass

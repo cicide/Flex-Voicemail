@@ -132,6 +132,9 @@ class wsApiServer:
 def getHost():
     return choice(wsApiList)
 
+def runTests():
+    pass
+
 for server in wsApiServers:
     log.debug(server)
     wsApiList.append(wsApiServer(server[0],server[1]))

@@ -28,8 +28,12 @@ def addServices():
     flexService.addService(ami.getService())
 
 def runTests():
+    import agi
+    agi.runTests()
     import call
     call.runTests()
+    import wsapi
+    wsapi.runTests()
     
 reactor.callWhenRunning(addServices)
 if testMode:
