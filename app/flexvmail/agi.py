@@ -39,7 +39,7 @@ class astCall:
         for x in test:
             log.debug('Testing Say %s' % x)
             testSay = self.sayNumber(x)
-            log.debug(x)
+            log.debug(testSay)
         
     def onError(self, reason):
         log.debug('entering agi:onError')
