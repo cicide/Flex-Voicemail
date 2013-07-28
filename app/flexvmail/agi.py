@@ -37,7 +37,7 @@ class astCall:
         test = [3,14,22,41,74,89,90,107,666,12872,123675,2636849,871934999,21734653461]
         log.debug('Testing sayNumber')
         for x in test:
-            log.debug('Saying %s' % x)
+            log.debug('Testing Say %s' % x)
             testSay = self.sayNumber(x)
             log.debug(x)
         
@@ -146,6 +146,7 @@ class astCall:
                 numMillions = speakNum/1000000
                 numMillList = self.sayNumber(numMillions)
                 speakList = speakList + numMillList
+                log.debug('Saying million')
                 speakList.append('digits/million')
                 speakNum = speakNum - (numMillions * 1000000)
             elif speakNum > 999:
@@ -153,7 +154,8 @@ class astCall:
                 # how many thousands are there?
                 numThousands = speakNum/1000
                 numThouList = self.sayNumber(numThousands)
-                speakList = speakList + numThousList
+                speakList = speakList + numThouList
+                log.debug('Saying thousand')
                 speakList.append('digits/thousand')
                 speakNum = speakNum - (numThousands * 1000)
             elif speakNum > 99:
@@ -162,30 +164,39 @@ class astCall:
                 numHundreds = speakNum/100
                 numHundList = self.sayNumber(numHundreds)
                 speakList = speakList + numHundList
+                log.debug('Saying hundred')
                 speakList.append('digits/hundred')
                 speakNum = speakNum - (numHundreds * 100)
             elif speakNum > 89:
+                log.debug('Saying ninety')
                 speakList.append('digits/90')
                 speakNum = speakNum - 90
             elif speakNum > 79:
+                log.debug('Saying eighty')
                 speakList.append('digits/80')
                 speakNum = speakNum - 80
             elif speakNum > 69:
+                log.debug('Saying seventy')
                 speakList.append('digits/70')
                 speakNum = speakNum - 70
             elif speakNum > 59:
+                log.debug('Saying sixty')
                 speakList.append('digits/60')
                 speakNum = speakNum - 60
             elif speakNum > 49:
+                log.debug('Saying fifty')
                 speakList.append('digits/50')
                 speakNum = speakNum - 50
             elif speakNum > 39:
+                log.debug('Saying fourty')
                 speakList.append('digits/40')
                 speakNum = speakNum - 40
             elif speakNum > 29:
+                log.debug('Saying thirty')
                 speakList.append('digits/30')
                 speakNum = speakNum - 30
             elif speakNum > 20:
+                log.debug('Saying %s' % speakNum)
                 speakList.append('digits/20')
                 speakNum = speakNum - 20
             else:
