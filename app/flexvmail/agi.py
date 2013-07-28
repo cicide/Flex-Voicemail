@@ -112,6 +112,77 @@ class astCall:
     def getCidNum(self):
         return self.cidNum
     
+    def sayNumber(self, number):
+        speakNum = int(number)
+        speakList = []
+        while speakNum > 0:
+            if speakNum <= 20:
+                # we have a recoding, just speak the number
+                log.debug('saying %s') % speakNum
+                speakList.append('digits/%s' % speakNum)
+                speakNum = speakNum - speakNum
+            elif speakNum > 999999999:
+                # we have a BILLION of something
+                # I wonder how many billion we have?
+                numBillions = speakNum/1000000000
+                numBillList = self.sayNumber(numBillions)
+                speakList = speakList + numBillList
+                speakList.append('digits/billion')
+                speakNum = speakNum - (numBillions * 1000000000)
+            elif speakNum > 999999:
+                # we have a MILLION of something
+                # Lets find out how many millions we have
+                numMillions = speakNum/1000000
+                numMillList = self.sayNumber(numMillions)
+                speakList = speakList + numMillList
+                speakList.append('digits/million')
+                speakNum = speakNum - (numMillions * 1000000)
+            elif speakNum > 999:
+                # we have a THOUSAND of something
+                # how many thousands are there?
+                numThousands = speakNum/1000
+                numThouList = self.sayNumber(numThousands)
+                speakList = speakList + numThousList
+                speakList.append('digits/thousand')
+                speakNum = speakNum - (numThousands * 1000)
+            elif speakNum > 99:
+                # we've got ourselves some hundreds of something
+                # how many hundreds?
+                numHundreds = speakNum/100
+                numHundList = self.sayNumber(numHundreds)
+                speakList = speakList + numHundList
+                speakList.append('digits/hundred')
+                speakNum = speakNum - (numHundreds * 100)
+            elif speakNum > 89:
+                speakList.append('digits/90')
+                speakNum = speakNum - 90
+            elif speakNum > 79:
+                speakList.append('digits/80')
+                speakNum = speakNum - 80
+            elif speakNum > 69:
+                speakList.append('digits/70')
+                speakNum = speakNum - 70
+            elif speakNum > 59:
+                speakList.append('digits/60')
+                speakNum = speakNum - 60
+            elif speakNum > 49:
+                speakList.append('digits/50')
+                speakNum = speakNum - 50
+            elif speakNum > 39:
+                speakList.append('digits/40')
+                speakNum = speakNum - 40
+            elif speakNum > 29:
+                speakList.append('digits/30')
+                speakNum = speakNum - 30
+            elif speakNum > 20:
+                speakList.append('digits/20')
+                speakNum = speakNum - 20
+            else:
+                log.debug('we should never ever ever arrive here')
+        return numList
+    
+
+    
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
         log.debug(result)
         log.debug('agi:playPromptList called')
@@ -203,6 +274,26 @@ class astCall:
                 #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
                 # don't capture this error
                 log.debug('playing prompt.')
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+            elif 'sayNum' in currPrompt:
+                promptKeys.remove('sayNum')
+                promptNum = currPrompt['sayNum']
+                numPromptList = self.sayNumber(promptNum)
+                sequence = fastagi.InSequence()
+                if delaybefore:
+                    delay = float(delaybefore)/1000
+                    log.debug('adding delay before of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                intKeys = str("".join(interrupKeys))                
+                while numPromptList:
+                    prompt = numPromptList.pop(0)
+                    log.debug(prompt)
+                    sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
+                if delayafter:
+                    delay = float(delayafter)/1000
+                    log.debug('adding delay after of %s' % delay)
+                    sequence.append(self.agi.wait,delay) 
+                log.debug('playing number')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
                 log.error('Unknown prompt type: %s' % promptType)
