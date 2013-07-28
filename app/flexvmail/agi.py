@@ -129,7 +129,7 @@ class astCall:
         while speakNum > 0:
             if speakNum <= 20:
                 # we have a recoding, just speak the number
-                log.debug('saying %s' % speakNum)
+                log.debug('Saying %s' % speakNum)
                 speakList.append('digits/%s' % speakNum)
                 speakNum = speakNum - speakNum
             elif speakNum > 999999999:
@@ -138,6 +138,7 @@ class astCall:
                 numBillions = speakNum/1000000000
                 numBillList = self.sayNumber(numBillions)
                 speakList = speakList + numBillList
+                log.debug('Saying billion')
                 speakList.append('digits/billion')
                 speakNum = speakNum - (numBillions * 1000000000)
             elif speakNum > 999999:
@@ -196,7 +197,7 @@ class astCall:
                 speakList.append('digits/30')
                 speakNum = speakNum - 30
             elif speakNum > 20:
-                log.debug('Saying %s' % speakNum)
+                log.debug('Saying twenty')
                 speakList.append('digits/20')
                 speakNum = speakNum - 20
             else:
