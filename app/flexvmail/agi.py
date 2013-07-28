@@ -129,7 +129,7 @@ class astCall:
         while speakNum > 0:
             if speakNum <= 20:
                 # we have a recoding, just speak the number
-                log.debug('saying %s') % speakNum
+                log.debug('saying %s' % speakNum)
                 speakList.append('digits/%s' % speakNum)
                 speakNum = speakNum - speakNum
             elif speakNum > 999999999:
