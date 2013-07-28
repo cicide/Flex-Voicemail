@@ -398,7 +398,7 @@ class astCall:
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
-        def onKeyBuffCheck(result):
+        def onKeyBuffCheck():
             keyBuff = ami.fetchDtmfBuffer(self.uid)
             last = keyBuff['last']
             buff = keyBuff['buffer']
