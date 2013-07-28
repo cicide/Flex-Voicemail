@@ -193,6 +193,7 @@ class Call:
         
     
     def onExecuteActionFailure(self, reason, invalidAction):
+        log.error(reason)
         return False
 
     def startCall(self, tree):

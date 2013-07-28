@@ -1,9 +1,9 @@
 #!/usr/local/bin/python
 
 from twisted.application import internet
-from twisted.internet import reactor, defer
+from twisted.internet import reactor, defer, task
 from starpy import fastagi
-import utils, call
+import utils, call, ami
 from twisted.internet.defer import setDebugging
 from twisted.internet.threads import deferToThread 
 import time
@@ -14,6 +14,8 @@ setDebugging(True)
 testMode = True
 
 log = utils.get_logger("AGIService")
+
+interKeyDelay = 2
 
 # get sounds directories
 system_sounds_dir = utils.config.get("sounds", "system_dir")
@@ -396,25 +398,91 @@ class astCall:
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
+        def onKeyBuffCheck(result):
+            keyBuff = ami.fetchDtmfBuffer(self.uid)
+            last = keyBuff['last']
+            buff = keyBuff['buffer']
+            if (time.time() - last) > interKeyDelay:
+                return (True, buff)
+            else:
+                return (False, keyBuff)
+
+        def onKeyBuffWait(result, dtmfList, maxKeyLen):
+            if result[0]:
+                buff = result[1]
+                keyVal = ''.join(buff)
+                if keyVal in dtmfList:
+                    return keyVal
+                else:
+                    return False
+            else:
+                last = keyBuff['last']
+                buff = keyBuff['buffer']
+                keyVal = ''.join(buff)
+                if keyVal in dtmfList:
+                    # we have an exact match, return it!
+                    return keyVal
+                elif len(buff) >= maxKeyLen:
+                    # we have reached max length and don't have a match 
+                    return False
+                else:
+                    # we don't match, but we haven't reached max length
+                    waitDelay = interKeyDelay - (time.time() - last) + 0.1
+                    d = task.deferLater(waitDelay, onKeyBuffCheck)
+                    d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
+                    return d                    
+
         def onPlayed(result, prompt, dtmf, retries):
+            # TODO: We need to handle multiple character responses
             log.debug('got play prompt result')
             log.debug(result)
+            log.debug(dtmf)
+            dtmfList = dtmf
             asciCode = result[0][0]
             if not asciCode:
                 if retries:
                     retries -= 1
+                    # TODO: We need to add some delays in here before retrying
                     d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
                     d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
                     return d
                 else:
                     return result
             else:
-                return chr(asciCode)
+                # check to see if we match any valid single keys
+                keyVal = chr(asciCode)
+                maxKeyLen = max(len(dtmfKeys) for dtmfKeys in dtmfList)
+                if keyVal in dtmfList:
+                    # we have a valid single dtmf entry, run with it
+                    return keyVal
+                elif maxKeyLen > 1:
+                    keyBuff = ami.fetchDtmfBuffer(self.uid)
+                    last = keyBuff['last']
+                    buff = keyBuff['buffer']
+                    keyBuffLen = len(buff)
+                    if keyBuffLen >= maxKeyLen:
+                        # do we already have the max number of allowed characters?
+                        return ''.join(buff)
+                    elif (time.time() - last) > interKeyDelay:
+                        # have we waited long enough to return what we have?
+                        return ''.join(buff)
+                    else:
+                        # we need to wait to see if the user is going to enter more keys
+                        waitDelay = interKeyDelay - (time.time() - last) + 0.1
+                        d = task.deferLater(waitDelay, onKeyBuffCheck)
+                        d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
+                        return d
+                else:
+                    # We have an invalid key combination
+                    return False
+
         def onError(reason):
             log.error(reason)
             return False
         log.debug('agi:actionPlay called')
         log.debug(prompt)
+        log.debug(dtmf)
+        ami.purgeDtmfBuffer(self.uid)
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)

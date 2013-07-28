@@ -3,7 +3,7 @@
 from twisted.application import internet, service
 from twisted.internet import reactor, defer
 from starpy.manager import AMIFactory, AMIProtocol
-import os
+import os, time
 import utils, call
 
 log = utils.get_logger("AMIService")
@@ -17,6 +17,8 @@ amidomain = utils.config.get("general", "amidomain")
 
 serverList=[]
 chan_map = {} # cuid: {chan: channel, ami: ami_obj}
+
+dtmfBuffer = {} # uid: {last: timestamp, buffer: [list of dtmf events]}
 
 
 class DialerProtocol(AMIProtocol):
@@ -59,16 +61,15 @@ class DialerProtocol(AMIProtocol):
         digit = event['digit']
         uid = event['uniqueid']
         dtmf_begin = event['begin']
+        dtmf_end = event['end']
         log.debug('got dtmf event: %s' % event)
-        #if dtmf_begin in ('Yes', 'yes'):
-            #cuid = '%s-%s' % (self.host_id, uid)
-            #if cuid not in call.calls:
-                #log.debug("got dtmf capture for call id %s that isn't in active calls" % cuid)
-                #pass
-            #else:
-                #d = defer.maybeDeferred(call.calls[cuid].captureDTMF, digit)
-                #d.addCallbacks(onSuccess, onFailure)
-
+        if dtmf_being in ('Yes', 'yes'):
+            if str(uid) in dtmfBuffer:
+                dtmfBuffer[str(uid)]['last'] = time.time()
+                dtmfBuffer[str(uid)].append(str(digit))
+            else:
+                dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
+                
     def onDialEvent(self, ami, event):
         log.debug("got dial event: %s" % event)
         uid = event['uniqueid']
@@ -164,6 +165,12 @@ class DialerProtocol(AMIProtocol):
         log.debug("hangup called with event: %s" % event)
         uid = event['uniqueid']
         cuid = '%s-%s' % (self.host_id, uid)
+        # Remove any stored dtmf buffer information for this call
+        if str(uid) in dtmfBuffer:
+            log.debug('clearing dtmf buffer for %s' % uid)
+            tmp = dtmfBuffer.pop(str(uid))
+            log.debug(tmp)
+            tmp = None
         #if cuid in call.calls:
             #log.debug("hangup up call %s" % cuid)
             #call.calls[cuid].hangup()
@@ -323,6 +330,20 @@ def getAMI(cuid):
         return None
     else:
         return chan_map[cuid]
+
+def purgeDtmfBuffer(uid):
+    if str(uid) in dtmfBuffer:
+        dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
+        log.debug('dtmf buffer for %s purged' % uid)
+    else:
+        log.debug('requested purge on unknown dtmf buffer for %s' % uid)
+        
+def fetchDtmfBuffer(uid):
+    if str(uid) in dtmfBuffer:
+        return dtmfBuffer[str(uid)]
+    else:
+        log.debug('no dtmf buffer available for %s' % uid)
+        return None
 
 def getService():
     from twisted.application import service
