@@ -204,8 +204,6 @@ class astCall:
                 log.debug('we should never ever ever arrive here')
         return speakList
     
-
-    
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
         log.debug(result)
         log.debug('agi:playPromptList called')
@@ -294,8 +292,6 @@ class astCall:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                #return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys).addErrback(onError, promptList=promptList, interrupKeys=interrupKeys)
-                # don't capture this error
                 log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             elif 'sayNum' in currPrompt:
@@ -400,14 +396,20 @@ class astCall:
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
+        def onPlayed(result, prompt, dtmf, retries):
+            log.debug('got play prompt result')
+            log.debug(result)
+            return result
+        def onError(reason):
+            log.error(reason)
+            return False
         log.debug('agi:actionPlay called')
         log.debug(prompt)
         if len(prompt):
             log.debug('calling play prompt')
-            result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
-            log.debug('got play prompt result')
-            log.debug(result)
-            return result
+            d = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
+            d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
+            return d
         else:
             return False
         
