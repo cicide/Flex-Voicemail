@@ -482,7 +482,8 @@ class astCall:
         log.debug('agi:actionPlay called')
         log.debug(prompt)
         log.debug(dtmf)
-        ami.purgeDtmfBuffer(self.uid)
+        tmp = ami.purgeDtmfBuffer(self.uid)
+        log.debug(tmp)
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)

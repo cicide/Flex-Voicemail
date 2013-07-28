@@ -63,7 +63,7 @@ class DialerProtocol(AMIProtocol):
         dtmf_begin = event['begin']
         dtmf_end = event['end']
         log.debug('got dtmf event: %s' % event)
-        if dtmf_being in ('Yes', 'yes'):
+        if dtmf_begin in ('Yes', 'yes'):
             if str(uid) in dtmfBuffer:
                 dtmfBuffer[str(uid)]['last'] = time.time()
                 dtmfBuffer[str(uid)].append(str(digit))
@@ -335,8 +335,10 @@ def purgeDtmfBuffer(uid):
     if str(uid) in dtmfBuffer:
         dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
         log.debug('dtmf buffer for %s purged' % uid)
+        return True
     else:
         log.debug('requested purge on unknown dtmf buffer for %s' % uid)
+        return False
         
 def fetchDtmfBuffer(uid):
     if str(uid) in dtmfBuffer:
