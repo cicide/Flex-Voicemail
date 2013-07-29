@@ -76,6 +76,7 @@ class DialerProtocol(AMIProtocol):
                 dtmfBuffer[str(uid)]['buffer'].append(str(digit))
             else:
                 dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
+            log.debug(dtmfBuffer[str(uid)])
                 
     def onDialEvent(self, ami, event):
         log.debug("got dial event: %s" % event)
