@@ -170,7 +170,7 @@ class Call:
             elif resType == 'play':
                 log.debug('found a play result type')
                 return True
-            elif type == 'response':
+            elif resType == 'response':
                 log.debug('found a response result type')
                 keyVal = result['value']
                 if nextAction[:4] == 'http':
