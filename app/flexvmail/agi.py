@@ -536,10 +536,12 @@ def getMsgNum(directory):
     msgCount = []
     for dname,dnames,fnames in os.walk(directory):
         for filename in fnames:
+            log.debug(filename)
             fname,ftype = filename.split('.')
             if ftype == 'txt':
                 if fname[:3] == 'msg' and len(fname) == 7:
                     msgCount.append(int(fname[3:]))
+                    log.debug(msgCount)
     if not len(msgCount):
         newMsgNum = 0
     else:
