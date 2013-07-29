@@ -387,7 +387,7 @@ class astCall:
             '''
             log.debug(tmpFolder)
             result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
-            result.addCallbacks(onSuccess,tmpFolder)
+            result.addCallback(onSuccess,tmpFolder).addErrback(onError)
             return result
         
         if len(prompt):
