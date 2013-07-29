@@ -399,7 +399,9 @@ class astCall:
 
     def actionPlay(self, prompt, dtmf, retries):
         def onKeyBuffCheck():
+            log.debug('checking keyBuffer')
             keyBuff = ami.fetchDtmfBuffer(self.uid)
+            log.debug(keyBuff)
             last = keyBuff['last']
             buff = keyBuff['buffer']
             if (time.time() - last) > interKeyDelay:
@@ -408,25 +410,33 @@ class astCall:
                 return (False, keyBuff)
 
         def onKeyBuffWait(result, dtmfList, maxKeyLen):
+            log.debug('keyBuff check completed')
             if result[0]:
+                log.debug('we have a result')
                 buff = result[1]
                 keyVal = ''.join(buff)
                 if keyVal in dtmfList:
+                    log.debug('and it is valid')
                     return keyVal
                 else:
+                    log.debug('but it is not valid')
                     return False
             else:
+                log.debug('it looks like we did not wait long enough, or another key has been entered')
                 keyBuff = result[1]
                 last = keyBuff['last']
                 buff = keyBuff['buffer']
                 keyVal = ''.join(buff)
                 if keyVal in dtmfList:
+                    log.debug('however, we have a valid match, return it')
                     # we have an exact match, return it!
                     return keyVal
                 elif len(buff) >= maxKeyLen:
+                    log.debug('we have reached the max possible response length and do not have a match')
                     # we have reached max length and don't have a match 
                     return False
                 else:
+                    log.debug('we have to wait some more')
                     # we don't match, but we haven't reached max length
                     waitDelay = interKeyDelay - (time.time() - last) + 0.1
                     d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
@@ -441,7 +451,9 @@ class astCall:
             dtmfList = dtmf
             asciCode = result[0][0]
             if not asciCode:
+                log.debug('no key pressed')
                 if retries:
+                    log.debug('retrying')
                     retries -= 1
                     # TODO: We need to add some delays in here before retrying
                     d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
@@ -453,21 +465,29 @@ class astCall:
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
                 maxKeyLen = max(len(dtmfKeys) for dtmfKeys in dtmfList)
+                log.debug('Got Result: %s' % keyVal)
                 if keyVal in dtmfList:
+                    log.debug('Result is Valid')
                     # we have a valid single dtmf entry, run with it
                     return keyVal
                 elif maxKeyLen > 1:
+                    log.debug('result not YET valid')
                     keyBuff = ami.fetchDtmfBuffer(self.uid)
                     last = keyBuff['last']
                     buff = keyBuff['buffer']
                     keyBuffLen = len(buff)
                     if keyBuffLen >= maxKeyLen:
+                        log.debug('No more keys available, returning what we have')
                         # do we already have the max number of allowed characters?
+                        # TODO: Confirm validity before returning 
                         return ''.join(buff)
                     elif (time.time() - last) > interKeyDelay:
+                        log.debug('We have waited long enough, no more keys are coming')
+                        # TODO: verify validity of current keys before returning
                         # have we waited long enough to return what we have?
                         return ''.join(buff)
                     else:
+                        log.debug('We need to wait a little longer to see if any more keys are entered')
                         # we need to wait to see if the user is going to enter more keys
                         waitDelay = interKeyDelay - (time.time() - last) + 0.1
                         d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
