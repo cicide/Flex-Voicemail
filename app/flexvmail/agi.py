@@ -363,10 +363,10 @@ class astCall:
             return response
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             
-            def onSuccess(msgFile):
+            def onSuccess(msgFile, folder):
                 log.debug('entered in success callback of deferToThread...')
-                #tmp_file_loc = '%s/%s' % (str(folder),str(msgFile))
-                tmp_file_loc = str(msgFile)
+                tmp_file_loc = '%s/%s' % (str(folder),str(msgFile))
+                #tmp_file_loc = str(msgFile)
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
@@ -386,7 +386,7 @@ class astCall:
                [Jul 26 11:25:34] WARNING[8732]: file.c:958 ast_streamfile: Unable to open beep (format 0x4 (ulaw)): No such file or directory
             '''
             result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
-            result.addCallbacks(onSuccess)
+            result.addCallbacks(onSuccess,tmpFolder)
             return result
         
         if len(prompt):
