@@ -417,10 +417,10 @@ class astCall:
                 keyVal = ''.join(buff)
                 if keyVal in dtmfList:
                     log.debug('and it is valid')
-                    return keyVal
+                    return {'type': 'response', 'value': keyVal}
                 else:
                     log.debug('but it is not valid')
-                    return False
+                    return {'type': 'response', 'value': False}
             else:
                 log.debug('it looks like we did not wait long enough, or another key has been entered')
                 keyBuff = result[1]
@@ -430,11 +430,11 @@ class astCall:
                 if keyVal in dtmfList:
                     log.debug('however, we have a valid match, return it')
                     # we have an exact match, return it!
-                    return keyVal
+                    return {'type': 'response', 'value': keyVal}
                 elif len(buff) >= maxKeyLen:
                     log.debug('we have reached the max possible response length and do not have a match')
                     # we have reached max length and don't have a match 
-                    return False
+                    return {'type': 'response', 'value': False}
                 else:
                     log.debug('we have to wait some more')
                     # we don't match, but we haven't reached max length
@@ -460,7 +460,7 @@ class astCall:
                     d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
                     return d
                 else:
-                    return result
+                    return {'type': 'response', 'value': False}
             else:
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
@@ -469,7 +469,7 @@ class astCall:
                 if keyVal in dtmfList:
                     log.debug('Result is Valid')
                     # we have a valid single dtmf entry, run with it
-                    return keyVal
+                    return {'type': 'response', 'value': keyVal}
                 elif maxKeyLen > 1:
                     log.debug('result not YET valid')
                     keyBuff = ami.fetchDtmfBuffer(self.uid)
@@ -480,12 +480,12 @@ class astCall:
                         log.debug('No more keys available, returning what we have')
                         # do we already have the max number of allowed characters?
                         # TODO: Confirm validity before returning 
-                        return ''.join(buff)
+                        return {'type': 'response', 'value': ''.join(buff)}
                     elif (time.time() - last) > interKeyDelay:
                         log.debug('We have waited long enough, no more keys are coming')
                         # TODO: verify validity of current keys before returning
                         # have we waited long enough to return what we have?
-                        return ''.join(buff)
+                        return {'type': 'response', 'value': ''.join(buff)}
                     else:
                         log.debug('We need to wait a little longer to see if any more keys are entered')
                         # we need to wait to see if the user is going to enter more keys
@@ -495,11 +495,12 @@ class astCall:
                         return d
                 else:
                     # We have an invalid key combination
-                    return False
+                    return {'type': 'response', 'value': False}
 
         def onError(reason):
             log.error(reason)
-            return False
+            return {'type': 'response', 'value': False}
+        
         log.debug('agi:actionPlay called')
         log.debug(prompt)
         log.debug(dtmf)
@@ -511,7 +512,7 @@ class astCall:
             d.addCallback(onPlayed, prompt[:], dtmf, retries).addErrback(onError)
             return d
         else:
-            return False
+            return {'type': 'response', 'value': False}
         
     def actionHangup(self):
         log.debug('agi:actionHangup called')

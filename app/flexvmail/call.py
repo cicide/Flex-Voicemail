@@ -170,18 +170,30 @@ class Call:
             elif resType == 'play':
                 log.debug('found a play result type')
                 return True
+            elif type == 'response':
+                log.debug('found a response result type')
+                keyVal = result['value']
+                if nextAction[:4] == 'http':
+                    #log.debug('executing action: ' % nextAction)
+                    nact = str(nextAction)
+                    #
+                    actionRequest = self.wsApiHost.wsapiCall(nact, None, None, key=keyVal)
+                    actionRequest.addCallbacks(self.onActionResponse,self.onError)
+                    return actionRequest
+                else:
+                    log.debug('unknown next action')
+                    return False                
             else:
                 log.debug('unknown result type')
                 return False
-            return True
         elif result:
             log.debug('got a result with no type')
             log.debug(nextAction[:4])
             if nextAction[:4] == 'http':
                 #log.debug('executing action: ' % nextAction)
                 nact = str(nextAction)
-                # key=2 is just for testing, we need to get keyword args from the calling method
-                actionRequest = self.wsApiHost.wsapiCall(nact, None, None, key=2)
+                #
+                actionRequest = self.wsApiHost.wsapiCall(nact, None, None, key=result)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             else:
