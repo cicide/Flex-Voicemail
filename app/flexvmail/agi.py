@@ -385,6 +385,7 @@ class astCall:
             '''[Jul 26 11:25:34] WARNING[8732]: file.c:663 ast_openstream_full: File beep does not exist in any format
                [Jul 26 11:25:34] WARNING[8732]: file.c:958 ast_streamfile: Unable to open beep (format 0x4 (ulaw)): No such file or directory
             '''
+            log.debug(tmpFolder)
             result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
             result.addCallbacks(onSuccess,tmpFolder)
             return result
@@ -543,7 +544,9 @@ def getMsgNum(directory):
         newMsgNum = 0
     else:
         newMsgNum = max(msgCount) + 1
-    return 'msg%s' % str(newMsgNum).zfill(4)
+    result = 'msg%s' % str(newMsgNum).zfill(4)
+    log.debug(result)
+    return result
 
 def genMsgFile(filepath,
                acct, 
