@@ -365,29 +365,30 @@ class astCall:
             
             def onSuccess(msgFile):
                 log.debug('entered in success callback of deferToThread...')
-                tmp_file_loc = '%s/%s' % (str(folder),str(msgFile))
+                #tmp_file_loc = '%s/%s' % (str(folder),str(msgFile))
+                tmp_file_loc = str(msgFile)
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
                 result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
-                return result
-            
+                return result            
              
             log.debug('entered agi:actionRecord:onPromptSuccess')
             log.debug(result)
             #fix this - figure out the correct file number
             #figure out the actual location for the record folder
-            tmpFolder = folder.split(':/')[0]
+            tmpFolder = folder.split(':/')[1]
             log.debug('Entering in deferToThread with method "getMsgNum"')
-            beep = False # Because it was giving me this error : 
+            beep = True # Because it was giving me this error : 
             '''[Jul 26 11:25:34] WARNING[8732]: file.c:663 ast_openstream_full: File beep does not exist in any format
                [Jul 26 11:25:34] WARNING[8732]: file.c:958 ast_streamfile: Unable to open beep (format 0x4 (ulaw)): No such file or directory
             '''
             result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
             result.addCallbacks(onSuccess)
             return result
+        
         if len(prompt):
             log.debug('calling play prompt')
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
