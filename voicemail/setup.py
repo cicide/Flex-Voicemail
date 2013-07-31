@@ -19,6 +19,7 @@ requires = [
     'bag',
     'deform',
     'paste',
+    'deform_bootstrap',
     ]
 
 setup(name='voicemail',

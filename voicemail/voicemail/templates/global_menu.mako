@@ -1,5 +1,4 @@
-    <div class='left_list'>
-        <h3>Global Actions</h3>
-        <ul>
-        </ul>
-    </div>
+<li><a href="#">sample1</a></li>
+<li><a href="#">sample2</a></li>
+<li><a href="#">sample3</a></li>
+<li><a href="#">sample4</a></li>

@@ -1,47 +1,76 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <title>VoiceMail Access - ${self.title()}</title>
-        
-        <script type="text/javascript" src="${request.static_url('voicemail:static/js/jquery-1.9.1.min.js')}"></script>
-        <link href="${request.static_url('voicemail:static/css/jquery-ui.min.css')}" media="all" rel="stylesheet" type="text/css" />
-        <link href="${request.static_url('voicemail:static/css/style.css')}" media="all" rel="stylesheet" type="text/css" />
-        <link href="${request.static_url('voicemail:static/css/voicemail.css')}" media="all" rel="stylesheet" type="text/css" />
-        <script type="text/javascript" src="${request.static_url('voicemail:static/js/jquery-ui-1.10.2.min.js')}"></script>
-</head>
-<body>
+<!DOCTYPE html>
+ <!-- The layout macro below is what is referenced in the layouts.Laytouts.global_template -->
+<html lang="en" metal:define-macro="layout">
+  <head>
 
-        <div class="wrapper">
-            ${render_flash_messages()|n}
-            % if request.user:
-            <div class="header">
-                        <h1 class="logo"><img src="${request.static_url('voicemail:static/img/voicemail.gif')}" style="vertical-align:middle" alt="" />VoiceMail Access - ${self.title()}</h1>
-                        <div class="userinfo">
-                                <h6>Welcome - ${request.user.name}</h6>
-                                <a href="${request.route_url('logout')}">Logout</a>
-                        </div>
-            </div>
-                <div class="left_col">
-                        <div class='left_list'>
-                                <h3>Options</h3>
-                        </div>
+    <!-- Styles from Deform Bootstrap -->
+    <link rel="stylesheet" href="${request.static_url('deform_bootstrap:static/deform_bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="${request.static_url('deform_bootstrap:static/chosen_bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="${request.static_url('deform:static/css/ui-lightness/jquery-ui-1.8.11.custom.css')}" type="text/css" media="screen" charset="utf-8" />
+  </head>
 
-                        <div class='left_list'>
-                            <%include file="./global_menu.mako"/>
-                        </div>
-
-            </div>
-            %endif
-
-
-        ${self.body()}
+  <body>
+  	<div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+	      <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	        <span class="icon-bar"></span>
+	      </a>
+	      <a class="brand" href="${request.application_url}">FlexVoiceMail</a>
+	      %if request.user:
+		      <div class="btn-group pull-right">
+		        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+		          <i class="icon-user icon-white"></i> 
+		          	${request.user.name}
+		          <span class="caret"></span>
+		        </a>
+		        <ul class="dropdown-menu">
+		          <li><a href="${request.application_url}/logout">Sign Out</a></li>
+		        </ul>
+		      </div>
+		  %else:
+	      <div tal:condition="request.user is None" class="pull-right">
+	        <a class="btn" href="${request.application_url}/login">Sign In
+	        </a>
+	      </div>
+	      %endif
+	      <div class="nav-collapse">
+            <ul class="nav">
+              <li><a href="${request.application_url}">Home</a></li>
+              <li><a href="${request.application_url}/about/">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
         </div>
-
-      <div id="footer">
-          <em>VoiceMail Access</em>
       </div>
-    </body>
-</html>
+    </div>
+    
+    <div class="body_content" style="padding-top: 60px;">
+            <%block name="body_content"/>
+    </div>
+    
+    <hr>
 
+      <footer>
+        <p>&copy; FlexVoicemail 2012</p>
+        <p class="pull-right">
+          small image
+        </p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+    <!-- The javascript resources from Deform -->
+    <script src="${request.static_url('deform:static/scripts/jquery-1.7.2.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-1.8.18.custom.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-timepicker-addon-0.9.9.js')}"></script>
+    <script src="${request.static_url('deform:static/scripts/deform.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/deform_bootstrap.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap-datepicker.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap-typeahead.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery.form-2.96.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery.maskedinput-1.3.js')}"></script>
+  </body>
+</html>
