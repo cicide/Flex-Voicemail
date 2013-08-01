@@ -7,7 +7,7 @@
 <div class="container-fluid">
       <div class="row-fluid">
         <div class="span3">
-          <div class="well sidebar-nav">
+          <div class="well sidebar-nav-fixed">
             	<ul class="nav nav-list">
             		<li class="nav-header">Options</li>
 			        %if utils.has_permission('admin'):
@@ -24,9 +24,11 @@
         <div class="span9">
           <div class="row-fluid">
             <div>
-	            <div class="main_content"">
-			    	<h3><img src="${request.static_url('voicemail:static/img/voicemail.gif')}" style="vertical-align:middle" alt="" />VoiceMail Access - ${self.title()}</h3>
-			    	<%block name="main_content"/>
+				<h3 class="subHeading"><i>${self.title()}</i>
+					<%block name="subHeading"/>
+				</h3>
+	            <div class="DetailView">
+			    	<%block name="DetailView"/>
 			    </div>
             </div>
           </div><!--/row-->

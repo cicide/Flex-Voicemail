@@ -2,9 +2,13 @@
 <%namespace name="defs" file="/defs.mako"/>
 <%def name="title()">Voicemail Inbox</%def>
 <script type="text/javascript" src="http://mediaplayer.yahoo.com/js"></script>
-<%block name="main_content">
+
+<%block name="subHeading">
+<a class="btn btn-small pull-right" href="/">Back</a>
+</%block>
+
+<%block name="DetailView">
 	<div id="details">
-		<a href="/">Back</a>
 		<table class="table">
 			<tr>
 				<th>Message</th>

@@ -1,9 +1,13 @@
 <%inherit file="/home.mako" />
 <%namespace name="defs" file="/defs.mako"/>
-<%def name="title()">Edit User</%def>
-<%block name="main_content">
+<%def name="title()">Voicemail Users</%def>
+
+<%block name="subHeading">
+<a class="btn btn-small pull-right" href="/">Back</a>
+</%block>
+<%block name="DetailView">
 	<div id="details">
-		<a href="/">Back</a>
+		
 		<table class="table">
 			<tr>
 				<th>ID</th>

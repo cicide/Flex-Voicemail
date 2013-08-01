@@ -2,7 +2,7 @@
 <%namespace name="defs" file="/defs.mako"/>
 <%def name="title()">Add User</%def>
 
-<%block name="main_content">
+<%block name="DetailView">
 	    %if form:
           ${form|n}
         %endif

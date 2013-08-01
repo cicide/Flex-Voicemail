@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="${request.static_url('deform_bootstrap:static/deform_bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="${request.static_url('deform_bootstrap:static/chosen_bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="${request.static_url('deform:static/css/ui-lightness/jquery-ui-1.8.11.custom.css')}" type="text/css" media="screen" charset="utf-8" />
+  	<link rel="stylesheet" href="${request.static_url('voicemail:static/css/flexvmail.css')}" type="text/css" media="screen" charset="utf-8" />
   </head>
 
   <body>
@@ -46,12 +47,10 @@
       </div>
     </div>
     
-    <div class="body_content" style="padding-top: 60px;">
+    <div class="body_content">
             <%block name="body_content"/>
     </div>
     
-    <hr>
-
       <footer>
         <p>&copy; FlexVoicemail 2012</p>
         <p class="pull-right">
