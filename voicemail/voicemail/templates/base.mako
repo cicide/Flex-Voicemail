@@ -23,7 +23,7 @@
 	      %if request.user:
 		      <div class="btn-group pull-right">
 		        <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-		          <i class="icon-user icon-white"></i> 
+		          <i class="icon-user"></i> 
 		          	${request.user.name}
 		          <span class="caret"></span>
 		        </a>

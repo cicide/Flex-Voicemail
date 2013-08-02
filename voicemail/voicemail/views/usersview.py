@@ -5,8 +5,8 @@ import logging
 log = logging.getLogger(__name__)
 
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPFound
-
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
+from pyramid.renderers import render
 
 from ..models.models import (
     DBSession,
@@ -110,13 +110,13 @@ class UsersView(object):
     def edit_user(self):
         userid = self.request.matchdict['userid']
         user = DBSession.query(User).filter_by(id=userid).first()
-        user_role = DBSession.query(UserRole).filter_by(user_id=userid).first()
+        user_role = DBSession.query(UserRole).filter_by(user_id=userid, role_name='Admin').first()
         
         schema = UserSchema().bind(request=self.request)
         form = deform.Form(schema, action=self.request.route_url('edit_user', userid=userid), buttons=('Save','Cancel'))
         
         if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('list_users'))
+            return HTTPFound(location = self.request.route_url('list_users',type='vmusers'))
         
         if 'Save' in self.request.params:
             appstruct = None
@@ -140,14 +140,24 @@ class UsersView(object):
             elif user_role:
                 DBSession.delete(user_role)
             DBSession.flush()
-            return HTTPFound(location =self.request.route_url('list_users'))
+            return HTTPFound(location =self.request.route_url('list_users', type='vmusers'))
         return dict(form=form.render(appstruct=user.__dict__))
     
-    @view_config(route_name='list_users', permission='admin', renderer='user_list.mako')
+    @view_config(route_name='list_users', permission='admin',renderer = 'user_list.mako')
     def list_users(self):
-        users = DBSession.query(User).all()
-        return dict(users = users)
+        type = self.request.matchdict.get('type',None)
+        if type == 'vmusers':
+            self.request.override_renderer = 'user_list.mako'
+        elif type == 'admins':
+            self.request.override_renderer = 'manage_roles.mako'
+        else:
+            return HTTPNotFound()
         
+        return dict(users = self.get_users())
+        
+    def get_users(self):
+        return DBSession.query(User).all()
+    
        
     
     @view_config(route_name='delete_user', permission='admin')
@@ -157,5 +167,32 @@ class UsersView(object):
         DBSession.query(UserRole).filter_by(user_id=userid).delete()
         DBSession.flush()
         return HTTPFound(location = self.request.route_url('list_users'))
+    
+    @view_config(route_name='edit_admin', permission='admin', xhr=True, renderer='json')
+    def toggle_admin(self):
+        userid = self.request.POST.get('userid',None)
+        do_admin = self.request.POST.get('admin',None)
+        msg = None
+        try:
+            if do_admin == u'true':
+                user_role = UserRole('Admin', userid)
+                DBSession.add(user_role)
+                msg = "Admin role added to user."
+            else:
+                if int(userid) == self.request.user.id:
+                    raise ValueError('Invalid Action')
+                user_role = DBSession.query(UserRole).filter_by(user_id=userid, role_name='Admin').first()
+                DBSession.delete(user_role)
+                msg = "Admin role removed from user."
+            DBSession.flush()
+            return {
+                    'success': True, 'msg': msg,
+                    'html': render('manage_roles.mako', {'users': self.get_users()}, self.request),
+                }
+        except Exception, e:
+            return {
+                    'success': False, 'msg': e.message,
+                    'html': render('manage_roles.mako', {'users': self.get_users()}, self.request),
+                }
         
         

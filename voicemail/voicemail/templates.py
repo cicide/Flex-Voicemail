@@ -5,7 +5,6 @@ from pyramid.events import subscriber
 from pyramid.events import BeforeRender
 from pyramid.security import has_permission
 
-
 @subscriber(BeforeRender)
 def add_global(event):
     event['utils'] = TemplateUtils(event['request'])
@@ -17,3 +16,10 @@ class TemplateUtils(object):
 
     def has_permission(self, permission):
         return has_permission(permission, self.request.context, self.request)
+    
+    def is_admin(self,user):
+        for role in user.role:
+            if 'Admin' in role.__dict__.values():
+                return True
+        return False
+        
