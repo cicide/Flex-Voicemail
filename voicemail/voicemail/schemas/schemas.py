@@ -69,11 +69,6 @@ class UserSchema(CSRFSchema):
                     description='Extension')
     pin = colander.SchemaNode(colander.String(), 
               description='PIN')
-    role = colander.SchemaNode(
-                    colander.String(),
-                    widget=deferred_choices_widget,
-                    missing = '',
-                    )
     
 class VMPrefSchema(CSRFSchema):
     folder = colander.SchemaNode(colander.String(), 

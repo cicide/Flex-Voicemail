@@ -51,7 +51,7 @@ class UsersView(object):
         form = deform.Form(schema, action=self.request.route_url('edit_vmpref', userid=userid), buttons=('Save','Cancel'))
         
         if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('list_users'))
+            return HTTPFound(location = self.request.route_url('list_users',type='vmusers'))
         
         if 'Save' in self.request.params:
             appstruct = None
@@ -70,7 +70,7 @@ class UsersView(object):
             vmpref.vm_name_recording = appstruct['vm_name_recording']
             DBSession.add(vmpref)
             DBSession.flush()
-            return HTTPFound(location = self.request.route_url('list_users'))
+            return HTTPFound(location = self.request.route_url('list_users',type='vmusers'))
         return dict(form=form.render(appstruct=vmpref.__dict__))
         
         
@@ -98,10 +98,6 @@ class UsersView(object):
 
             DBSession.add(newuser)
             DBSession.flush()
-            if appstruct['role'] == 'admin':
-                 user_role = UserRole('Admin', newuser.id)
-                 DBSession.add(user_role)
-                 DBSession.flush()
             self.create_vmpref(newuser)
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
@@ -134,11 +130,6 @@ class UsersView(object):
             user.extension = appstruct['extension']
             user.pin = appstruct['pin']
             DBSession.add(user) 
-            if 'admin' in appstruct['role'] and user_role is None:
-                user_role = UserRole('Admin', userid)
-                DBSession.add(user_role)
-            elif user_role:
-                DBSession.delete(user_role)
             DBSession.flush()
             return HTTPFound(location =self.request.route_url('list_users', type='vmusers'))
         return dict(form=form.render(appstruct=user.__dict__))
