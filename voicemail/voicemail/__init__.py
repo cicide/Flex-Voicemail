@@ -38,6 +38,8 @@ def main(global_config, **settings):
     config.add_route('list_users', '/users/list/{type}')
     config.add_route('delete_user', '/user/delete/{userid}')
     config.add_route('edit_vmpref', '/vmpref/edit/{userid}')
+    config.add_route('edit_own_vmpref', '/vmpref/edit')
+    config.add_route('view_vmpref', '/user/pref')
     config.add_route('edit_admin', '/admin/edit')
     config.add_route('view_vm', '/vm/view')
     config.add_route('play_vm', '/vm/play/{vmid}')
