@@ -26,4 +26,17 @@
           </div><!--/row-->
         </div><!--/span-->
       </div><!--/row-->
+      
+	<script> 
+		function newAlert (success, message) {
+			if (success == true ){
+				$("#alert-area").append($("<div class='alert alert-success alert-message'><a class='close' data-dismiss='alert'>×</a><strong>Success! </strong>"+message+"</div>"));
+			}
+			else{
+				$("#alert-area").append($("<div class='alert alert-error alert-message'><a class='close' data-dismiss='alert'>×</a><strong>Success! </strong>"+message+"</div>"));
+			}					
+			
+		    $(".alert-message").delay(5000).fadeOut("slow", function () { $(this).remove(); });
+		}
+	</script>
 </%block>
