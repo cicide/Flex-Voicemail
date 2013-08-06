@@ -33,7 +33,7 @@
 				        %if user == request.user:
 				        	<div class="btn btn-small disabled">Delete</div>
 				        %else:
-				        	<div class="btn btn-small" onclick="handleClick('/user/delete','${user.id}')">Delete</div>
+				        	<div class="btn btn-small" onclick="showModal('${user.id}','${user.username}')">Delete</div>
 				        %endif
 				    </div>
     			</td>
@@ -41,27 +41,13 @@
 			% endfor
 		</table>
 	</div>
+	<%include file="./delete_user.mako"/>
 	<script>
-		function handleClick(url,userid) {
-		  
-		  var url = this.location.origin + url;
-		  data = {'userid': userid}
-		  $.post(url, data, function(response) {
-	  			newAlert(response.success, response.msg);
-	  			window.setTimeout(function(){location.reload()},5000)
-			}, 'json');
-		}
-		
-		function newAlert (success, message) {
-			if (success == true ){
-				$("#alert-area").append($("<div class='alert alert-success alert-message'><a class='close' data-dismiss='alert'>×</a><strong>Success! </strong>"+message+"</div>"));
-			}
-			else{
-				$("#alert-area").append($("<div class='alert alert-error alert-message'><a class='close' data-dismiss='alert'>×</a><strong>Success! </strong>"+message+"</div>"));
-			}					
-			
-		    $(".alert-message").delay(5000).fadeOut("slow", function () { $(this).remove(); });
-		}
-		
+		function showModal(userid,username){
+			$('#userid').val(userid);
+			$('#username').replaceWith(username);
+			$('#delete_modal').modal('show');
+		};
 	</script>
+
 </%block>
