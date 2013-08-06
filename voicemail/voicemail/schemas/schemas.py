@@ -69,26 +69,21 @@ class UserSchema(CSRFSchema):
                     description='Extension')
     pin = colander.SchemaNode(colander.String(), 
               description='PIN')
-    role = colander.SchemaNode(
-                    colander.String(),
-                    widget=deferred_choices_widget,
-                    missing = '',
-                    )
     
 class VMPrefSchema(CSRFSchema):
     folder = colander.SchemaNode(colander.String(), 
                    description="Folder")
     deliver_vm = colander.SchemaNode(colander.Boolean(),
-                    description="Deliver VM")
+                    description="Deliver VM", missing=None)
     attach_vm = colander.SchemaNode(colander.Boolean(),
-                    description="Attach VM")
+                    description="Attach VM", missing=None)
     email = colander.SchemaNode(colander.String(),
                     validator=colander.Email(),
-                    description="Email")
+                    description="Email", missing=None)
     sms_addr = colander.SchemaNode(colander.String(),
-                    description="SMS Address")
+                    description="SMS Address", missing=None)
     vm_greeting = colander.SchemaNode(colander.String(),
-                    description="VM Greeting")
+                    description="VM Greeting", missing=None)
     vm_name_recording = colander.SchemaNode(colander.String(),
-                    description="VM Name Recording")
+                    description="VM Name Recording", missing=None)
 

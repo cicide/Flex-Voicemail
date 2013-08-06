@@ -1,3 +1,4 @@
+import os
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPFound, HTTPNotFound
 from pyramid.response import FileResponse, Response
@@ -53,5 +54,23 @@ class VoicemailView(object):
                              body_file = open(vm.path)
                              )
         return response
+    
+    @view_config(route_name='delete_vm')
+    def vm_delete(self):
+        logged_user = self.request.user
+        vm_id = self.request.matchdict['vmid']
+        vm = None
+        try:
+            vm = DBSession.query(Voicemail).filter_by(id=vm_id, user_id=logged_user.id).first()
+            os.remove(vm.path)
+            os.remove(vm.path.replace('.wav','.txt'))
+            DBSession.delete(vm)
+            DBSession.flush()
+        except:
+            pass
+        finally:
+            if vm is None:
+                return HTTPNotFound()
+        return HTTPFound(location = self.request.route_url('view_vm'))
         
     

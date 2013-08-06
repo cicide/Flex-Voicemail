@@ -1,12 +1,11 @@
-import os
-import ConfigParser
+import shutil
 import deform
 import logging
 log = logging.getLogger(__name__)
 
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPFound
-
+from pyramid.httpexceptions import HTTPFound, HTTPNotFound
+from pyramid.renderers import render
 
 from ..models.models import (
     DBSession,
@@ -21,59 +20,13 @@ from ..schemas import (
     VMPrefSchema,
     )
 
+from .preferviews import VMPrefView
+
 class UsersView(object):
     
     def __init__(self, request):
         self.request = request
     
-    def create_vmpref(self,user):
-        dirname = os.path.dirname
-        SITE_ROOT = dirname(dirname(dirname(dirname(__file__))))
-        path = os.path.join(SITE_ROOT,'app/etc/flexvmail.conf')
-        config = ConfigParser.ConfigParser()
-        config.read(path)
-        vm_dir = config.get("sounds", 'vm_dir')
-        directory = os.path.join(vm_dir,str(user.id))
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        vmpref = DBSession.query(UserVmPref).filter_by(id=user.id).first()
-        if vmpref is None:
-            vmpref = UserVmPref(user_id=user.id, folder=directory)
-            DBSession.add(vmpref)
-            DBSession.flush()
-        
-            
-    @view_config(route_name='edit_vmpref', permission='admin', renderer='vmpref_edit.mako')
-    def edit_vmpref(self):
-        userid = self.request.matchdict['userid']
-        vmpref = DBSession.query(UserVmPref).filter_by(user_id=userid).first()
-        schema = VMPrefSchema().bind(request=self.request)
-        form = deform.Form(schema, action=self.request.route_url('edit_vmpref', userid=userid), buttons=('Save','Cancel'))
-        
-        if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('list_users'))
-        
-        if 'Save' in self.request.params:
-            appstruct = None
-            try:
-                appstruct = form.validate(self.request.POST.items())
-            except deform.ValidationFailure, e:
-                log.exception('in form validated')
-                return {'form':e.render()}
-            
-            vmpref.folder = appstruct['folder']
-            vmpref.deliver_vm = appstruct['deliver_vm']
-            vmpref.attach_vm = appstruct['attach_vm']
-            vmpref.email = appstruct['email']
-            vmpref.sms_addr = appstruct['sms_addr']
-            vmpref.vm_greeting = appstruct['vm_greeting']
-            vmpref.vm_name_recording = appstruct['vm_name_recording']
-            DBSession.add(vmpref)
-            DBSession.flush()
-            return HTTPFound(location = self.request.route_url('list_users'))
-        return dict(form=form.render(appstruct=vmpref.__dict__))
-        
-        
     @view_config(route_name='add_user', permission='admin', renderer='add_user.mako')
     def add_user(self):
         schema = UserSchema(validator = user_DoesExist).bind(request=self.request)
@@ -98,11 +51,8 @@ class UsersView(object):
 
             DBSession.add(newuser)
             DBSession.flush()
-            if appstruct['role'] == 'admin':
-                 user_role = UserRole('Admin', newuser.id)
-                 DBSession.add(user_role)
-                 DBSession.flush()
-            self.create_vmpref(newuser)
+            pref = VMPrefView(self.request)
+            pref.create_vmpref(newuser)
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
     
@@ -110,13 +60,13 @@ class UsersView(object):
     def edit_user(self):
         userid = self.request.matchdict['userid']
         user = DBSession.query(User).filter_by(id=userid).first()
-        user_role = DBSession.query(UserRole).filter_by(user_id=userid).first()
+        user_role = DBSession.query(UserRole).filter_by(user_id=userid, role_name='Admin').first()
         
         schema = UserSchema().bind(request=self.request)
         form = deform.Form(schema, action=self.request.route_url('edit_user', userid=userid), buttons=('Save','Cancel'))
         
         if 'Cancel' in self.request.params:
-            return HTTPFound(location = self.request.route_url('list_users'))
+            return HTTPFound(location = self.request.route_url('list_users',type='vmusers'))
         
         if 'Save' in self.request.params:
             appstruct = None
@@ -134,28 +84,72 @@ class UsersView(object):
             user.extension = appstruct['extension']
             user.pin = appstruct['pin']
             DBSession.add(user) 
-            if 'admin' in appstruct['role'] and user_role is None:
-                user_role = UserRole('Admin', userid)
-                DBSession.add(user_role)
-            elif user_role:
-                DBSession.delete(user_role)
             DBSession.flush()
-            return HTTPFound(location =self.request.route_url('list_users'))
+            return HTTPFound(location =self.request.route_url('list_users', type='vmusers'))
         return dict(form=form.render(appstruct=user.__dict__))
     
-    @view_config(route_name='list_users', permission='admin', renderer='user_list.mako')
+    @view_config(route_name='list_users', permission='admin',renderer = 'user_list.mako')
     def list_users(self):
-        users = DBSession.query(User).all()
-        return dict(users = users)
+        type = self.request.matchdict.get('type',None)
+        if type == 'vmusers':
+            self.request.override_renderer = 'user_list.mako'
+        elif type == 'admins':
+            self.request.override_renderer = 'manage_roles.mako'
+        else:
+            return HTTPNotFound()
         
+        return dict(users = self.get_users())
+        
+    def get_users(self):
+        return DBSession.query(User).all()
+    
        
     
-    @view_config(route_name='delete_user', permission='admin')
+    @view_config(route_name='delete_user', permission='admin', renderer='json')
     def delete_user(self):
-        userid = self.request.matchdict['userid']
-        DBSession.query(User).filter_by(id=userid).delete()
+        userid = self.request.POST.get('userid',None)
+        user = DBSession.query(User).get(userid)
+        if user.id == self.request.user.id:
+            return {
+                    'success': False, 'msg': 'Unable to remove %s ' % self.request.user.username,
+                    'html': render('user_list.mako', {'users': self.get_users()}, self.request),
+                }
         DBSession.query(UserRole).filter_by(user_id=userid).delete()
+        user_vm = DBSession.query(UserVmPref).filter_by(user_id=userid).first()
+        DBSession.delete(user)
+        DBSession.delete(user_vm)
         DBSession.flush()
-        return HTTPFound(location = self.request.route_url('list_users'))
+        shutil.rmtree(user_vm.folder)
+        return {
+                    'success': True, 'msg': 'Removed %s ' % user.username,
+                    'html': render('user_list.mako', {'users': self.get_users()}, self.request),
+                }
+    
+    @view_config(route_name='edit_admin', permission='admin', xhr=True, renderer='json')
+    def toggle_admin(self):
+        userid = self.request.POST.get('userid',None)
+        do_admin = self.request.POST.get('admin',None)
+        msg = None
+        try:
+            if do_admin == u'true':
+                user_role = UserRole('Admin', userid)
+                DBSession.add(user_role)
+                msg = "Admin role added to user."
+            else:
+                if int(userid) == self.request.user.id:
+                    raise ValueError('Invalid Action')
+                user_role = DBSession.query(UserRole).filter_by(user_id=userid, role_name='Admin').first()
+                DBSession.delete(user_role)
+                msg = "Admin role removed from user."
+            DBSession.flush()
+            return {
+                    'success': True, 'msg': msg,
+                    'html': render('manage_roles.mako', {'users': self.get_users()}, self.request),
+                }
+        except Exception, e:
+            return {
+                    'success': False, 'msg': e.message,
+                    'html': render('manage_roles.mako', {'users': self.get_users()}, self.request),
+                }
         
         
