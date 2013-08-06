@@ -29,7 +29,7 @@
 	        	<td>${user.status}</td>
 	        	<td><a href="/vmpref/edit/${user.id}">Edit</a></td>
 	        	<td> <div class="btn-group inline">
-				        <div class="btn btn-small" onclick="handleClick('/user/edit','${user.id}')">Edit</div>
+				        <a class="btn btn-small" href="/user/edit/${user.id}">Edit</a>
 				        %if user == request.user:
 				        	<div class="btn btn-small disabled">Delete</div>
 				        %else:
