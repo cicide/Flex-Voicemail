@@ -1,3 +1,4 @@
+import shutil
 import deform
 import logging
 log = logging.getLogger(__name__)
@@ -18,6 +19,8 @@ from ..schemas import (
     user_DoesExist,
     VMPrefSchema,
     )
+
+from .preferviews import VMPrefView
 
 class UsersView(object):
     
@@ -48,7 +51,8 @@ class UsersView(object):
 
             DBSession.add(newuser)
             DBSession.flush()
-            self.create_vmpref(newuser)
+            pref = VMPrefView(self.request)
+            pref.create_vmpref(newuser)
             return dict(form=form.render(appstruct={'success':'User added successfully'}))
         return dict(form=form.render(appstruct={}))
     
@@ -101,13 +105,25 @@ class UsersView(object):
     
        
     
-    @view_config(route_name='delete_user', permission='admin')
+    @view_config(route_name='delete_user', permission='admin', renderer='json')
     def delete_user(self):
-        userid = self.request.matchdict['userid']
-        DBSession.query(User).filter_by(id=userid).delete()
+        userid = self.request.POST.get('userid',None)
+        user = DBSession.query(User).get(userid)
+        if user.id == self.request.user.id:
+            return {
+                    'success': False, 'msg': 'Unable to remove %s ' % self.request.user.username,
+                    'html': render('user_list.mako', {'users': self.get_users()}, self.request),
+                }
         DBSession.query(UserRole).filter_by(user_id=userid).delete()
+        user_vm = DBSession.query(UserVmPref).filter_by(user_id=userid).first()
+        DBSession.delete(user)
+        DBSession.delete(user_vm)
         DBSession.flush()
-        return HTTPFound(location = self.request.route_url('list_users'))
+        shutil.rmtree(user_vm.folder)
+        return {
+                    'success': True, 'msg': 'Removed %s ' % user.username,
+                    'html': render('user_list.mako', {'users': self.get_users()}, self.request),
+                }
     
     @view_config(route_name='edit_admin', permission='admin', xhr=True, renderer='json')
     def toggle_admin(self):
