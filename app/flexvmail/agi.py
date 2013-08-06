@@ -366,7 +366,6 @@ class astCall:
             def onSuccess(msgFile, folder):
                 log.debug('entered in success callback of deferToThread...')
                 tmp_file_loc = '%s/%s' % (str(folder),str(msgFile))
-                #tmp_file_loc = str(msgFile)
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
@@ -382,9 +381,6 @@ class astCall:
             tmpFolder = folder.split(':/')[1]
             log.debug('Entering in deferToThread with method "getMsgNum"')
             beep = True # Because it was giving me this error : 
-            '''[Jul 26 11:25:34] WARNING[8732]: file.c:663 ast_openstream_full: File beep does not exist in any format
-               [Jul 26 11:25:34] WARNING[8732]: file.c:958 ast_streamfile: Unable to open beep (format 0x4 (ulaw)): No such file or directory
-            '''
             log.debug(tmpFolder)
             result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
             result.addCallback(onSuccess,tmpFolder).addErrback(onError)
@@ -446,7 +442,6 @@ class astCall:
                     return d                    
 
         def onPlayed(result, prompt, dtmf, retries):
-            # TODO: We need to handle multiple character responses
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
