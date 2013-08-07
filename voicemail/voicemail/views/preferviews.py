@@ -1,4 +1,5 @@
 import os
+import shutil
 import ConfigParser
 import deform
 import logging
@@ -36,7 +37,13 @@ class VMPrefView(object):
             vmpref = UserVmPref(user_id=user.id, folder=directory)
             DBSession.add(vmpref)
             DBSession.flush()
-        
+            
+    def save_vm_greeting(self,existing_file, path,fileinfo):
+        os.remove(existing_file)
+        file_path = os.path.join(path, fileinfo['filename'])
+        with open(file_path, 'a') as output_file:
+            shutil.copyfileobj(fileinfo['fp'], output_file)
+        return file_path
     
     @view_config(route_name='edit_own_vmpref', renderer='vmpref_edit.mako')
     @view_config(route_name='edit_vmpref', permission='admin', renderer='vmpref_edit.mako')
@@ -65,16 +72,16 @@ class VMPrefView(object):
                 log.exception('in form validated')
                 return {'form':e.render()}
             
-            vmpref.folder = appstruct['folder']
             vmpref.deliver_vm = appstruct['deliver_vm']
             vmpref.attach_vm = appstruct['attach_vm']
             vmpref.email = appstruct['email']
             vmpref.sms_addr = appstruct['sms_addr']
-            vmpref.vm_greeting = appstruct['vm_greeting']
+            vmpref.vm_greeting = self.save_vm_greeting(vmpref.vm_greeting, vmpref.folder,appstruct['vm_greeting'])
             vmpref.vm_name_recording = appstruct['vm_name_recording']
             DBSession.add(vmpref)
             DBSession.flush()
             return HTTPFound(location = self.request.route_url(cancel_url,type=type))
+        vmpref.__dict__.pop('vm_greeting')#because vm_greeting file path unable to display on file field.
         return dict(form=form.render(appstruct=vmpref.__dict__))
     
     
