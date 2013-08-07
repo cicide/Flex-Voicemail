@@ -40,6 +40,10 @@ def deferred_choices_widget(node,kw):
 def user_DoesExist(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
         raise colander.Invalid(node, 'Username already exist.!!')
+    
+def CheckAuthentication(node,appstruct):
+    if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0:
+        raise colander.Invalid(node, 'Invalid Username or password')
 
 class CSRFSchema(colander.Schema):
     csrf_token = colander.SchemaNode(
