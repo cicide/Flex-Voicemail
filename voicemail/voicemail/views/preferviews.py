@@ -34,14 +34,17 @@ class VMPrefView(object):
             os.makedirs(directory)
         vmpref = DBSession.query(UserVmPref).filter_by(id=user.id).first()
         if vmpref is None:
-            vmpref = UserVmPref(user_id=user.id, folder=directory)
+            file_location = os.path.join('file://','/'.join(directory.split('/')[1:]))#file path starts with 'file://' is required in agi.py.  
+            vmpref = UserVmPref(user_id=user.id, folder=file_location)
             DBSession.add(vmpref)
             DBSession.flush()
             
     def save_vm_greeting(self,existing_file, path,fileinfo):
-        os.remove(existing_file)
+        #os.remove(existing_file) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/1/beep.wav'
+        if existing_file:
+            os.remove(existing_file.split(':/')[1])
         file_path = os.path.join(path, fileinfo['filename'])
-        with open(file_path, 'a') as output_file:
+        with open(file_path.split(':/')[1], 'a') as output_file:
             shutil.copyfileobj(fileinfo['fp'], output_file)
         return file_path
     
