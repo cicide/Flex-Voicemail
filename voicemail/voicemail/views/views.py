@@ -25,6 +25,7 @@ from ..models.models import (
 from ..schemas import (
     LoginSchema,
     UserSchema,
+    CheckAuthentication,
     )
 
 
@@ -48,7 +49,7 @@ def login(request):
     referrer = request.url
     if referrer == login_url:
         referrer = '/' # never use the login form itself as came_from
-    schema = LoginSchema().bind(request=request)
+    schema = LoginSchema(validator=CheckAuthentication).bind(request=request)
     form = deform.Form(schema, action=login_url, buttons=('Login',))
     defaults = {}
     defaults['came_from'] = request.params.get('came_from', referrer)
@@ -69,7 +70,6 @@ def login(request):
             user.last_login = datetime.datetime.utcnow()
             request.user = user
             return HTTPFound(location = came_from, headers = headers)
-        FlashMessage(request, 'Invalid Username or password', kind='error')
         return dict( form= form.render(appstruct=appstruct),
                    )
 

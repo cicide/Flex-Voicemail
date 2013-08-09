@@ -2,6 +2,8 @@ import deform
 import colander
 import six
 
+from deform.schema import FileData
+
 from ..models.models import (
     DBSession,
     User,
@@ -40,6 +42,16 @@ def deferred_choices_widget(node,kw):
 def user_DoesExist(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
         raise colander.Invalid(node, 'Username already exist.!!')
+    
+def CheckAuthentication(node,appstruct):
+    if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0:
+        raise colander.Invalid(node, 'Invalid Username or password')
+    
+def checkUploadFile(node,data):
+    AUDIO_EXTS = ['audio/mp3', 'audio/wav']
+    if data['mimetype'] not in AUDIO_EXTS:
+        raise colander.Invalid(node, 'Invalid file format')
+    pass
 
 class CSRFSchema(colander.Schema):
     csrf_token = colander.SchemaNode(
@@ -49,6 +61,12 @@ class CSRFSchema(colander.Schema):
         validator=deferred_csrf_validator,
     )
 
+
+class Store(dict):
+    def preview_url(self, name):
+        return "/tmp"
+ 
+store = Store()
 
 class LoginSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String())
@@ -71,8 +89,6 @@ class UserSchema(CSRFSchema):
               description='PIN')
     
 class VMPrefSchema(CSRFSchema):
-    folder = colander.SchemaNode(colander.String(), 
-                   description="Folder")
     deliver_vm = colander.SchemaNode(colander.Boolean(),
                     description="Deliver VM", missing=None)
     attach_vm = colander.SchemaNode(colander.Boolean(),
@@ -82,8 +98,9 @@ class VMPrefSchema(CSRFSchema):
                     description="Email", missing=None)
     sms_addr = colander.SchemaNode(colander.String(),
                     description="SMS Address", missing=None)
-    vm_greeting = colander.SchemaNode(colander.String(),
-                    description="VM Greeting", missing=None)
+    vm_greeting = colander.SchemaNode(FileData(), widget=deform.widget.FileUploadWidget(store),
+                    description="VM Greeting", missing=None,
+                    validator = checkUploadFile)
     vm_name_recording = colander.SchemaNode(colander.String(),
                     description="VM Name Recording", missing=None)
 

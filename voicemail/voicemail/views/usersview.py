@@ -119,7 +119,8 @@ class UsersView(object):
         DBSession.delete(user)
         DBSession.delete(user_vm)
         DBSession.flush()
-        shutil.rmtree(user_vm.folder)
+        #shutil.rmtree(user_vm.folder) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/24' 
+        shutil.rmtree(user_vm.folder.split(':/')[1])
         return {
                     'success': True, 'msg': 'Removed %s ' % user.username,
                     'html': render('user_list.mako', {'users': self.get_users()}, self.request),
