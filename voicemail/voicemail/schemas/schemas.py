@@ -101,6 +101,7 @@ class VMPrefSchema(CSRFSchema):
     vm_greeting = colander.SchemaNode(FileData(), widget=deform.widget.FileUploadWidget(store),
                     description="VM Greeting", missing=None,
                     validator = checkUploadFile)
-    vm_name_recording = colander.SchemaNode(colander.String(),
-                    description="VM Name Recording", missing=None)
+    vm_name_recording = colander.SchemaNode(FileData(), widget=deform.widget.FileUploadWidget(store),
+                    description="VM Name Recording", missing=None,
+                    validator = checkUploadFile)
 

@@ -39,9 +39,11 @@ class VMPrefView(object):
             DBSession.add(vmpref)
             DBSession.flush()
             
-    def save_vm_greeting(self,existing_file, path,fileinfo):
+    def save_audio(self,existing_file, path,fileinfo):
         #os.remove(existing_file) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/1/beep.wav'
-        if existing_file:
+        if fileinfo is None:
+            return existing_file
+        elif existing_file:
             os.remove(existing_file.split(':/')[1])
         file_path = os.path.join(path, fileinfo['filename'])
         with open(file_path.split(':/')[1], 'a') as output_file:
@@ -79,12 +81,13 @@ class VMPrefView(object):
             vmpref.attach_vm = appstruct['attach_vm']
             vmpref.email = appstruct['email']
             vmpref.sms_addr = appstruct['sms_addr']
-            vmpref.vm_greeting = self.save_vm_greeting(vmpref.vm_greeting, vmpref.folder,appstruct['vm_greeting'])
-            vmpref.vm_name_recording = appstruct['vm_name_recording']
+            vmpref.vm_greeting = self.save_audio(vmpref.vm_greeting, vmpref.folder,appstruct['vm_greeting'])
+            vmpref.vm_name_recording = self.save_audio(vmpref.vm_name_recording, vmpref.folder,appstruct['vm_name_recording'])
             DBSession.add(vmpref)
             DBSession.flush()
             return HTTPFound(location = self.request.route_url(cancel_url,type=type))
         vmpref.__dict__.pop('vm_greeting')#because vm_greeting file path unable to display on file field.
+        vmpref.__dict__.pop('vm_name_recording')
         return dict(form=form.render(appstruct=vmpref.__dict__))
     
     
