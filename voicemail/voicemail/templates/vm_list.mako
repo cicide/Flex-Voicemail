@@ -4,7 +4,13 @@
 <script type="text/javascript" src="http://mediaplayer.yahoo.com/js"></script>
 
 <%block name="subHeading">
-<a class="btn btn-small pull-right" href="/">Back</a>
+	<form id="custom-search-form" action='/search' method='post' class="form-search form-horizontal pull-right">
+	    <div class="input-append span12">
+	        <input type="text" name="search"  class="search-query" placeholder="Search">
+	        <button type="submit" class="btn"><i class="icon-search"></i></button>
+	        <a class="btn btn-small" href="/">Back</a>
+	    </div>
+	</form>
 </%block>
 
 <%block name="DetailView">
@@ -43,5 +49,11 @@
 				</tr>
 			%endfor
 		</table>
+			%if not voicemails:
+				<div class="alert alert-info">  
+				  <a class="close" data-dismiss="alert">×</a>  
+				  <strong>Info!</strong>There are no voice mails available.  
+				</div>  
+			%endif
 	</div>
 </%block>

@@ -72,5 +72,20 @@ class VoicemailView(object):
             if vm is None:
                 return HTTPNotFound()
         return HTTPFound(location = self.request.route_url('view_vm'))
-        
+    
+    @view_config(route_name='search_vm', renderer='vm_list.mako')
+    def search_vm(self):
+        voice_mails = None
+        keyword = self.request.POST.get('search',None)
+        if keyword.isdigit():
+            if self.request.user.role and self.request.user.role[0].role_name=='Admin':
+                voice_mails = DBSession.query(Voicemail).filter_by(cid_number=int(keyword)).all()
+            else:
+                voice_mails = DBSession.query(Voicemail).filter_by(user_id=self.request.user.id, cid_number=int(keyword)).all()
+        else:
+            if self.request.user.role and self.request.user.role[0].role_name=='Admin':
+                voice_mails = DBSession.query(Voicemail).filter_by(cid_name=keyword).all()
+            else:
+                voice_mails = DBSession.query(Voicemail).filter_by(user_id=self.request.user.id, cid_name=keyword).all()
+        return dict(voicemails=voice_mails)
     

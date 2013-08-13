@@ -45,6 +45,7 @@ def main(global_config, **settings):
     config.add_route('play_vm', '/vm/play/{vmid}')
     config.add_route('download_vm', '/vm/download/{vmid}')
     config.add_route('delete_vm', '/vm/delete/{vmid}')
+    config.add_route('search_vm', '/search')
     config.add_route('startcall', '/startcall')
     config.add_route('savemessage', '/savemessage')
     config.add_route('handlekey', '/handlekey')
