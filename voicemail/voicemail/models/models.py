@@ -52,7 +52,8 @@ class User(Base):
     last_login = Column(DateTime)
     status = Column(Integer, nullable=False)
 
-    voicemails = relationship("Voicemail", backref='user', cascade="all, delete, delete-orphan")
+    voicemails = relationship("Voicemail", backref='user', cascade="all, delete, delete-orphan", 
+        order_by="(desc(Voicemail.is_read), desc(Voicemail.create_date))")
     role = relationship("UserRole", backref='users')
     vm_prefs = relationship("UserVmPref", uselist=False, backref='user')
 
@@ -171,8 +172,9 @@ class Prompt(Base):
     messageSaved = "Message_Saved"
     helpMenu = "Help_Menu"
     vmSummary = "VM_Summary"
+    firstMessage = "First_Message"
 
-    def getFullPrompt(self, user=None):
+    def getFullPrompt(self, user=None, vm=None):
         listprompt = []
         for i in self.details:
             if i.prompt_type == 1:
@@ -189,6 +191,8 @@ class Prompt(Base):
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
                 listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
+            elif i.prompt_type == 5:
+                listprompt.append({'uri':vm.path, 'delayafter':i.delay_after})
         return listprompt
     
     def _getSubPrompt(self, count, new=0):
