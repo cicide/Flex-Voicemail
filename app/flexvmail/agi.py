@@ -96,8 +96,10 @@ class astCall:
         if newCall:
             self.call = newCall
             if testMode:
-                log.debug('running TESTS, normal calls will fail')
-                return self.runTests()
+                #add any tests here
+                #log.debug('running TESTS, normal calls will fail')
+                #return self.runTests()
+                result = self.call.startCall(self.script)
             else:
                 result = self.call.startCall(self.script)
             if result:
@@ -310,8 +312,9 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                dtFormat = "Q 'digits/at' IMp"
-                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits=intKeys,format=dtFormat)
+                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+                sequence.append(self.agi.streamFile, 'digits/at')
+                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
