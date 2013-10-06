@@ -117,7 +117,7 @@ class astCall:
         dtTests = [dtNow, dtEarlier, dtYesterday, dtSeveralDays,dtWayBack]
         dtFormat = "Q 'digits/at' IMp"
         for dt in dtTests:
-            sequence.append(self.agi.sayDateTime,dt,escapeDigits=intKeys,format=dtFormat)
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format=dtFormat)
         return sequence
     
     def hangup(self):
