@@ -95,7 +95,11 @@ class astCall:
         newCall = call.newCall(self, self.uid)
         if newCall:
             self.call = newCall
-            result = self.call.startCall(self.script)
+            if testMode:
+                log.debug('running TESTS, normal calls will fail')
+                return self.runTests()
+            else:
+                result = self.call.startCall(self.script)
             if result:
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
@@ -103,6 +107,19 @@ class astCall:
             else:
                 return self.onError('nothing')
 
+    def runTests(self):
+        sequence = fastagi.InSequence()
+        dtNow = time.time()
+        dtEarlier = dtNow-3600
+        dtYesterday = dtNow-86400
+        dtSeveralDays = dtNow-320000
+        dtWayBack = dtNow-3200000
+        dtTests = [dtNow, dtEarlier, dtYesterday, dtSeveralDays,dtWayBack]
+        dtFormat = "Q 'digits/at' IMp"
+        for dt in dtTests:
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits=intKeys,format=dtFormat)
+        return sequence
+    
     def hangup(self):
         d = self.agi.hangup()
         d.addCallbacks(self.onHangup,self.onError)
@@ -271,6 +288,30 @@ class astCall:
                             sequence.append(self.agi.wait,delay)
                     log.debug('playing tts prompt.')
                     return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+        elif 'datetime' in currPrompt:
+            """ read back date/time """
+            log.debug('found a datetime prompt')
+            dateTimeString = currPrompt('datetime')
+            log.debug(dateTimeString)
+            if len(dateTimeString) < 1:
+                log.warning('got zero length datetime prompt')
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+            else:
+                sequence = fastagi.InSequence()
+                if delaybefore:
+                    delay = float(delaybefore)/1000
+                    log.debug('adding delay before of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                intKeys = str("".join(interrupKeys))
+                dtVal = int(dateTimeString)
+                dtFormat = "Q 'digits/at' IMp"
+                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits=intKeys,format=dtFormat)
+                if delayafter:
+                    delay = float(delayafter)/1000
+                    log.debug('adding delay after of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                log.debug('playing tts prompt.')
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
