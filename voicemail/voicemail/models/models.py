@@ -173,6 +173,8 @@ class Prompt(Base):
     helpMenu = "Help_Menu"
     vmSummary = "VM_Summary"
     firstMessage = "First_Message"
+    main1RecordMessage = "Main_1_Record_Message" #653 - mc-input-recordnow - "Record the message/comment and press pound"
+    
 
     def getFullPrompt(self, user=None, vm=None):
         listprompt = []
@@ -198,26 +200,26 @@ class Prompt(Base):
     def _getSubPrompt(self, count, new=0):
         retlist = []
         if count == 0:
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-no.wav', 'delayafter' : 2}) 
-           if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
-           else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+            retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-no.wav', 'delayafter' : 2}) 
+            if new:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+            else:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+            retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
         elif count == 1:
-           retlist.append({'tts':'1', 'delayafter' : 2}) 
-           if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
-           else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-message.wav', 'delayafter' : 2}) 
+            retlist.append({'tts':'1', 'delayafter' : 2}) 
+            if new:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+            else:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+            retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-message.wav', 'delayafter' : 2}) 
         else:
-           retlist.append({'tts':'%s'%count, 'delayafter' : 2}) 
-           if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
-           else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+            retlist.append({'tts':'%s'%count, 'delayafter' : 2}) 
+            if new:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+            else:
+                retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
+            retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
         return retlist
 
 
