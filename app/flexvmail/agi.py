@@ -116,7 +116,7 @@ class astCall:
         dtSeveralDays = dtNow-320000
         dtWayBack = dtNow-3200000
         dtTests = [dtNow, dtEarlier, dtYesterday, dtSeveralDays,dtWayBack]
-        dtFormat = "Q 'digits/at' IMp"
+        dtFormat = "QIMp"
         for dt in dtTests:
             log.debug('adding test for %s' % dt)
             sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format=dtFormat)
