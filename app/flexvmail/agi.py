@@ -119,7 +119,9 @@ class astCall:
         dtFormat = "QIMp"
         for dt in dtTests:
             log.debug('adding test for %s' % dt)
-            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format=dtFormat)
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+            sequence.append(self.agi.streamFile, 'digits/at')
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
         log.debug('sequencing tests.')
         sequence.append(self.agi.finish)
         return sequence()  #.addCallback(self.playPromptList)
