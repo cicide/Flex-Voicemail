@@ -110,7 +110,7 @@ class astCall:
 
     def runTests(self):
         sequence = fastagi.InSequence()
-        dtNow = time.time()
+        dtNow = int(time.time())
         dtEarlier = dtNow-3600
         dtYesterday = dtNow-86400
         dtSeveralDays = dtNow-320000
@@ -122,7 +122,7 @@ class astCall:
             sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format=dtFormat)
         log.debug('sequencing tests.')
         sequence.append(self.agi.finish)
-        return sequence.addCallback(self.playPromptList)
+        return sequence()  #.addCallback(self.playPromptList)
     
     def hangup(self):
         d = self.agi.hangup()
