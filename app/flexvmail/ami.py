@@ -57,7 +57,7 @@ class DialerProtocol(AMIProtocol):
         ami.registerEvent('Dial', self.onDialEvent)
         log.debug('registering Bridge')
         ami.registerEvent('Bridge', self.onBridgeEvent)
-        log.debug('registering dtmf')
+        log.debug('registering DTMF')
         ami.registerEvent('DTMF', self.onDtmf)
 
     def onDtmf(self, ami, event):

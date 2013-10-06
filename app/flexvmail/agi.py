@@ -33,7 +33,7 @@ class astCall:
         self.intType = 'asterisk'
         self.mediaType = 'wav'
         if testMode:
-            result = self.runTest
+            result = self.runTest()
         
     def runTest(self):
         test = [3,14,22,41,74,89,90,107,666,12872,123675,2636849,871934999,21734653461]
@@ -101,6 +101,7 @@ class astCall:
             else:
                 result = self.call.startCall(self.script)
             if result:
+                self.agi.finish()
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
                 return result
@@ -117,8 +118,11 @@ class astCall:
         dtTests = [dtNow, dtEarlier, dtYesterday, dtSeveralDays,dtWayBack]
         dtFormat = "Q 'digits/at' IMp"
         for dt in dtTests:
+            log.debug('adding test for %s' % dt)
             sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format=dtFormat)
-        return sequence
+        log.debug('sequencing tests.')
+        sequence.append(self.agi.finish)
+        return sequence.addCallback(self.playPromptList)
     
     def hangup(self):
         d = self.agi.hangup()
