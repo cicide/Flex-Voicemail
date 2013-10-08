@@ -31,7 +31,6 @@ from pyramid.httpexceptions import (
 import datetime
 import deform
 import colander
-import colander
 import deform
 import six
 from bag.web.pyramid.flash_msg import FlashMessage
@@ -217,7 +216,19 @@ def handleKey(request):
         return retdict
     if menu == "main":
         if key == "1":
-            return returnPrompt(name=Prompt.invalidRequest)
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.main1RecordMessage).first()
+            return dict(
+                action="record",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'idontknow',
+                    _query={'user': extension, 'uid': callid,
+                            'callerid': callerid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['#', '*7'],
+                folder=user.vm_prefs.folder,
+                )
         elif key == "2":
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state)

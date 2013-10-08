@@ -33,7 +33,7 @@ class astCall:
         self.intType = 'asterisk'
         self.mediaType = 'wav'
         if testMode:
-            result = self.runTest
+            result = self.runTest()
         
     def runTest(self):
         test = [3,14,22,41,74,89,90,107,666,12872,123675,2636849,871934999,21734653461]
@@ -95,14 +95,39 @@ class astCall:
         newCall = call.newCall(self, self.uid)
         if newCall:
             self.call = newCall
-            result = self.call.startCall(self.script)
+            if testMode:
+                #add any tests here
+                #log.debug('running TESTS, normal calls will fail')
+                #return self.runTests()
+                result = self.call.startCall(self.script)
+            else:
+                result = self.call.startCall(self.script)
             if result:
+                self.agi.finish()
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
                 return result
             else:
                 return self.onError('nothing')
 
+    def runTests(self):
+        sequence = fastagi.InSequence()
+        dtNow = int(time.time())
+        dtEarlier = dtNow-3600
+        dtYesterday = dtNow-86400
+        dtSeveralDays = dtNow-320000
+        dtWayBack = dtNow-3200000
+        dtTests = [dtNow, dtEarlier, dtYesterday, dtSeveralDays,dtWayBack]
+        dtFormat = "QIMp"
+        for dt in dtTests:
+            log.debug('adding test for %s' % dt)
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+            sequence.append(self.agi.streamFile, 'digits/at')
+            sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
+        log.debug('sequencing tests.')
+        sequence.append(self.agi.finish)
+        return sequence()  #.addCallback(self.playPromptList)
+    
     def hangup(self):
         d = self.agi.hangup()
         d.addCallbacks(self.onHangup,self.onError)
@@ -271,6 +296,31 @@ class astCall:
                             sequence.append(self.agi.wait,delay)
                     log.debug('playing tts prompt.')
                     return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
+        elif 'datetime' in currPrompt:
+            """ read back date/time """
+            log.debug('found a datetime prompt')
+            dateTimeString = currPrompt('datetime')
+            log.debug(dateTimeString)
+            if len(dateTimeString) < 1:
+                log.warning('got zero length datetime prompt')
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+            else:
+                sequence = fastagi.InSequence()
+                if delaybefore:
+                    delay = float(delaybefore)/1000
+                    log.debug('adding delay before of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                intKeys = str("".join(interrupKeys))
+                dtVal = int(dateTimeString)
+                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+                sequence.append(self.agi.streamFile, 'digits/at')
+                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
+                if delayafter:
+                    delay = float(delayafter)/1000
+                    log.debug('adding delay after of %s' % delay)
+                    sequence.append(self.agi.wait,delay)
+                log.debug('playing tts prompt.')
+                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']

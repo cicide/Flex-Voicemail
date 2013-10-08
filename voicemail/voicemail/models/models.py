@@ -182,6 +182,8 @@ class Prompt(Base):
     nextMessage = "Next_Message"
     lastMessage = "Last_Message"
     vmMessage = "VM_Message"
+    main1RecordMessage = "Main_1_Record_Message" #653 - mc-input-recordnow - "Record the message/comment and press pound"
+    
 
     def getFullPrompt(self, user=None, vm=None, number=None):
         listprompt = []
