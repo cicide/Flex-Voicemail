@@ -28,6 +28,12 @@ from pyramid.security import (
     Everyone,
     )
 
+import json
+
+import logging
+log = logging.getLogger(__name__)
+
+
 class RootFactory(object):
     __acl__ = [ (Allow, Everyone, 'user'),
                 (Allow, 'g:admin', 'admin') ]
@@ -173,8 +179,11 @@ class Prompt(Base):
     helpMenu = "Help_Menu"
     vmSummary = "VM_Summary"
     firstMessage = "First_Message"
+    nextMessage = "Next_Message"
+    lastMessage = "Last_Message"
+    vmMessage = "VM_Message"
 
-    def getFullPrompt(self, user=None, vm=None):
+    def getFullPrompt(self, user=None, vm=None, number=None):
         listprompt = []
         for i in self.details:
             if i.prompt_type == 1:
@@ -187,6 +196,10 @@ class Prompt(Base):
                     listprompt.extend(self._getSubPrompt(count=user.getUnreadCount(), new=1))
                 elif i.path == "Read-Count":
                     listprompt.extend(self._getSubPrompt(count=user.getReadCount(), new=0))
+                elif i.path == "VM-Header":
+                    listprompt.extend(self._getVmTime(vm=vm))
+                elif i.path == "Number":
+                    listprompt.append({'tts':'%s'%number, 'delayafter':i.delay_after})
             elif i.prompt_type == 3:
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
@@ -195,29 +208,34 @@ class Prompt(Base):
                 listprompt.append({'uri':vm.path, 'delayafter':i.delay_after})
         return listprompt
     
+    def _getVmTime(self, vm):
+        retlist = []
+        retlist.append({'datetime':'%s' % str(vm.create_date), 'delayafter':2})
+        return retlist
+
     def _getSubPrompt(self, count, new=0):
         retlist = []
         if count == 0:
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-no.wav', 'delayafter' : 2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-no.wav', 'delayafter':2}) 
            if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter':2}) 
            else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter':2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter':2}) 
         elif count == 1:
-           retlist.append({'tts':'1', 'delayafter' : 2}) 
+           retlist.append({'tts':'1', 'delayafter':2}) 
            if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter':2}) 
            else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-message.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter':2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-message.wav', 'delayafter':2}) 
         else:
-           retlist.append({'tts':'%s'%count, 'delayafter' : 2}) 
+           retlist.append({'tts':'%s'%count, 'delayafter':2}) 
            if new:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-newm.wav', 'delayafter':2}) 
            else:
-               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter' : 2}) 
-           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter' : 2}) 
+               retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-oldm.wav', 'delayafter':2}) 
+           retlist.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-messages.wav', 'delayafter':2}) 
         return retlist
 
 
@@ -241,3 +259,26 @@ class Group(Base):
     def __init__(self, name):
         self.name = name
 
+class UserSession(Base):
+    __tablename__ = 'user_session'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(String(40))
+    data = Column(Text)
+    
+    def getState(self):
+        s = State()
+        cdata =  json.loads(self.data)
+        s.unread = cdata.get('unread', None)
+        s.read = cdata.get('read', None)
+        s.first = cdata.get('first', None)
+        return s
+    
+    def saveState(self, state):
+        self.data = json.dumps(state, default=lambda o: o.__dict__)
+       
+
+class State():
+    unread = None
+    read = None
+    first = 0
+    curmessage = 0

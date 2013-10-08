@@ -19,6 +19,8 @@ from ..models.models import (
     User,
     Prompt,
     Voicemail,
+    UserSession,
+    State,
     )
 
 from pyramid.httpexceptions import (
@@ -68,6 +70,7 @@ def startCall(request):
     callerid = request.GET.get('callerid', None)
     tree = request.GET.get('tree', None)
 
+
     if extension is None or callid is None or callerid is None or tree is None:
         log.debug("Missing parameters entension %s, callid %s, callerid %s \
             tree %s" % (extension, callid, callerid, tree))
@@ -79,6 +82,7 @@ def startCall(request):
     if not success:
         return retdict
 
+    user_session = None
     if tree == "leaveMessage":
         if user.vm_prefs.vm_greeting:
             prompt = DBSession.query(Prompt). \
@@ -94,21 +98,51 @@ def startCall(request):
             prompt=prompt.getFullPrompt(user=user),
             nextaction=request.route_url(
                 'savemessage',
-                _query={'user': extension, 'uid': callid,
-                        'callerid': callerid}),
+                _query={'user':extension, 'uid':callid,
+                        'callerid':callerid}),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['#', ],
                 folder=user.vm_prefs.folder,
         )
     elif tree == "accessMenu":
+        try:
+            user_session = DBSession.query(UserSession).filter_by(uid=callid).first()
+            log.debug("looking for a user Session %s" % user_session)
+        except:
+            pass
+
+        if user_session is None:
+            log.debug("Creating a user Session")
+            user_session = UserSession()
+            user_session.uid = callid
+            state = State()
+            state.unread = []
+            state.read = []
+            state.first = 1
+            for i in user.voicemails:
+                if i.is_read:
+                    state.read.append(i.id)
+                else:
+                    state.unread.append(i.id)
+            user_session.saveState(state=state)
+            DBSession.add(user_session)
+            DBSession.flush()
+        log.debug("UserSession created for a user Session %s" % user_session)
+            
+        # TODO add temporary greeting stuff
+        # so first is get the prompt for Voicemail Summary
+        prompt = DBSession.query(Prompt). \
+            filter_by(name=Prompt.vmSummary).first()
+        retprompt = prompt.getFullPrompt(user=user)
         prompt = DBSession.query(Prompt). \
             filter_by(name=Prompt.userVmAccess).first()
+        retprompt.extend(prompt.getFullPrompt(user=user))
         return dict(
             action="play",
-            prompt=prompt.getFullPrompt(user=user),
+            prompt=retprompt,
             nextaction=request.route_url(
                 'handlekey',
-                _query={'user': extension, 'menu': 'main'}),
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
             invalidaction=request.route_url('invalidmessage'),
             dtmf=['1', '2', '3', '5', '7', '*4']
             )
@@ -163,15 +197,19 @@ def handleKey(request):
     key = request.GET.get('key', None)
     vmid = request.GET.get('vmid', None)
     menu = request.GET.get('menu', None)
+    callid = request.GET.get('uid', None)
     log.debug(
         "HandleKey called with extension %s key %s vmid %s menu %s",
         extension, key, vmid, menu)
-    if extension is None or (key is None and vmid is None) or menu is None:
+    if extension is None or (key is None and vmid is None) or menu is None \
+            or callid is None:
         log.debug(
             "Invalid parameters extension %s key %s menu %s",
             extension, key, menu)
         return returnPrompt(name=Prompt.invalidRequest)
 
+    user_session = DBSession.query(UserSession).filter_by(uid=callid).first()
+    state = user_session.getState()
     user = DBSession.query(User).filter_by(extension=extension).first()
     success, retdict = userCheck(user)
     if not success:
@@ -181,16 +219,8 @@ def handleKey(request):
         if key == "1":
             return returnPrompt(name=Prompt.invalidRequest)
         elif key == "2":
-            prompt = DBSession.query(Prompt). \
-                filter_by(name=Prompt.vmSummary).first()
-            return dict(
-                action="play",
-                prompt=prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={
-                        'user': extension, 'menu': 'vmaccess', 'vmid': '-1'}),
-            )
+            return getMessage(
+                request=request, menu="vmaccess", user=user, state=state)
         elif key == "3":
             return returnPrompt(name=Prompt.invalidRequest)
         elif key == "*4":
@@ -226,9 +256,6 @@ def handleKey(request):
         log.debug(
             "HandleKey called with extension %s key %s vmid %s menu %s",
             extension, key, vmid, menu)
-        if vmid == "-1":
-            return getMessagesStart(
-                request=request, menu="vmaccess", user=user)
         if key == "0":
             return returnPrompt(name=Prompt.invalidRequest)
         if key == "1":
@@ -247,27 +274,48 @@ def handleKey(request):
     return returnPrompt(name=Prompt.invalidRequest)
 
 
-def getMessagesStart(request, menu, user):
+def getMessage(request, menu, user, state=None):
     # Lets check if unread vms are there
     # if not then old messages
     # else no message
-    unreadCount = user.getUnreadCount()
-    log.debug("UnreadCount %d", unreadCount)
-    if unreadCount:
-        v = user.voicemails[0]
+    v = None
+    prompt = None
+    log.debug(
+        "Called getMessage with state %s %s %s %s" % \
+            (state.unread, state.read, state.first, state.curmessage))
+    if state.first == 1:
         prompt = DBSession.query(Prompt). \
             filter_by(name=Prompt.firstMessage).first()
-        #lets get the first message and return it as message to place
-        return dict(
-            action="play",
-            prompt=prompt.getFullPrompt(user=user, vm=v),
-            nextaction=request.route_url(
-                'handlekey',
-                _query={
-                    'user': user.extension, 'menu': 'vmaccess', 'vmid': v.id}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['0', '1', '*3', '#', '23'],
-        )
+        log.debug("First prompt %s" % prompt)
+    else:
+        # TODO put the last message logic
+        prompt = DBSession.query(Prompt). \
+            filter_by(name=Prompt.nextMessage).first()
+        log.debug("next prompt %s" % prompt)
+
+    if len(state.unread) != 0:
+        v = DBSession.query(Voicemail).filter_by(id=state.unread[0]).first()
+        log.debug("Voicemail %s" % v)
+    elif len(state.read) != 0:
+        v = DBSession.query(Voicemail).filter_by(id=state.read[0]).first()
+
+    retPrompt = []
+    retPrompt.extend(prompt.getFullPrompt(user=user, number=state.curmessage))
+    #lets get the first message and return it as message to place
+    prompt = DBSession.query(Prompt).filter_by(name=Prompt.vmMessage).first()
+    p = prompt.getFullPrompt(user=user, vm=v)
+    for i in p:
+        retPrompt.append(i)
+    return dict(
+        action="play",
+        prompt=retPrompt,
+        nextaction=request.route_url(
+            'handlekey',
+            _query={
+                'user': user.extension, 'menu': 'vmaccess', 'vmid': v.id}),
+        invalidaction=request.route_url('invalidmessage'),
+        dtmf=['0', '1', '*3', '#', '23'],
+    )
 
 
 def returnHelpMenu(request=None, user=None):
