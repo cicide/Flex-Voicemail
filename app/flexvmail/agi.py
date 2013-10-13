@@ -394,7 +394,7 @@ class astCall:
                 duration = 0
             response = {}
             response['result'] = result
-            response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
+            response['vmfile'] = """file:/%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
             vmFile = '%s.txt' % file_loc
