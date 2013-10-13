@@ -349,33 +349,34 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
-            elif 'sayNum' in currPrompt:
-                log.debug('found a number to speak')
-                promptKeys.remove('sayNum')
-                promptNum = currPrompt['sayNum']
-                numPromptList = self.sayNumber(promptNum)
-                sequence = fastagi.InSequence()
-                if delaybefore:
-                    delay = float(delaybefore)/1000
-                    log.debug('adding delay before of %s' % delay)
-                    sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))                
-                while numPromptList:
-                    prompt = numPromptList.pop(0)
-                    log.debug(prompt)
-                    sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
-                if delayafter:
-                    delay = float(delayafter)/1000
-                    log.debug('adding delay after of %s' % delay)
-                    sequence.append(self.agi.wait,delay) 
-                log.debug('playing number')
-                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
-                log.error('Unknown prompt type: %s' % promptType)
-                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+                log.warning('No prompt uri provided in prompt.')
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)            
+        elif 'sayNum' in currPrompt:
+            log.debug('found a number to speak')
+            promptKeys.remove('sayNum')
+            promptNum = currPrompt['sayNum']
+            numPromptList = self.sayNumber(promptNum)
+            sequence = fastagi.InSequence()
+            if delaybefore:
+                delay = float(delaybefore)/1000
+                log.debug('adding delay before of %s' % delay)
+                sequence.append(self.agi.wait,delay)
+            intKeys = str("".join(interrupKeys))                
+            while numPromptList:
+                prompt = numPromptList.pop(0)
+                log.debug(prompt)
+                sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
+            if delayafter:
+                delay = float(delayafter)/1000
+                log.debug('adding delay after of %s' % delay)
+                sequence.append(self.agi.wait,delay) 
+            log.debug('playing number')
+            return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         else:
-            log.warning('No prompt uri provided in prompt.')
+            log.error('Unknown prompt type: %s' % promptType)
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        
     
     def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
         log.debug('agi:actionRecord called')
