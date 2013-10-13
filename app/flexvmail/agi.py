@@ -313,7 +313,7 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at')
                 sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
                 if delayafter:
