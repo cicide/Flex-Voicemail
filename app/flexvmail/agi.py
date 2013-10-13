@@ -315,7 +315,7 @@ class astCall:
                 dtVal = int(dateTimeString)
                 sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at')
-                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
+                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
