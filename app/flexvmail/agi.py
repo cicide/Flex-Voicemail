@@ -103,8 +103,8 @@ class astCall:
             else:
                 result = self.call.startCall(self.script)
             if result:
-                log.debug('stopping call')
-                self.agi.finish()
+                log.debug('stopping call........................ not really')
+                #self.agi.finish()
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
                 return result
