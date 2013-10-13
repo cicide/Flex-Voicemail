@@ -322,6 +322,7 @@ class astCall:
                 log.debug('playing tts prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
+            log.debug('found uri in prompt list')
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
@@ -331,6 +332,7 @@ class astCall:
                 promptLoc = promptLoc[1:].split('.')[0]
             log.debug(promptLoc)
             if promptType == 'file':
+                log.debug('found a file')
                 sequence = fastagi.InSequence()
                 if delaybefore:
                     delay = float(delaybefore)/1000
@@ -347,6 +349,7 @@ class astCall:
                 log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             elif 'sayNum' in currPrompt:
+                log.debug('found a number to speak')
                 promptKeys.remove('sayNum')
                 promptNum = currPrompt['sayNum']
                 numPromptList = self.sayNumber(promptNum)
