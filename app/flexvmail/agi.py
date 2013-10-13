@@ -300,7 +300,7 @@ class astCall:
         elif 'datetime' in currPrompt:
             """ read back date/time """
             log.debug('found a datetime prompt')
-            dateTimeString = currPrompt('datetime')
+            dateTimeString = currPrompt['datetime']
             log.debug(dateTimeString)
             if len(dateTimeString) < 1:
                 log.warning('got zero length datetime prompt')
