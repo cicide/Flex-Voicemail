@@ -103,6 +103,7 @@ class astCall:
             else:
                 result = self.call.startCall(self.script)
             if result:
+                log.debug('stopping call')
                 self.agi.finish()
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
@@ -574,6 +575,7 @@ def onFailure(reason):
     return False
 
 def route(agi):
+    log.debug('New AGI call!')
     agiObj = astCall(agi)
     return agiObj.start()
 
