@@ -17,7 +17,7 @@ log = utils.get_logger("Call")
 #get the smtp server for sending out emails
 smtp_server = utils.config.get("general", "smtp_server")
 
-retriesDefault = 3
+retriesDefault = 0
 callMap = {}
 
 class Call:

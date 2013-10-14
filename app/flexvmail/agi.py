@@ -103,7 +103,8 @@ class astCall:
             else:
                 result = self.call.startCall(self.script)
             if result:
-                self.agi.finish()
+                log.debug('stopping call........................ not really')
+                #self.agi.finish()
                 #log.debug('Terminating call.')
                 #result.addCallbacks(self.onError,self.onError)
                 return result
@@ -299,7 +300,7 @@ class astCall:
         elif 'datetime' in currPrompt:
             """ read back date/time """
             log.debug('found a datetime prompt')
-            dateTimeString = currPrompt('datetime')
+            dateTimeString = currPrompt['datetime']
             log.debug(dateTimeString)
             if len(dateTimeString) < 1:
                 log.warning('got zero length datetime prompt')
@@ -312,9 +313,9 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='Q')
+                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at')
-                sequence.append(self.agi.sayDateTime,dt,escapeDigits='',format='IMp')
+                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
@@ -322,6 +323,7 @@ class astCall:
                 log.debug('playing tts prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
+            log.debug('found uri in prompt list')
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
             promptType, promptLoc = promptUri.split(':')
@@ -331,6 +333,7 @@ class astCall:
                 promptLoc = promptLoc[1:].split('.')[0]
             log.debug(promptLoc)
             if promptType == 'file':
+                log.debug('found a file')
                 sequence = fastagi.InSequence()
                 if delaybefore:
                     delay = float(delaybefore)/1000
@@ -346,32 +349,34 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 log.debug('playing prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
-            elif 'sayNum' in currPrompt:
-                promptKeys.remove('sayNum')
-                promptNum = currPrompt['sayNum']
-                numPromptList = self.sayNumber(promptNum)
-                sequence = fastagi.InSequence()
-                if delaybefore:
-                    delay = float(delaybefore)/1000
-                    log.debug('adding delay before of %s' % delay)
-                    sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))                
-                while numPromptList:
-                    prompt = numPromptList.pop(0)
-                    log.debug(prompt)
-                    sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
-                if delayafter:
-                    delay = float(delayafter)/1000
-                    log.debug('adding delay after of %s' % delay)
-                    sequence.append(self.agi.wait,delay) 
-                log.debug('playing number')
-                return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
             else:
-                log.error('Unknown prompt type: %s' % promptType)
-                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+                log.warning('No prompt uri provided in prompt.')
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)            
+        elif 'sayNum' in currPrompt:
+            log.debug('found a number to speak')
+            promptKeys.remove('sayNum')
+            promptNum = currPrompt['sayNum']
+            numPromptList = self.sayNumber(promptNum)
+            sequence = fastagi.InSequence()
+            if delaybefore:
+                delay = float(delaybefore)/1000
+                log.debug('adding delay before of %s' % delay)
+                sequence.append(self.agi.wait,delay)
+            intKeys = str("".join(interrupKeys))                
+            while numPromptList:
+                prompt = numPromptList.pop(0)
+                log.debug(prompt)
+                sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
+            if delayafter:
+                delay = float(delayafter)/1000
+                log.debug('adding delay after of %s' % delay)
+                sequence.append(self.agi.wait,delay) 
+            log.debug('playing number')
+            return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         else:
-            log.warning('No prompt uri provided in prompt.')
+            log.error('Unknown prompt type: %s' % promptType)
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        
     
     def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
         log.debug('agi:actionRecord called')
@@ -389,7 +394,7 @@ class astCall:
                 duration = 0
             response = {}
             response['result'] = result
-            response['vmfile'] = """%s.%s""" % (file_loc, self.mediaType)
+            response['vmfile'] = """file:/%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
             vmFile = '%s.txt' % file_loc
@@ -571,6 +576,7 @@ def onFailure(reason):
     return False
 
 def route(agi):
+    log.debug('New AGI call!')
     agiObj = astCall(agi)
     return agiObj.start()
 
