@@ -124,6 +124,8 @@ create table user_session (
 id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
 uid varchar(40) COMMENT 'UID of the call',
 data text COMMENT 'Stores the json object for the user_session',
+create_date datetime not NULL COMMENT 'create time of this user_session',
+last_updated datetime COMMENT 'last updated time',
 primary key(id),
 key(uid)
 ) engine=innodb

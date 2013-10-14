@@ -114,11 +114,15 @@ def startCall(request):
             log.debug("Creating a user Session")
             user_session = UserSession()
             user_session.uid = callid
+            user_session.create_date = datetime.datetime.utcnow()
             state = State()
             state.unread = []
             state.read = []
-            state.first = 1
+            state.curmessage = 1
+            state.uid = callid
             for i in user.voicemails:
+                if i.status == 1:
+                    continue
                 if i.is_read:
                     state.read.append(i.id)
                 else:
@@ -257,7 +261,7 @@ def handleKey(request):
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'main'}),
+                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['1', '2', '3', '5', '7', '*4'],
             )
@@ -267,16 +271,67 @@ def handleKey(request):
         log.debug(
             "HandleKey called with extension %s key %s vmid %s menu %s",
             extension, key, vmid, menu)
+        if key != "False":
+            state.retryCount = 0
+            user_session.saveState(state=state)
+            DBSession.add(user_session)
         if key == "0":
+            # listen to the message
+            # I have no idea when this happens and what to do
             return returnPrompt(name=Prompt.invalidRequest)
         if key == "1":
+            # forward / reply to the message
+            # chris is implementing this
             return returnPrompt(name=Prompt.invalidRequest)
         elif key == "*3":
-            return returnPrompt(name=Prompt.invalidRequest)
+            # delete the message
+            v = DBSession.query(Voicemail).filter_by(id = vmid).first()
+            v.status = 1
+            v.deleted_on = datetime.datetime.utcnow()
+            DBSession.add(v)
+            state.nextMessage()
+            user_session.saveState(state=state)
+            DBSession.add(user_session)
+            return getMessage(
+                request=request, menu="vmaccess", user=user, state=state)
         elif key == "#":
-            return returnPrompt(name=Prompt.invalidRequest)
+            # skip message
+            v = DBSession.query(Voicemail).filter_by(id = vmid).first()
+            v.is_read = 1
+            v.read_on = datetime.datetime.utcnow()
+            DBSession.add(v)
+            state.nextMessage()
+            user_session.saveState(state=state)
+            DBSession.add(user_session)
+            return getMessage(
+                request=request, menu="vmaccess", user=user, state=state)
         elif key == "23":
+            # play header
             return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "4":
+            # rewind
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "5":
+            # toggle pause/play
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "6":
+            # advance 
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "44":
+            # previous Message
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "4":
+            # play header
+            return returnPrompt(name=Prompt.invalidRequest)
+        elif key == "False":
+            curposition = getMessage(
+                request=request, menu="vmaccess", user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.stillThereGetMessage
+            )
         else:
             log.debug(
                 "Invalid Input with extension %s key %s vmid %s menu %s",
@@ -285,7 +340,7 @@ def handleKey(request):
     return returnPrompt(name=Prompt.invalidRequest)
 
 
-def getMessage(request, menu, user, state=None):
+def getMessage(request, menu, user, state=None, vmid=None):
     # Lets check if unread vms are there
     # if not then old messages
     # else no message
@@ -293,28 +348,42 @@ def getMessage(request, menu, user, state=None):
     prompt = None
     log.debug(
         "Called getMessage with state %s %s %s %s" % \
-            (state.unread, state.read, state.first, state.curmessage))
-    if state.first == 1:
-        prompt = DBSession.query(Prompt). \
-            filter_by(name=Prompt.firstMessage).first()
-        log.debug("First prompt %s" % prompt)
-    else:
-        # TODO put the last message logic
-        prompt = DBSession.query(Prompt). \
-            filter_by(name=Prompt.nextMessage).first()
-        log.debug("next prompt %s" % prompt)
+            (state.unread, state.read, state.message_type, state.curmessage))
 
-    if len(state.unread) != 0:
-        v = DBSession.query(Voicemail).filter_by(id=state.unread[0]).first()
-        log.debug("Voicemail %s" % v)
-    elif len(state.read) != 0:
-        v = DBSession.query(Voicemail).filter_by(id=state.read[0]).first()
+    if state.message_type == "Unread" and state.curmessage <= len(state.unread): #unread messages
+        if state.curmessage == 1:
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.firstMessage).first()
+        elif state.curmessage == len(state.unread):
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.lastMessage).first()
+        else:
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.nextMessage).first()
+        v = DBSession.query(Voicemail).filter_by(id=state.unread[state.curmessage - 1]).first()
+    elif state.curmessage <= len(state.read):
+        if state.curmessage == 1:
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.firstMessage).first()
+        elif state.curmessage == len(state.read):
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.lastMessage).first()
+        else:
+            prompt = DBSession.query(Prompt). \
+                filter_by(name=Prompt.nextMessage).first()
+        v = DBSession.query(Voicemail).filter_by(id=state.read[state.curmessage - 1]).first()
+    else:
+        prompt = DBSession.query(Prompt). \
+            filter_by(name=Prompt.noMoreMessage).first()
 
     retPrompt = []
     retPrompt.extend(prompt.getFullPrompt(user=user, number=state.curmessage))
-    #lets get the first message and return it as message to place
     prompt = DBSession.query(Prompt).filter_by(name=Prompt.vmMessage).first()
     p = prompt.getFullPrompt(user=user, vm=v)
+    for i in p:
+        retPrompt.append(i)
+    prompt = DBSession.query(Prompt).filter_by(name=Prompt.postMessage).first()
+    p = prompt.getFullPrompt(user=user)
     for i in p:
         retPrompt.append(i)
     return dict(
@@ -323,9 +392,9 @@ def getMessage(request, menu, user, state=None):
         nextaction=request.route_url(
             'handlekey',
             _query={
-                'user': user.extension, 'menu': 'vmaccess', 'vmid': v.id}),
+                'user':user.extension, 'menu': 'vmaccess', 'vmid': v.id, 'uid':state.uid}),
         invalidaction=request.route_url('invalidmessage'),
-        dtmf=['0', '1', '*3', '#', '23'],
+        dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44'],
     )
 
 
@@ -341,6 +410,30 @@ def returnHelpMenu(request=None, user=None):
         dtmf=['1', '2', '3', '5', '7', '*7'],
     )
 
+
+def stillThereLoop(request=None, user=None, nextaction=None, dtmf=None, user_session=None, extraPrompt=None ):
+    state = None
+    if user_session:
+        state = user_session.getState()
+    if state and state.retryCount < 3:
+        log.debug("StillThereloop called with state %d", state.retryCount)
+        state.retryCount = state.retryCount + 1
+        user_session.saveState(state=state)
+        DBSession.add(user_session)
+    else:
+        return returnPrompt(name=Prompt.goodbye)
+    prompt = DBSession.query(Prompt).filter_by(name=Prompt.stillThere).first()
+    retPrompt = prompt.getFullPrompt()
+    prompt = DBSession.query(Prompt).filter_by(name=extraPrompt).first()
+    for i in prompt.getFullPrompt():
+        retPrompt.append(i)
+    return dict(
+        action="play",
+        prompt=retPrompt,
+        nextaction=nextaction,
+        invalidaction=request.route_url('invalidmessage'),
+        dtmf=dtmf,
+        )
 
 @view_config(route_name='invalidmessage', renderer='json')
 def invalidMessage(request):

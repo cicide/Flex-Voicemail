@@ -9,6 +9,7 @@ from sqlalchemy import (
     )
 
 import datetime
+import time
 from sqlalchemy.orm import relationship, backref
 
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -182,6 +183,11 @@ class Prompt(Base):
     nextMessage = "Next_Message"
     lastMessage = "Last_Message"
     vmMessage = "VM_Message"
+    noMoreMessage = "No_More_Message"
+    postMessage = "Post_Message"
+    stillThere = "Still_There"
+    stillThereGetMessage = "Still_There_VM_Get_Message"
+    goodbye = "Goodbye"
     main1RecordMessage = "Main_1_Record_Message" #653 - mc-input-recordnow - "Record the message/comment and press pound"
     
 
@@ -200,8 +206,8 @@ class Prompt(Base):
                     listprompt.extend(self._getSubPrompt(count=user.getReadCount(), new=0))
                 elif i.path == "VM-Header":
                     listprompt.extend(self._getVmTime(vm=vm))
-                elif i.path == "Number":
-                    listprompt.append({'tts':'%s'%number, 'delayafter':i.delay_after})
+                elif i.path == "sayNum":
+                    listprompt.append({'sayNum':'%s'%number, 'delayafter':i.delay_after})
             elif i.prompt_type == 3:
                 listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
@@ -212,7 +218,7 @@ class Prompt(Base):
     
     def _getVmTime(self, vm):
         retlist = []
-        retlist.append({'datetime':'%s' % str(vm.create_date), 'delayafter':2})
+        retlist.append({'datetime':'%d' % int(time.mktime(vm.create_date.timetuple())), 'delayafter':2})
         return retlist
 
     def _getSubPrompt(self, count, new=0):
@@ -266,21 +272,41 @@ class UserSession(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     uid = Column(String(40))
     data = Column(Text)
+    create_date = Column(DateTime, nullable=False, default=datetime.datetime.utcnow )
+    last_updated = Column(DateTime)
     
     def getState(self):
         s = State()
         cdata =  json.loads(self.data)
         s.unread = cdata.get('unread', None)
         s.read = cdata.get('read', None)
-        s.first = cdata.get('first', None)
+        s.uid = self.uid
+        s.curmessage = cdata.get('curmessage', None)
+        s.message_type = cdata.get('message_type', None)
+        s.retryCount = cdata.get('retryCount', None)
         return s
     
     def saveState(self, state):
+        self.last_updated = datetime.datetime.utcnow()
         self.data = json.dumps(state, default=lambda o: o.__dict__)
        
 
 class State():
-    unread = None
-    read = None
-    first = 0
-    curmessage = 0
+
+    def __init__(self):
+        self.unread = None
+        self.read = None
+        self.curmessage = 0
+        self.uid = None
+        self.message_type = "Unread"
+        self.retryCount = 0
+
+    def nextMessage(self):
+        if self.message_type == "Unread":
+            if self.curmessage < len(self.unread):
+                self.curmessage = self.curmessage + 1
+            else:
+                self.message_type = "read"
+                self.curmessage = 1
+        else:
+            self.curmessage = self.curmessage + 1
