@@ -169,26 +169,88 @@ class Prompt(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(40), nullable = False)
 
-    invalidRequest = "Invalid_Request"
-    invalidMessage = "Invalid_Message"
-    userGreeting = "User_Greeting"
-    userNameRecording = "User_Name_Recording"
-    userLeaveMessage = "User_Leave_Message"
-    userNotExist = "User_Not_Exist"
-    userVmAccess = "User_Vm_Access"
-    messageSaved = "Message_Saved"
-    helpMenu = "Help_Menu"
-    vmSummary = "VM_Summary"
-    firstMessage = "First_Message"
-    nextMessage = "Next_Message"
-    lastMessage = "Last_Message"
-    vmMessage = "VM_Message"
-    noMoreMessage = "No_More_Message"
-    postMessage = "Post_Message"
-    stillThere = "Still_There"
-    stillThereGetMessage = "Still_There_VM_Get_Message"
-    goodbye = "Goodbye"
-    main1RecordMessage = "Main_1_Record_Message" #653 - mc-input-recordnow - "Record the message/comment and press pound"
+    invalidRequest = "Invalid_Request"                                #  1
+    invalidMessage = "Invalid_Message"                                #  7
+    userGreeting = "User_Greeting"                                    #  3
+    userNameRecording = "User_Name_Recording"                         #  4
+    userLeaveMessage = "User_Leave_Message"                           #  5
+    userNotExist = "User_Not_Exist"                                   #  2
+    userVmAccess = "User_Vm_Access"                                   #  8
+    messageSaved = "Message_Saved"                                    #  6
+    helpMenu = "Help_Menu"                                            #  9
+    vmSummary = "VM_Summary"                                          # 10
+    firstMessage = "First_Message"                                    # 12
+    nextMessage = "Next_Message"                                      # 14
+    lastMessage = "Last_Message"                                      # 13
+    vmMessage = "VM_Message"                                          # 11
+    noMoreMessage = "No_More_Message"                                 # 15
+    postMessage = "Post_Message"                                      # 16
+    stillThere = "Still_There"                                        # 17
+    stillThereGetMessage = "Still_There_VM_Get_Message"               # 19
+    goodbye = "Goodbye"                                               # 18
+    main1RecordMessage = "Main_1_Record_Message"                      # 653 - mc-input-recordnow - "Record the message/comment and press pound"
+    # Login Menu: External Access Prompts
+    loginWelcomeMessage = "Login_Welcome_Message"                     # 20
+    loginInvalidMailbox = "Login_Invalid_Mailbox"                     # 21
+    loginInputPassword = "Login_Input_Password_Message"               # 22
+    loginInvalidPassword = "Login_Invalid_Password"                   # 23
+    loginLoggedIn = "Login_Logged_In"                                 # 24
+    loginStillThere = "Login_Still_There_Message"                     # 28
+    # Record, Send, Forward, Reply Menu
+    rsfInputRecordNow = "RSF_Input_Record_Now"                        # 25
+    rsfMenuRecord = "RSF_Amenu_Record"                                # 26
+    rsfMessageDeleted = "RSF_Message_Deleted"                         # 27
+    rsfApprovedMessage = "RSF_Approved_Message"                       # 29
+    rsfCreateForward = "RSF_Create_Forward_Message"                   # 30
+    rsfRecordStillThere = "RSF_Record_Still_There_Message"            # 31
+    rsfForwardStillThere = "RSF_Forward_Still_There_Message"          # 32
+    rsfDelivered = "RSF_Delivered_Message"                            # 33
+    rsfCancelled = "RSF_Cancelled_Message"                            # 34
+    # Send Message Menu
+    sendInputList = "Send_Input_List_Now"                             # 35
+    sendStillThere = "Send_Still_There_Message"                       # 36
+    sendInvalid = "Send_Invalid_Mailbox_List"                         # 37
+    sendApprovedCount = "Send_Approved_Delivered_Count"               # 38
+    sendRemoved = "Send_Removed_Message"                              # 39
+    sendAdded = "Send_Added_Message"                                  # 40
+    # Personal Greetings Menu
+    personalGreeting = "Personal_Greeting_Message"                    # 41
+    personalGreetingStillThere = "Personal_Greeting_Still_There_Message" # 42
+    # Greetings Menu
+    greetingsBusyIs = "Greetings_Busy_Is_Message"                     # 43
+    greetingsTempIs = "Greetings_Temp_Is_Message"                     # 44
+    greetingsUnavailIs = "Greetings_Unavailable_Is_Message"           # 45
+    greetingsNotSet = "Greetings_Not_Set_Message"                     # 46
+    greetingsRecordMenu = "Greetings_Record_Menu"                     # 47
+    greetingsRecordBusy = "Greetings_Busy_Record_Message"             # 48
+    greetignsRecordUnavail = "Greetings_Unavail_Record_Message"       # 49
+    greetingsRecordTemp = "Greetings_Temp_Record_Message"             # 50
+    greetingsApproved = "Greetings_Approved_Message"                  # 51
+    greetingsBusyNotSet = "Greetings_Busy_Not_Set"                    # 52
+    greetingsUnavailNotSet = "Greetings_Unavail_Not_Set"              # 53
+    greetingsTempNotSet = "Greetings_Temp_Not_Set"                    # 54
+    # Personal Options Menu
+    personalOptions = "Personal_Options_Menu"                         # 55
+    personalStillThere = "Personal_Options_Still_There_Message"       # 56
+    # Administrator Mainling List Menu
+    mailListMenu = "AML_Menu_Message"                                 # 57
+    mailListRecord = "AML_Record_Message"                             # 58
+    mailListName = "AML_Record_List_Name"                             # 59
+    mailListCode = "AML_Enter_Key_Code"                               # 60
+    # Change Password Menu
+    passwordNew = "Password_Enter_New"                                # 61
+    passwordNoMatch = "Password_No_Match"                             # 62
+    passwordReEnter = "Password_Re_Enter_New"                         # 63
+    passwordChanged = "Password_Changed_Message"                      # 64
+    # Record Name Menu
+    recordNameIs = "Record_Name_Name_Is"                              # 65
+    recordName = "Record_Name_Record"                                 # 66
+    # Scan Message Menu
+    scanMenu = "Scan_Menu_Message"                                    # 67
+    scanStillThere = "Scan_Still_There_Message"                       # 68
+    # Internal Access Menu
+    invalidOption = "Invalid_Option"                                  # 69
+    internalWelcome = "Internal_Access_Welcome"                       # 70
     
 
     def getFullPrompt(self, user=None, vm=None, number=None):
