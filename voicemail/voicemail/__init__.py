@@ -49,6 +49,7 @@ def main(global_config, **settings):
     config.add_route('startcall', '/startcall')
     config.add_route('savemessage', '/savemessage')
     config.add_route('handlekey', '/handlekey')
+    config.add_route('handlelogin', '/handlelogin')
     config.add_route('invalidmessage', '/invalidmessage')
     config.scan()
     return config.make_wsgi_app()

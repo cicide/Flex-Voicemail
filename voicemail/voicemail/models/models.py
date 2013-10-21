@@ -253,6 +253,11 @@ class Prompt(Base):
     internalWelcome = "Internal_Access_Welcome"                       # 70
     
 
+    @staticmethod
+    def getByName(name=None):
+        return DBSession.query(Prompt).filter_by(name=name).first()
+
+
     def getFullPrompt(self, user=None, vm=None, number=None):
         listprompt = []
         for i in self.details:
@@ -271,11 +276,17 @@ class Prompt(Base):
                 elif i.path == "sayNum":
                     listprompt.append({'sayNum':'%s'%number, 'delayafter':i.delay_after})
             elif i.prompt_type == 3:
-                listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
+                if user.vm_prefs.vm_name_recording:
+                    listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
+                else:
+                    listprompt.append({'tts':list(user.extension), 'delayafter':i.delay_after})
             elif i.prompt_type == 4:
                 listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 5:
                 listprompt.append({'uri':vm.path, 'delayafter':i.delay_after})
+            elif i.prompt_type == 99:
+                if user.vm_prefs.vm_greeting:
+                    listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
         return listprompt
     
     def _getVmTime(self, vm):
