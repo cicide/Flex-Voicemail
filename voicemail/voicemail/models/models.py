@@ -137,6 +137,10 @@ class UserVmPref(Base):
     sms_addr = Column(String(80))
     ivr_tree_id = Column(Integer, ForeignKey('ivr_tree.id'))
     vm_greeting = Column(String(100))
+    unavail_greeting = Column(String(100))
+    busy_greeting = Column(String(100))
+    tmp_greeting = Column(String(100))
+    is_tmp_greeting_on = Column(Boolean)
     vm_name_recording = Column(String(100))
     greeting_prompt_id = Column(Integer, ForeignKey('prompts.id'))
     last_changed = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
@@ -175,7 +179,7 @@ class Prompt(Base):
     userNameRecording = "User_Name_Recording"                         #  4
     userLeaveMessage = "User_Leave_Message"                           #  5
     userNotExist = "User_Not_Exist"                                   #  2
-    userVmAccess = "User_Vm_Access"                                   #  8
+    activityMenu = "Activity_Menu"                                   #  8
     messageSaved = "Message_Saved"                                    #  6
     helpMenu = "Help_Menu"                                            #  9
     vmSummary = "VM_Summary"                                          # 10
@@ -218,17 +222,17 @@ class Prompt(Base):
     personalGreetingStillThere = "Personal_Greeting_Still_There_Message" # 42
     # Greetings Menu
     greetingsBusyIs = "Greetings_Busy_Is_Message"                     # 43
-    greetingsTempIs = "Greetings_Temp_Is_Message"                     # 44
+    greetingsTmpIs = "Greetings_Temp_Is_Message"                     # 44
     greetingsUnavailIs = "Greetings_Unavailable_Is_Message"           # 45
     greetingsNotSet = "Greetings_Not_Set_Message"                     # 46
     greetingsRecordMenu = "Greetings_Record_Menu"                     # 47
     greetingsRecordBusy = "Greetings_Busy_Record_Message"             # 48
     greetignsRecordUnavail = "Greetings_Unavail_Record_Message"       # 49
-    greetingsRecordTemp = "Greetings_Temp_Record_Message"             # 50
+    greetingsRecordTmp = "Greetings_Tmp_Record_Message"             # 50
     greetingsApproved = "Greetings_Approved_Message"                  # 51
     greetingsBusyNotSet = "Greetings_Busy_Not_Set"                    # 52
     greetingsUnavailNotSet = "Greetings_Unavail_Not_Set"              # 53
-    greetingsTempNotSet = "Greetings_Temp_Not_Set"                    # 54
+    greetingsTmpNotSet = "Greetings_Tmp_Not_Set"                    # 54
     # Personal Options Menu
     personalOptions = "Personal_Options_Menu"                         # 55
     personalStillThere = "Personal_Options_Still_There_Message"       # 56
@@ -251,6 +255,10 @@ class Prompt(Base):
     # Internal Access Menu
     invalidOption = "Invalid_Option"                                  # 69
     internalWelcome = "Internal_Access_Welcome"                       # 70
+
+    userUnavailGreeting = "User_Unavail_Greeting"                     #71
+    userBusyGreeting = "User_Busy_Greeting"                           #72
+    userTmpGreeting = "User_Tmp_Greeting"                             #73
     
 
     @staticmethod
@@ -284,8 +292,14 @@ class Prompt(Base):
                 listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 5:
                 listprompt.append({'uri':vm.path, 'delayafter':i.delay_after})
+            elif i.prompt_type == 6:
+                listprompt.append({'uri':user.vm_prefs.unavail_greeting, 'delayafter':i.delay_after})
+            elif i.prompt_type == 7:
+                listprompt.append({'uri':user.vm_prefs.busy_greeting, 'delayafter':i.delay_after})
+            elif i.prompt_type == 8:
+                listprompt.append({'uri':user.vm_prefs.tmp_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 99:
-                if user.vm_prefs.vm_greeting:
+                if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
                     listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
         return listprompt
     

@@ -119,10 +119,7 @@ def startCall(request):
             
         # TODO add temporary greeting stuff
         # so first is get the prompt for Voicemail Summary
-        prompt = Prompt.getByName(name=Prompt.vmSummary)
-        retprompt = prompt.getFullPrompt(user=user)
-        prompt = Prompt.getByName(name=Prompt.userVmAccess)
-        retprompt.extend(prompt.getFullPrompt(user=user))
+        retPrompt = combinePrompts(user, None, None, Prompt.vmSummary, Prompt.activityMenu)
         return dict(
             action="play",
             prompt=retprompt,
@@ -266,6 +263,7 @@ def handleKey(request):
     vmid = request.GET.get('vmid', None)
     menu = request.GET.get('menu', None)
     callid = request.GET.get('uid', None)
+    step = request.GET.get('step', '0')
     log.debug(
         "HandleKey called with extension %s key %s vmid %s menu %s",
         extension, key, vmid, menu)
@@ -301,13 +299,48 @@ def handleKey(request):
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state)
         elif key == "3":
-            return returnPrompt(name=Prompt.invalidRequest)
+            prompt = Prompt.getByName(name=Prompt.personalGreeting)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'personal', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '4'],
+            )
         elif key == "*4":
             return returnHelpMenu(request=request, user=user)
         elif key == "5":
             return returnPrompt(name=Prompt.invalidRequest)
         elif key == "7":
             return returnPrompt(name=Prompt.invalidRequest)
+    elif menu == "personal":
+        if key == "1":
+            if user.vm_prefs.is_tmp_greeting_on:
+                user.vm_prefs.is_tmp_greeting_on = 0
+            else:
+                user.vm_prefs.is_tmp_greeting_on = 1
+            DBSession.add(user)
+            ### TODO 
+            # figure out the prompt to return for confirmation
+            # returning them to the previous menu
+            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        elif key == "2":
+            return doPersonalGreeting(request, callid, user, personal, key, step=step, type="unavail") 
+        elif key == "3":
+            return doPersonalGreeting(request, callid, user, personal, key, step=step, type="busy") 
+        elif key == "4":
+            return doPersonalGreeting(request, callid, user, personal, key, step=step, type="tmp") 
     elif menu == "help":
         if key == "1":
             return returnPrompt(name=Prompt.invalidRequest)
@@ -509,7 +542,7 @@ def stillThereLoop(request=None, user=None, nextaction=None, dtmf=None, user_ses
     else:
         return returnPrompt(name=Prompt.goodbye)
 
-    retPrompt = combinePrompt(Prompt.stillThere, extraPrompt)
+    retPrompt = combinePrompt(user, None, None, Prompt.stillThere, extraPrompt)
 
     return dict(
         action="play",
@@ -519,12 +552,12 @@ def stillThereLoop(request=None, user=None, nextaction=None, dtmf=None, user_ses
         dtmf=dtmf,
         )
 
-def combinePrompts(*p):
+def combinePrompts(user, vm, number, *p):
     retPrompt = []
     for i in p:
         if i:
             prompt = Prompt.getByName(name=i)
-            j = prompt.getFullPrompt()
+            j = prompt.getFullPrompt(user=user, vm=vm, number=number)
         for k in j:
             retPrompt.append(k)
     return retPrompt
@@ -533,3 +566,113 @@ def combinePrompts(*p):
 @view_config(route_name='invalidmessage', renderer='json')
 def invalidMessage(request):
     return returnPrompt(name=Prompt.invalidMessage)
+
+
+def doPersonalGreeting(request, callid, user, menu, key, step, type):
+    firstPrompt = None
+    promptName = Prompt.greetingsNotSet
+    secondPrompt = Prompt.greetingsRecordMenu
+
+    if type == "unavail":
+        firstPrompt = Prompt.greetingsUnavailIs
+        if user.vm_prefs.unavail_greeting:
+            promptName = Prompt.userUnavailGreeting
+        else:
+            secondPrompt = Prompt.greetingsRecordUnavail
+    elif type == "busy":
+        firstPrompt = Prompt.greetingsBusyIs
+        if user.vm_prefs.busy_greeting:
+            promptName = Prompt.userBusyGreeting
+        else:
+            secondPrompt = Prompt.greetingsRecordBusy
+    elif type == "tmp":
+        firstPrompt = Prompt.greetingsTmpIs
+        if user.vm_prefs.tmp_greeting:
+            promptName = Prompt.userTmpGreeting
+        else:
+            secondPrompt = Prompt.greetingsRecordTmp
+    
+    if step == '0':
+        retPrompt = combinePrompts(user, None, None, firstPrompt, promptName, secondPrompt)
+        return dict(
+            action="play",
+            prompt=retPrompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'type':type, 'menu': 'personal', 'uid':callid, 'step':'1'}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '23', '#'],
+        )
+    elif step == '1':
+        if key == '1':
+            prompt = Prompt.getByName(Prompt.greetingsRecordMenu)
+            return dict(
+                action="record",
+                prompt = Prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'uid':callid,
+                            'type':type, 'menu':'personal', 'step':'2'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '#', ],
+                folder=user.vm_prefs.folder,
+            )
+        elif key == '23':
+            retPrompt = combinePrompts(user, None, None, firstPrompt, promptName, secondPrompt)
+            return dict(
+                action="play",
+                prompt=retPrompt,
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'uid':callid,
+                            'type':type, 'menu':'personal', 'step':'1'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '#' ],
+                folder=user.vm_prefs.folder,
+            )
+    elif step == '2':
+        if key == '1':
+            prompt = Prompt.getByName(Prompt.greetingsRecordMenu)
+            return dict(
+                action="record",
+                prompt = Prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'uid':callid,
+                            'type':type, 'menu':'personal', 'step':'2'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '#', ],
+                folder=user.vm_prefs.folder,
+            )
+        elif key == '23':
+            file = request.get('file', None)
+            prompt =  {'uri':file, 'delayafter':10}
+            return dict(
+                action="play",
+                prompt=prompt,
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'uid':callid,'file':file,
+                            'type':type, 'menu':'personal', 'step':'2'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '#' ],
+                )
+        elif key == '#':
+            file = request.get('file', None)
+            if type == "unavail":
+                user.vm_prefs.unavail_greeting = file
+            elif type == "busy":
+                user.vm_prefs.busy_greeting = file
+            elif type == "tmp":
+                user.vm_prefs.tmp_greeting = file
+            DBSession.add(user.vm_prefs)
+            retPrompt = combinePrompts(user, None, None, Prompt.greetingsApproved, Prompt.activityMenu)
+            return dict(
+                action="play",
+                prompt=retprompt,
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'menu':'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+                )
