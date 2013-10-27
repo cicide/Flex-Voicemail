@@ -172,8 +172,8 @@ def handleLogin(request):
                 nextaction="agi:hangup",
             )
     elif extension is None: 
-         prompt = Prompt.getByName(Prompt.loginInputPassword)
-         return dict(
+        prompt = Prompt.getByName(Prompt.loginInputPassword)
+        return dict(
              action="play",
              prompt=prompt.getFullPrompt(),
              nextaction=request.route_url(
