@@ -285,16 +285,16 @@ def handleKey(request):
         return retdict
     if menu == "main":
         if key == "1":
-            prompt = Prompt.getByName(name=Prompt.main1RecordMessage)
+            prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
             return dict(
                 action="record",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
-                    'idontknow',
-                    _query={'user': extension, 'uid': callid,
-                            'callerid': callerid}),
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'rsf', 'uid': callid}
+                ),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['#', '*7'],
+                dtmf=['#', '*7', '1', '23', '*3'],
                 folder=user.vm_prefs.folder,
                 )
         elif key == "2":
