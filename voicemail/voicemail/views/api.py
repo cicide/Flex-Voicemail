@@ -222,7 +222,7 @@ def saveMessage(request):
     callid = request.GET.get('uid', None)
     callerid = request.GET.get('callerid', None)
     vmfile = request.GET.get('vmfile', None)
-    duration = request.GET.get('duration', '0')
+    duration = request.GET.get('duration', 0)
 
     if(not extension or not callid or not callerid or not vmfile):
         log.debug(
@@ -288,11 +288,11 @@ def handleKey(request):
                 action="record",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'rsf', 'uid': callid}
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecord', 'uid': callid}
                 ),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['#', '*7', '1', '23', '*3'],
+                dtmf=['#'],
                 folder=user.vm_prefs.folder,
                 )
         elif key == "2":
@@ -341,6 +341,7 @@ def handleKey(request):
             return doPersonalGreeting(request, callid, user, personal, key, step=step, type="busy") 
         elif key == "4":
             return doPersonalGreeting(request, callid, user, personal, key, step=step, type="tmp") 
+            
     elif menu == "help":
         if key == "1":
             return returnPrompt(name=Prompt.invalidRequest)
@@ -435,7 +436,295 @@ def handleKey(request):
             return returnPrompt(name=Prompt.invalidRequest)
     return returnPrompt(name=Prompt.invalidRequest)
 
+@view_config(route_name='recordsendfwdreply', renderer='json')
+def recordSendForwardReply(request):
+    extension = request.GET.get('user', None)
+    key = request.GET.get('key', None)
+    callid = request.GET.get('uid', None)
+    callerid = request.GET.get('callerid', None)
+    vmfile = request.GET.get('vmfile', None)
+    duration = request.GET.get('duration', 0)
+    source = request.GET.get('source', None)
+    
+    if(not extension or not callid or not callerid or not vmfile or not section):
+            log.debug(
+                "Invalid parameters extension %s callid %s callerid %s vmfile %s",
+                extension, callid, callerid, vmfile)
+            return returnPrompt(name=Prompt.invalidRequest)
+    
+    user = DBSession.query(User).filter_by(extension=extension).first()
+    success, retdict = userCheck(user)
+    if not success:
+        log.debug(
+            "User Not Found extension %s callid %s callerid %s \
+            vmfile %s duraiton %s",
+            extension, callid, callerid, vmfile, duration)
+        return retdict    
 
+    if section == 'initrecord':
+        if not duration:
+            # do still there loop
+            curposition = recordSendForwardReply(request=request, user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.rsfInputRecordNow
+            )
+        else:
+            # we have a recorded message, play instruction for handling the recording
+            prompt = Prompt.getByName(name=Prompt.rsfMenuRecord)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecordaction', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '*3', '#']                
+                )
+    elif section == 'recordhelplongaction':
+        if not key:
+            # do still there loop
+            curposition = recordSendForwardReply(request=request, user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.rsfRecordStillThere
+            )
+        elif key == '1':
+            prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+            return dict(
+                action="record",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecord', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['#'],
+                folder=user.vm_prefs.folder,
+                )
+        elif key == '23':# TODO: play back recorded message
+            prompt = Prompt.getByName(name=Prompt.TODO)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'recordhelplong', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '*3', '#']                
+                )
+        elif key == '*3':
+            # TODO: delete - ignore recorded message - delete file
+            prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecordaction', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '*3', '*7', '#']                
+                )
+        elif key == '*7':
+            # bail out to main menu
+            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            return dict(
+            action="play",
+            prompt=retprompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        elif key == '#':
+            # TODO - approved
+            pass
+            
+    elif section == 'recordhelplong':
+        prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+        return dict(
+            action="play",
+            prompt=prompt.getFullPrompt(user=user),
+            nextaction=request.route_url(
+                'recordsendfwdreply',
+                _query={'user': extension, 'menu': 'recordhelplongaction', 'uid': callid}
+            ),
+            invalidaction=request.route_url('invalidmessage'),  #TODO: this should actually route to a still there loop
+            dtmf=['1', '23', '*3', '*7', '#']
+            )        
+    elif section == 'initrecordaction':
+        if not key:
+            # do still there loop
+            curposition = recordSendForwardReply(request=request, user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.rsfRecordStillThere
+            )
+        elif key == '1':
+            # re-record
+            prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+            return dict(
+                action="record",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecord', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['#'],
+                folder=user.vm_prefs.folder,
+                )            
+        elif key == '23':
+            # TODO: play back recorded message
+            prompt = Prompt.getByName(name=Prompt.TODO)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'recordhelplong', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '*3', '#']                
+                )
+        elif key == '*3':
+            # TODO: delete - ignore recorded message - delete file
+            prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    'recordsendfwdreply',
+                    _query={'user': extension, 'menu': 'initrecordaction', 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '*3', '*7', '#']                
+                ) 
+        elif key == '*7':
+            # Return to main activity Menu
+            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            return dict(
+            action="play",
+            prompt=retprompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        elif key == '#':
+            # TODO: approve - store file information
+            if not source:
+                # if this wasn't a reply, then we move on to scan messages
+                menuDest = 'scanmessages'
+                stepDest = 'fromrsfr'
+            else:
+                # if this was a reply, we jump to scan menu
+                menuDest = 'recordsendfwdreply'
+                stepDest = 'postapproval'
+            prompt = Prompt.getByName(name=Prompt.rsfApprovedMessage)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                nextaction=request.route_url(
+                    menuDest,
+                    _query={'user': extension, 'menu': stepDest, 'uid': callid}
+                ),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=[]                
+                )            
+        else:
+            # invalid key returns to still there loop
+            curposition = recordSendForwardReply(request=request, user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.rsfRecordStillThere
+            )
+    elif section == 'postapproval':
+        prompt = Prompt.getByName(name=Prompt.rsfCreateForward)
+        return dict(
+            action="play",
+            prompt=prompt.getFullPrompt(user=user),
+            nextaction=request.route_url(
+                'recordsendfwdreply',
+                _query={'user': extension, 'menu': 'postapprovalaction', 'uid': callid}
+            ),
+            invalidaction=request.route_url('invalidmessage'),  #TODO: this should actually route to a still there loop
+            dtmf=['0', '*7', '#']
+            )
+    elif section == 'postapprovalaction':
+        if not key:
+            # invalid key returns to still there loop
+            curposition = recordSendForwardReply(request=request, user=user, state=state)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.rsfForwardStillThere
+            )
+        elif key == '0':
+            # TODO - Cancel
+            prompt = combinePrompts(user, None, None, Prompt.rsfCancelled, Prompt.activityMenu)
+            return dict(
+            action="play",
+            prompt=retprompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        elif key == '*7':
+            # Return to main activity Menu
+            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            return dict(
+            action="play",
+            prompt=retprompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        elif key == '#':
+            # TODO - Deliver message
+            prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
+            return dict(
+            action="play",
+            prompt=retprompt,
+            nextaction=request.route_url(
+                'handlekey',
+                _query={'user':extension, 'menu':'main', 'uid':callid}),
+            invalidaction=request.route_url('invalidmessage'),
+            dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+            
+        
+@view_config(route_name='scanmessages', renderer='json')
+def scanmessages(request):
+    extension = request.GET.get('user', None)
+    key = request.GET.get('key', None)
+    callid = request.GET.get('uid', None)
+    callerid = request.GET.get('callerid', None)
+    vmfile = request.GET.get('vmfile', None)
+    duration = request.GET.get('duration', 0)
+    source = request.GET.get('source', None)   
+    # TODO - Finish this section
+    
+    
+    
 def getMessage(request, menu, user, state=None, vmid=None):
     # Lets check if unread vms are there
     # if not then old messages

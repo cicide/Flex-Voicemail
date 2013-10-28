@@ -78,15 +78,15 @@ class User(Base):
     def getReadCount(self):
         readCount = 0
         for i in self.voicemails:
-           if i.is_read: 
-               readCount = readCount + 1
+            if i.is_read: 
+                readCount = readCount + 1
         return readCount
 
     def getUnreadCount(self):
         unreadCount = 0
         for i in self.voicemails:
-           if not i.is_read: 
-               unreadCount = unreadCount + 1
+            if not i.is_read: 
+                unreadCount = unreadCount + 1
         return unreadCount
 
 class UserRole(Base):
