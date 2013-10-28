@@ -259,6 +259,7 @@ class Prompt(Base):
     userUnavailGreeting = "User_Unavail_Greeting"                     #71
     userBusyGreeting = "User_Busy_Greeting"                           #72
     userTmpGreeting = "User_Tmp_Greeting"                             #73
+    userName = "User_Name"                                            #74
     
 
     @staticmethod

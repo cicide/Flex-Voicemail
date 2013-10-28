@@ -118,8 +118,9 @@ def startCall(request):
         log.debug("UserSession created for a user Session %s" % user_session)
             
         # TODO add temporary greeting stuff
-        # so first is get the prompt for Voicemail Summary
-        retPrompt = combinePrompts(user, None, None, Prompt.vmSummary, Prompt.activityMenu)
+        retPrompt = combinePrompts(
+            user, None, None, Prompt.loginLoggedIn,
+            Prompt.vmSummary, Prompt.activityMenu)
         return dict(
             action="play",
             prompt=retprompt,
@@ -507,14 +508,14 @@ def recordSendForwardReply(request):
                 dtmf=['#'],
                 folder=user.vm_prefs.folder,
                 )
-        elif key == '23':# TODO: play back recorded message
-            prompt = Prompt.getByName(name=Prompt.TODO)
+        elif key == '23':
+            prompt = {'uri':vmfile, 'delayafter' : 10}
             return dict(
                 action="play",
-                prompt=prompt.getFullPrompt(user=user),
+                prompt=prompt
                 nextaction=request.route_url(
                     'recordsendfwdreply',
-                    _query={'user': extension, 'menu': 'recordhelplong', 'uid': callid}
+                    _query={'user': extension, 'menu': 'recordhelplong', 'uid': callid, 'vmfile':vmfile}
                 ),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['1', '23', '*3', '#']                
@@ -547,7 +548,6 @@ def recordSendForwardReply(request):
         elif key == '#':
             # TODO - approved
             pass
-            
     elif section == 'recordhelplong':
         prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
         return dict(
