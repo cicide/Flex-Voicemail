@@ -115,6 +115,8 @@ class Voicemail(Base):
     cid_name = Column(String(80))
     cid_number = Column(String(20))
 
+    reply_to = relationship("ReplyTo", backref='voicemail')
+
     def __init__(self, path = None, cid_name = None, cid_number = None, duration = 0, user = None, create_date = None, is_read = False, status = 0):
         self.path = path
         self.cid_name = cid_name
@@ -354,6 +356,11 @@ class Group(Base):
 
     def __init__(self, name):
         self.name = name
+
+class ReplyTo(Base):
+    __tablename__ = 'ReplyTo'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    vm_id = Column(Integer, nullable = False)
 
 class UserSession(Base):
     __tablename__ = 'user_session'

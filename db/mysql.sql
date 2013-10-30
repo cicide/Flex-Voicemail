@@ -23,6 +23,14 @@ read_on datetime COMMENT 'date when this was read',
 deleted_on datetime COMMENT 'date when this was deleted',
 cid_name varchar(80) COMMENT 'CallerID name of the person leaving VM',
 cid_number varchar(20) COMMENT 'CallerID for the person leaving VM',
+reply_id int(11) COMMENT'id for the reply to table',
+primary key(id)
+) engine = innodb
+DEFAULT CHARACTER SET = utf8;
+
+create table reply_to (
+id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
+vm_id int(11) not NULL COMMENT 'vm which this record is a reply too',
 primary key(id)
 ) engine = innodb
 DEFAULT CHARACTER SET = utf8;
