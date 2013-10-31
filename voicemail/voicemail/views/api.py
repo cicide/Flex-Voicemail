@@ -301,7 +301,7 @@ def handleKey(request):
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'type':'send'}
+                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'type':'send', 'step': 'record'}
                 ),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['#'],
@@ -355,7 +355,251 @@ def handleKey(request):
         elif key == "4":
             return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp") 
     elif menu == "record":
-        return recordSendFwdReply(request, callid, user, menu, key, step=step)
+        duration = request.GET.get('duration', 0)
+        msgtype = request.GET.get('type', 0)
+        step = request.GET.get('step', 0)
+        if step == 'record':
+            if not duration:
+                # do still there loop
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.rsf.rsfInputRecordNow
+                )
+            else:
+                # we have a recorded message, play instruction for handling the recording
+                prompt = Prompt.getByName(name=Prompt.rsfMenuRecord)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                    'handleKey',
+                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'approve', 'msgtype': msgtype}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '#']                
+                )
+        elif step == 'approve':
+            if key == "1":
+                prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+                return dict(
+                    action="record",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'msgtype': msgtype}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['#'],
+                    folder=user.vm_prefs.folder,
+                    )
+            elif key == "23":
+                vmfile = request.get('vmfile', None)
+                promptMsg = {'uri':vmfile, 'delayafter' : 10}
+                prompt = combinePrompts(user, None, None, promptMsg, Prompt.rsfRecordStillThere)
+                return dict(
+                    action="play",
+                    prompt=prompt
+                    nextaction=request.route_url(
+                        'handleKey',
+                        _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'step': 'approve', 'msgtype': msgtype}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '*7', '#']                
+                )
+            elif key == "*3":
+                # Not deleting the file 
+                # TODO to create a cron to delete
+                prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'step': 'approve', 'msgtype': msgtype}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '*7', '#']                
+                    )
+            elif key == "#":
+                promptFirst = Prompt.getByName(name=Prompt.rsfApprovedMessage)
+                if msgtype == 'fwd' or msgtype == 'send':
+                    promptSecond = Prompt.getByName(name=Prompt.sendInputList)
+                    prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                    return dict(
+                        action="play",
+                        prompt=prompt.getFullPrompt(user=user),
+                        nextaction=request.route_url(
+                            'handleKey',
+                            _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile, 'step': 'input'}
+                        ),
+                        invalidaction=request.route_url('invalidmessage'),
+                        dtmf=['!', '*7', '#'],
+                        maxkeylength = 6
+                    )                    
+                elif msgtype == 'reply':
+                    promptSecond = Prompt.getByName(name=Prompt.rsfCreateForward)
+                    prompt = combinePrompts(user, None, None, promptFirst, promptSecond))
+                    return dict(
+                        action="play",
+                        prompt=prompt.getFullPrompt(user=user),
+                        nextaction=request.route_url(
+                            'handleKey',
+                            _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'step': 'reply', 'msgtype': msgtype}
+                        ),
+                        invalidaction=request.route_url('invalidmessage'),
+                        dtmf=['0', '*7', '#']
+                        )
+            else:
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.rsf.rsfForwardStillThere
+                )
+        elif step == 'reply':
+            if key == '0':
+                #
+                # TODO - Cancel
+                prompt = combinePrompts(user, None, None, Prompt.rsfCancelled, Prompt.activityMenu)
+                return dict(
+                action="play",
+                prompt=prompt,
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'menu':'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+                )
+            elif key == '#':
+                #send
+                # TODO - Deliver message
+                prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
+                return dict(
+                action="play",
+                prompt=prompt,
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'menu':'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+                )
+            else:
+                # still there?
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.rsf.rsfRecordStillThere
+                )                
+    elif menu == "send":
+        if not key:
+            # no entry
+            # do still there loop
+            curposition = handleKey(request=request)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.rsf.sendStillThere
+            )
+        elif key == '#':
+            # done entering list
+            destlist = None #TODO placeholder for list - kept in state?
+            # TODO if len of list is 0 
+            if len(destlist):
+                # TODO process list - deliver messages
+                listcount = len(destlist)
+                promptFirst = listcount # TODO placehold to create prompt for list lentgh count prompt
+                promptSecond = Prompt.getByName(name=Prompt.sendApprovedCount)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '2', '3', '5', '7', '*4']
+                )                                       
+            else:
+                # drop back to list entry loop
+                promptFirst = Prompt.getByName(name=Prompt.sendInvalid)
+                promptSecond = Prompt.getByName(name=Prompt.sendInputList)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handleKey',
+                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['!', '*7', '#'],
+                    maxkeylength = 6
+                )
+        elif key == '0':
+            # Cancel list entry
+            promptFirst = Prompt.getByName(name=Prompt.rsfCancelled)
+            promptSecond = Prompt.getByName(name=Prompt.activityMenu)
+            prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+            
+        else:
+            # determine if the entry matches a list or user
+            user = DBSession.query(User).filter_by(extension=key).first()
+            if not user:
+                # requested value doesn't match a user or list
+                promptFirst = Prompt.getByName(name=Prompt.sendInvalid)
+                promptSecond = Prompt.getByName(name=Prompt.sendStillThere)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handleKey',
+                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['!', '*7', '#'],
+                    maxkeylength = 6
+                )
+            else:
+                # entered value matches a user or list, add to / delete fromlist of entered destinations
+                # TODO toggle inclusion of destination in the current list of destinations
+                promptFirst = 'something' # TODO - play back the extension/list read back (i.e. one, two, seven, nine)
+                if result == 'add':
+                    promptSecond = Prompt.getByName(name=Prompt.sendAdded)
+                elif result == 'del':
+                    promptSecond = Promtp.getByName(name=Prompt.sendRemoved)
+                else:
+                    #how did I get here?
+                    #TODO - error handle 
+                    promptSecond = Prompt.getByName(name=Prompt.sendInvalid)
+                promptThird = Prompt.getByName(name=Prompt.sendStillThere)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond, promptThird)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handleKey',
+                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['!', '*7', '#'],
+                    maxkeylength = 6
+                )                    
     elif menu == "help":
         if key == "1":
             return returnPrompt(name=Prompt.invalidRequest)
@@ -450,110 +694,6 @@ def handleKey(request):
             return returnPrompt(name=Prompt.invalidRequest)
     return returnPrompt(name=Prompt.invalidRequest)
 
-def recordSendFwdReply(request, callid, user, menu, key, step, type):
-    if key == "1":
-        prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
-        return dict(
-            action="record",
-            prompt=prompt.getFullPrompt(user=user),
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user': extension, 'menu': 'record', 'uid': callid}
-            ),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['#'],
-            folder=user.vm_prefs.folder,
-            )
-    elif key == '23':
-        vmfile = request.get('vmfile', None)
-        prompt = {'uri':vmfile, 'delayafter' : 10}
-        return dict(
-            action="play",
-            prompt=prompt
-            nextaction=request.route_url(
-                'recordsendfwdreply',
-                _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile}
-            ),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '23', '*3', '#']                
-        )
-    elif key == '*3':
-        # Not deleting the file 
-        # TODO to create a cron to delete
-        prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted)
-        return dict(
-            action="play",
-            prompt=prompt.getFullPrompt(user=user),
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user': extension, 'menu': 'record', 'uid': callid}
-            ),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '23', '*3', '*7', '#']                
-            )
-    elif key == '#':
-            # TODO - approved
-            pass
-    elif section == 'postapproval':
-        prompt = Prompt.getByName(name=Prompt.rsfCreateForward)
-        return dict(
-            action="play",
-            prompt=prompt.getFullPrompt(user=user),
-            nextaction=request.route_url(
-                'recordsendfwdreply',
-                _query={'user': extension, 'menu': 'postapprovalaction', 'uid': callid}
-            ),
-            invalidaction=request.route_url('invalidmessage'),  #TODO: this should actually route to a still there loop
-            dtmf=['0', '*7', '#']
-            )
-    elif section == 'postapprovalaction':
-        if not key:
-            # invalid key returns to still there loop
-            curposition = recordSendForwardReply(request=request, user=user, state=state)
-            return stillThereLoop(
-                request=request, user=user, user_session=user_session,
-                dtmf=curposition['dtmf'],
-                nextaction=curposition['nextaction'],
-                extraPrompt=Prompt.rsf.rsfForwardStillThere
-            )
-        elif key == '0':
-            # TODO - Cancel
-            prompt = combinePrompts(user, None, None, Prompt.rsfCancelled, Prompt.activityMenu)
-            return dict(
-            action="play",
-            prompt=retprompt,
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user':extension, 'menu':'main', 'uid':callid}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '2', '3', '5', '7', '*4']
-            )
-        elif key == '*7':
-            # Return to main activity Menu
-            prompt = Prompt.getByName(name=Prompt.activityMenu)
-            return dict(
-            action="play",
-            prompt=retprompt,
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user':extension, 'menu':'main', 'uid':callid}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '2', '3', '5', '7', '*4']
-            )
-        elif key == '#':
-            # TODO - Deliver message
-            prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
-            return dict(
-            action="play",
-            prompt=retprompt,
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user':extension, 'menu':'main', 'uid':callid}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '2', '3', '5', '7', '*4']
-            )
-            
-        
 @view_config(route_name='scanmessages', renderer='json')
 def scanmessages(request):
     extension = request.GET.get('user', None)
