@@ -19,7 +19,7 @@ log = utils.get_logger("WSAPI")
 class mwiResponse(resource.Resource):
     isLeaf = True
     def render_GET(self, request):
-        url = urlparse('http://localhost:8011/mwi?user=<user id>&new=<int>&old=<int')
+        url = urlparse('http://localhost:8011/mwi?user=<user id>&new=<int>&old=<int>')
         if request.path == url.path:
             request.setResponseCode(200)
             return "<html><body>Success.</body></html>" 
