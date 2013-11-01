@@ -282,6 +282,7 @@ def handleKey(request):
     if not success:
         log.debug("User Not Found extension %s", extension)
         return retdict
+    # Handle GLOBAL keys - *7 return to main menu, *4 help
     if key == "*7":
             prompt = Prompt.getByName(name=Prompt.activityMenu)
             return dict(
@@ -293,6 +294,8 @@ def handleKey(request):
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['1', '2', '3', '5', '7', '*4']
             )
+    elif key == "*4":
+        return returnHelpMenu(request=request, user=user)    
     elif menu == "main":
         if key == "1":
             prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
@@ -321,10 +324,17 @@ def handleKey(request):
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['1', '2', '3', '4'],
             )
-        elif key == "*4":
-            return returnHelpMenu(request=request, user=user)
         elif key == "5":
-            return returnPrompt(name=Prompt.invalidRequest)
+            prompt = Prompt.getByName(name=Prompt.personalOptions)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'options', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '3', '4', '6', '*4', '*7']
+            )
         elif key == "7":
             return returnPrompt(name=Prompt.invalidRequest)
     elif menu == "personal":
@@ -366,7 +376,7 @@ def handleKey(request):
                     request=request, user=user, user_session=user_session,
                     dtmf=curposition['dtmf'],
                     nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.rsf.rsfInputRecordNow
+                    extraPrompt=Prompt.rsfInputRecordNow
                 )
             else:
                 # we have a recorded message, play instruction for handling the recording
@@ -401,7 +411,7 @@ def handleKey(request):
                 prompt = combinePrompts(user, None, None, promptMsg, Prompt.rsfRecordStillThere)
                 return dict(
                     action="play",
-                    prompt=prompt
+                    prompt=prompt,
                     nextaction=request.route_url(
                         'handleKey',
                         _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'step': 'approve', 'msgtype': msgtype}
@@ -458,7 +468,7 @@ def handleKey(request):
                     request=request, user=user, user_session=user_session,
                     dtmf=curposition['dtmf'],
                     nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.rsf.rsfForwardStillThere
+                    extraPrompt=Prompt.rsfForwardStillThere
                 )
         elif step == 'reply':
             if key == '0':
@@ -494,7 +504,7 @@ def handleKey(request):
                     request=request, user=user, user_session=user_session,
                     dtmf=curposition['dtmf'],
                     nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.rsf.rsfRecordStillThere
+                    extraPrompt=Prompt.rsfRecordStillThere
                 )                
     elif menu == "send":
         if not key:
@@ -505,7 +515,7 @@ def handleKey(request):
                 request=request, user=user, user_session=user_session,
                 dtmf=curposition['dtmf'],
                 nextaction=curposition['nextaction'],
-                extraPrompt=Prompt.rsf.sendStillThere
+                extraPrompt=Prompt.rsfFrowardStillThere
             )
         elif key == '#':
             # done entering list
@@ -622,6 +632,184 @@ def handleKey(request):
             )
         elif key == "7":
             return returnPrompt(name=Prompt.invalidRequest)
+    elif menu == 'options':
+        # Personal Options Menu - main menu selection 5
+        if key == '1':
+            # Administer mailing lists
+            prompt = Prompt.getByName(name=Prompt.mailListMenu)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['0', '1', '*7', '*4']
+            )            
+        elif key == '3':
+            # Change Password
+            prompt = Prompt.getByName(name=Prompt.passwordNew)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'password', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['0', '1', '*7', '*4']
+            )
+        elif key == '4':
+            #Record namePassword
+            prompt = Prompt.getByName(name=Prompt.recordNameIs)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['*7', '*4']
+            )
+        elif key == '6':
+            # Toggle auto-login on/off
+            # TODO - No idea what this is 
+            # placeholder returns to main Menu
+            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '2', '3', '5', '7', '*4']
+            )
+        else:
+            # invalid key - run the still there loopiness thingy function
+            curposition = handleKey(request=request)
+            return stillThereLoop(
+                request=request, user=user, user_session=user_session,
+                dtmf=curposition['dtmf'],
+                nextaction=curposition['nextaction'],
+                extraPrompt=Prompt.personalStillThere
+            )
+    elif menu == 'listadmin':
+        listid = request.GET.get('list', None)
+        vmfile = request.GET.get('vmfile', None)
+        # Administer Lists
+        if step == 'start':
+            if key == '1':
+                #Create List
+                prompt = Prompt.getByName(name=Prompt.mailListName)
+                return dict(
+                    action="record",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordName', 'list': listid}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['#'],
+                    folder=user.vm_prefs.folder,
+                    )
+            elif key == '0':
+                # TODO - Play List Names
+                pass
+            else:
+                #Still There?
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.mailListMenuStillThere
+                )
+        elif step == 'recordname':
+            # TODO check recording duration - re-record if not there
+            #if key == '#':
+            prompt = Prompt.getByName(name=Prompt.mailListRecord)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(),
+                nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'approve', 'list': listid}),
+                invalidaction=request.route_url('invalidmessage'),
+                dtmf=['1', '23', '#', '*3', '*7', '*4']
+            )
+        elif step == 'approve':
+            if key == '1':
+                # re-record
+                prompt = Prompt.getByName(name=Prompt.mailListName)
+                return dict(
+                    action="record",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordName', 'list': listid}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['#'],
+                    folder=user.vm_prefs.folder,
+                )
+            elif key == '23':
+                # play back recording
+                promptMsg = {'uri':vmfile, 'delayafter' : 10}
+                prompt = combinePrompts(user, None, None, promptMsg, Prompt.mailListRecord)
+                return dict(
+                    action="play",
+                    prompt=prompt,
+                    nextaction=request.route_url(
+                        'handleKey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'vmfile':vmfile, 'step': 'approve', 'list': listid}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '#', '*3', '*7', '*4']                
+                )
+            elif key == '*3':
+                # exit to top menu
+                prompt = Prompt.getByName(name=Prompt.mailListMenu)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['0', '1', '*7', '*4']
+                )
+            elif key == '#':
+                # approve recording, set passcode
+                prompt = Prompt.getByName(name=Prompt.mailListCode)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'list': listid, 'vmfile':vmfile, 'list': listid}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 6,
+                    dtmf=['!', '#', '*7', '*4']
+                )
+        elif step == 'keycode':
+            # TODO - validate keycode - make sure it's available, if not send them back to get a new keycode
+            user = DBSession.query(User).filter_by(extension=key).first()
+            if not user:
+                # TODO - we have an available list keycode, accept it
+                pass
+            else:
+                # TODO - invalid list keycode, try again.
+                pass
+
+    elif menu == 'password':
+        # TODO - Change Password
+        pass
+    elif menu == 'nameadmin':
+        # TODO - Change name Recording
+        pass
+    elif menu == 'scan':
+        #TODO - Scan Messages
+        pass
     elif menu == "vmaccess":
         log.debug(
             "HandleKey called with extension %s key %s vmid %s menu %s",

@@ -181,7 +181,7 @@ class Prompt(Base):
     userNameRecording = "User_Name_Recording"                         #  4
     userLeaveMessage = "User_Leave_Message"                           #  5
     userNotExist = "User_Not_Exist"                                   #  2
-    activityMenu = "Activity_Menu"                                   #  8
+    activityMenu = "Activity_Menu"                                    #  8
     messageSaved = "Message_Saved"                                    #  6
     helpMenu = "Help_Menu"                                            #  9
     vmSummary = "VM_Summary"                                          # 10
@@ -224,22 +224,23 @@ class Prompt(Base):
     personalGreetingStillThere = "Personal_Greeting_Still_There_Message" # 42
     # Greetings Menu
     greetingsBusyIs = "Greetings_Busy_Is_Message"                     # 43
-    greetingsTmpIs = "Greetings_Temp_Is_Message"                     # 44
+    greetingsTmpIs = "Greetings_Temp_Is_Message"                      # 44
     greetingsUnavailIs = "Greetings_Unavailable_Is_Message"           # 45
     greetingsNotSet = "Greetings_Not_Set_Message"                     # 46
     greetingsRecordMenu = "Greetings_Record_Menu"                     # 47
     greetingsRecordBusy = "Greetings_Busy_Record_Message"             # 48
     greetignsRecordUnavail = "Greetings_Unavail_Record_Message"       # 49
-    greetingsRecordTmp = "Greetings_Tmp_Record_Message"             # 50
+    greetingsRecordTmp = "Greetings_Tmp_Record_Message"               # 50
     greetingsApproved = "Greetings_Approved_Message"                  # 51
     greetingsBusyNotSet = "Greetings_Busy_Not_Set"                    # 52
     greetingsUnavailNotSet = "Greetings_Unavail_Not_Set"              # 53
-    greetingsTmpNotSet = "Greetings_Tmp_Not_Set"                    # 54
+    greetingsTmpNotSet = "Greetings_Tmp_Not_Set"                      # 54
     # Personal Options Menu
     personalOptions = "Personal_Options_Menu"                         # 55
     personalStillThere = "Personal_Options_Still_There_Message"       # 56
     # Administrator Mainling List Menu
     mailListMenu = "AML_Menu_Message"                                 # 57
+    mailListMenuStillThere = "AML_ListStillThere"                     # 75
     mailListRecord = "AML_Record_Message"                             # 58
     mailListName = "AML_Record_List_Name"                             # 59
     mailListCode = "AML_Enter_Key_Code"                               # 60
@@ -258,10 +259,10 @@ class Prompt(Base):
     invalidOption = "Invalid_Option"                                  # 69
     internalWelcome = "Internal_Access_Welcome"                       # 70
 
-    userUnavailGreeting = "User_Unavail_Greeting"                     #71
-    userBusyGreeting = "User_Busy_Greeting"                           #72
-    userTmpGreeting = "User_Tmp_Greeting"                             #73
-    userName = "User_Name"                                            #74
+    userUnavailGreeting = "User_Unavail_Greeting"                     # 71
+    userBusyGreeting = "User_Busy_Greeting"                           # 72
+    userTmpGreeting = "User_Tmp_Greeting"                             # 73
+    userName = "User_Name"                                            # 74
     
 
     @staticmethod
