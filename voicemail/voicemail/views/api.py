@@ -667,7 +667,7 @@ def handleKey(request):
                 prompt=prompt.getFullPrompt(),
                 nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid}),
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'start'}),
                 invalidaction=request.route_url('invalidmessage'),
                 dtmf=['*7', '*4']
             )
@@ -707,7 +707,7 @@ def handleKey(request):
                     prompt=prompt.getFullPrompt(user=user),
                     nextaction=request.route_url(
                         'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordName', 'list': listid}
+                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname', 'list': listid}
                     ),
                     invalidaction=request.route_url('invalidmessage'),
                     dtmf=['#'],
@@ -747,7 +747,7 @@ def handleKey(request):
                     prompt=prompt.getFullPrompt(user=user),
                     nextaction=request.route_url(
                         'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordName', 'list': listid}
+                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname', 'list': listid}
                     ),
                     invalidaction=request.route_url('invalidmessage'),
                     dtmf=['#'],
@@ -934,8 +934,124 @@ def handleKey(request):
                     dtmf=['!', '*7', '*4']
                 )
     elif menu == 'nameadmin':
-        # TODO - Change name Recording
-        pass
+        # Change name Recording
+        if step == 'start':
+            namefile = 'something'  # TODO - get location of name file
+            if not namefile:
+                promptFirst = Prompt.getByName(name=Prompt.greetingsNotSet)
+                promptSecond = Prompt.getByName(name=Prompt.mailListRecord)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '#', '7', '*4']
+                )
+            else:
+                promptFirst = {'uri':namefile, 'delayafter' : 10}
+                promptSecond = promptSecond = Prompt.getByName(name=Prompt.mailListRecord)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '#', '7', '*4']
+                )
+        if step == 'recordoptions':
+            namefile = request.Get.get('namefile', None)
+            vmfile = request.GET.get('vmfile', None)
+            if not key:
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.passwordNew
+                )
+            elif key =='1':
+                prompt = Prompt.getByName(name=Prompt.recordName)
+                return dict(
+                    action="record",
+                    prompt=prompt.getFullPrompt(user=user),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'nameadmin', 'uid': callid, 'namefile': namefile, 'step': 'recordname'}
+                    ),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['#'],
+                    folder=user.vm_prefs.folder,  # TODO use a sub directory for this
+                    )
+            elif key =='23':
+                # handle both newly recorded and previously recorded names
+                if vmfile:  #is there a new recording?
+                    promptFirst = {'uri': vmfile, 'delayafter': 10}
+                elif namefile:
+                    promptFirst = {'uri': namefile, 'delayafter': 10}
+                else:
+                    promptFirst = Prompt.getByName(name=Prompt.greetingsNotSet)
+                promptSecond = Prompt.getByName(name=Prompt.mailListRecord)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '23', '*3', '#', '7', '*4']
+                )
+            elif key == '*3':
+                # delete current recording or previous recording
+                if vmfile:   # TODO - we have a new recording, delete it
+                    pass
+                elif namefile:  # TODO - we have an old recording - remove references to it in the db and delete
+                    pass
+                else:
+                    # Nothing at all to do here, no file exists
+                    pass
+                promptFirst = Prompt.getByName(name=Prompt.rsfMessageDeleted)
+                promptSecond = Prompt.getByName(name=Prompt.recordNameIs)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'start'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['*7', '*4']
+                )                
+            elif key == '#':
+                if vmfile:
+                    # We have a new recording - save it
+                    # TODO - save new recording - delete old one
+                    pass
+                elif namefile:
+                    # We have an old recording - no changes needed
+                    pass
+                else:
+                    # TODO - We have neither, make sure we've deleted any old recordings and removed references in the db
+                    pass
+                promptFirst = Prompt.getByName(name=Prompt.messageSaved)
+                promptSecond = Prompt.getByName(name=Prompt.activityMenu)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '2', '3', '5', '7', '*4']
+                )
+        elif step == 'recordname':
+            # TODO - handle post-recording 
+            pass
     elif menu == 'scan':
         #TODO - Scan Messages
         pass
