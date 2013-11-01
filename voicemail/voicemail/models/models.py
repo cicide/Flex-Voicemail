@@ -244,6 +244,8 @@ class Prompt(Base):
     mailListRecord = "AML_Record_Message"                             # 58
     mailListName = "AML_Record_List_Name"                             # 59
     mailListCode = "AML_Enter_Key_Code"                               # 60
+    mailListExists = "AML_List_Already_Exists"                        # 76
+    mailListApprove = "AML_List_Approve"                              # 77
     # Change Password Menu
     passwordNew = "Password_Enter_New"                                # 61
     passwordNoMatch = "Password_No_Match"                             # 62
