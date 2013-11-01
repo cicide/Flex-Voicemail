@@ -654,12 +654,13 @@ def handleKey(request):
                 prompt=prompt.getFullPrompt(),
                 nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'password', 'uid':callid}),
+                    _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['0', '1', '*7', '*4']
+                maxkeylength = 8,
+                dtmf=['!', '*7', '*4']
             )
         elif key == '4':
-            #Record namePassword
+            #Record name
             prompt = Prompt.getByName(name=Prompt.recordNameIs)
             return dict(
                 action="play",
@@ -713,7 +714,7 @@ def handleKey(request):
                     folder=user.vm_prefs.folder,
                     )
             elif key == '0':
-                # TODO - Play List Names
+                # TODO - Play List Names - need flow mapped
                 pass
             else:
                 #Still There?
@@ -725,7 +726,7 @@ def handleKey(request):
                     extraPrompt=Prompt.mailListMenuStillThere
                 )
         elif step == 'recordname':
-            # TODO check recording duration - re-record if not there
+            # TODO - check recording duration - re-record if not there
             #if key == '#':
             prompt = Prompt.getByName(name=Prompt.mailListRecord)
             return dict(
@@ -786,24 +787,152 @@ def handleKey(request):
                     prompt=prompt.getFullPrompt(),
                     nextaction=request.route_url(
                         'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'list': listid, 'vmfile':vmfile, 'list': listid}),
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'list': listid, 'vmfile':vmfile}),
                     invalidaction=request.route_url('invalidmessage'),
                     maxkeylength = 6,
                     dtmf=['!', '#', '*7', '*4']
                 )
         elif step == 'keycode':
-            # TODO - validate keycode - make sure it's available, if not send them back to get a new keycode
+            # validate keycode - make sure it's available, if not send them back to get a new keycode
             user = DBSession.query(User).filter_by(extension=key).first()
             if not user:
-                # TODO - we have an available list keycode, accept it
-                pass
+                # we have an available list keycode, accept it
+                prompt = Prompt.getByName(name=Prompt.mailListApprove)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'codeapprove', 'list': listid, 'vmfile':vmfile}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['0', '#', '*7', '*4']
+                )
             else:
-                # TODO - invalid list keycode, try again.
-                pass
-
+                # invalid list keycode, try again.
+                promptFirst = Prompt.getByName(name=Prompt.mailListExists)
+                promptSecond = Prompt.getByName(name=Prompt.mailListCode)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'list': listid, 'vmfile':vmfile}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 6,
+                    dtmf=['!', '#', '*7', '*4']
+                )                
+        elif step == 'codeapprove':
+            if key == '0':
+                prompt = Prompt.getByName(name=Prompt.mailListMenu)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['0', '1', '*7', '*4']
+                )
+            elif key == '#':
+                # TODO - save list & name
+                promptFirst = Prompt.getByName(name=Prompt.messageSaved)
+                promptSecond = Prompt.getByName(name=Prompt.personalOptions)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'options', 'uid':callid}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '3', '4', '6', '*4', '*7']
+                )
     elif menu == 'password':
+        if step = 'firstpass':
         # TODO - Change Password
-        pass
+            if not key:
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.passwordNew
+                )
+            elif len(key) < 4:
+                prompt = Prompt.getByName(name=Prompt.passwordNew)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 8,
+                    dtmf=['!', '*7', '*4']
+                )
+            else:
+                firstpass = key  # TODO - save this in state instead of passing via url?
+                prompt = Prompt.getByName(name=Prompt.passwordReEnter)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass', 'fpwd': firstpass}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 8,
+                    dtmf=['!', '*7', '*4']
+                )            
+        if step == 'secondpass':
+            firstpass = request.Get.get('firstpass', None)
+            if not key:
+                curposition = handleKey(request=request)
+                return stillThereLoop(
+                    request=request, user=user, user_session=user_session,
+                    dtmf=curposition['dtmf'],
+                    nextaction=curposition['nextaction'],
+                    extraPrompt=Prompt.passwordNew
+                )
+            elif len(key) < 4:
+                prompt = Prompt.getByName(name=Prompt.passwordNew)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass'}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 8,
+                    dtmf=['!', '*7', '*4']
+                )
+            elif key == firstpass:
+                # TODO - save new password to database
+                promptFirst = Prompt.getByName(name=Prompt.passwordChanged)
+                promptSecond = Prompt.getByName(name=Prompt.activityMenu)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['1', '2', '3', '5', '7', '*4']
+                )
+            else:
+                firstpass = key  # TODO - save this in state instead of passing via url?
+                prompt = Prompt.getByName(name=Prompt.passwordReEnter)
+                return dict(
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass', 'fpwd': firstpass}),
+                    invalidaction=request.route_url('invalidmessage'),
+                    maxkeylength = 8,
+                    dtmf=['!', '*7', '*4']
+                )
     elif menu == 'nameadmin':
         # TODO - Change name Recording
         pass
