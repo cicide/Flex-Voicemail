@@ -1,6 +1,6 @@
 import uuid
 from twisted.application import internet
-from twisted.protocols import sip
+from twisted.protocols import sip, ServerFactory
 from twisted.internet import reactor, defer
 from UserDict import UserDict
 import utils, call
@@ -209,7 +209,9 @@ class Mwi(SIPSession):
             self.deferred.callback(self)    
         
         
-        
+class sipfactory(ServerFactory):
+    protocol = SIPClient()
+    
 protocol = SIPClient()
 account = SIPAccount('192.168.10.131','flexvmail',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
 
@@ -230,7 +232,8 @@ def runTests():
     
 
 def getService():
-    protocol = SIPClient()
+    sipsvr = sipfactory()
+    protocol = sipsvr.protocol
     service = internet.UDPServer(sipport, protocol)
     service.setName("SIPService")
     return service
