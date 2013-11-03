@@ -5,7 +5,6 @@ from twisted.internet import reactor
 from UserDict import UserDict
 import utils, call
 
-setDebugging(True)
 testMode = True
 
 log = utils.get_logger("SIPService")
