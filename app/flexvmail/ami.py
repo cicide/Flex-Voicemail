@@ -59,7 +59,18 @@ class DialerProtocol(AMIProtocol):
         ami.registerEvent('Bridge', self.onBridgeEvent)
         log.debug('registering DTMF')
         ami.registerEvent('DTMF', self.onDtmf)
+        log.debug('registering Peer Status Events')
+        ami.registerEvent('PeerStatus')
+        # query server for device status
+        d = self.ami.sippeers()
+        d.addCallback(self.onPeerList).addErrback(self.onFailure, 'sippeers')
 
+    def onPeerList(self, result):
+        log.debug(result)
+        
+    def onPeerStatus(self, ami, event):
+        log.debug(event)
+        
     def onDtmf(self, ami, event):
         def onSuccess(result):
             log.debug("dtmf capture success: %s" % result)

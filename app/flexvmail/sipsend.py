@@ -179,11 +179,15 @@ class Mwi(SIPSession):
     
     method = 'NOTIFY'
     
-    def __init__(self, account, protocol, msgWait, newCount, oldCount, user, host, port):
+    def __init__(self, account, protocol, msgWait, user, host, port, newCount=0, oldCount=0, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
         SIPSession.__init__(self, account, protocol)
         self.msgWaiting = msgWait
         self.newCount = newCount
         self.oldCount = oldCount
+        self.newUrgent = newUrgent
+        self.oldUrgent = oldUrgent
+        self.newFax = newFax
+        self.oldFax = oldFax
         self.notifyUser = user
         self.notifyHost = host
         self.notifyPort = int(port)
@@ -201,7 +205,16 @@ class Mwi(SIPSession):
         
     def genMwiContent(self):
         uri = 'sip:{0}@{1}'.format(self.account.username, self.account.ip)
-        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (self.msgWaiting, uri, self.newCount, self.oldCount, self.newCount, self.oldCount)
+        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
+            self.msgWaiting, 
+            uri, 
+            self.newCount,
+            self.oldCount,
+            self.newUrgent,
+            self.oldUrgent,
+            self.newFax,
+            self.oldFax
+        )
         return msg, len(msg)
     
     def requestMessage(self):
