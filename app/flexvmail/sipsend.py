@@ -243,7 +243,7 @@ class Mwi(SIPSession):
     
 protocol = SIPClient()
 account = SIPAccount('192.168.10.175','asterisk',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
-session = SIPSession(svrAccount, protocol)
+session = SIPSession(account, protocol)
 
 def notifyMWI(svrSession, destSession, user, host, port, new, old):
     def onNotify(result):
