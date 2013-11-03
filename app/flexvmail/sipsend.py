@@ -30,32 +30,32 @@ class SIPAccount(sip.URL):
         else:
             self.proxy = host
             
-    def toString(self, includeTag=True):
-        l = []; w = l.append
-        w("{0} <sip:".format(self.display if includeTag else ''))
-        if self.username is not None:
-            w(self.username)
-            w("@")
-        w(self.host)
-        if self.port is not None:
-            w(":%d" % self.port)
-        w(">")
-        if self.usertype is not None:
-            w(";user=%s" % self.usertype)
-        for n in ("transport", "ttl", "maddr", "method", "tag"):
-            v = getattr(self, n)
-            if v is not None:
-                if n == 'tag' and includeTag == False:
-                    pass
-                else:
-                    w(";%s=%s" % (n, v))
-        for v in self.other:
-            w(";%s" % v)
-        if self.headers:
-            w("?")
-            w("&".join([("%s=%s" % (specialCases.get(h) or dashCapitalize(h), v)) for (h, v) in self.headers.items()]))
+    #def toString(self, includeTag=True):
+        #l = []; w = l.append
+        #w("{0} <sip:".format(self.display if includeTag else ''))
+        #if self.username is not None:
+            #w(self.username)
+            #w("@")
+        #w(self.host)
+        #if self.port is not None:
+            #w(":%d" % self.port)
+        #w(">")
+        #if self.usertype is not None:
+            #w(";user=%s" % self.usertype)
+        #for n in ("transport", "ttl", "maddr", "method", "tag"):
+            #v = getattr(self, n)
+            #if v is not None:
+                #if n == 'tag' and includeTag == False:
+                    #pass
+                #else:
+                    #w(";%s=%s" % (n, v))
+        #for v in self.other:
+            #w(";%s" % v)
+        #if self.headers:
+            #w("?")
+            #w("&".join([("%s=%s" % (specialCases.get(h) or dashCapitalize(h), v)) for (h, v) in self.headers.items()]))
         
-        return "".join(l)
+        #return "".join(l)
         
         
     def __str__(self):
@@ -246,21 +246,24 @@ class Mwi(SIPSession):
 protocol = SIPClient()
 account = SIPAccount('192.168.10.131','flexvmail',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
 
-def notifyMWI(user, host, port, new, old):
+def notifyMWI(session, user, host, port, new, old):
     def onNotify(result):
         log.debug('Notification came back!')
     def onErr(reason):
         log.error(reason)
         
-    session = SIPSession(account, protocol)
     dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old))
     dmwi.addCallback(onNotify).addErrback(onErr)
         
         
 def runTests():
     log.debug('Running SIP test.')
-    notifyMWI('2609', '192.168.10.95', '5060', '5', '3')
-    notifyMWI('2610', '192.168.10.175', '5060', '17', '21')
+    account = SIPAccount('192.168.10.95', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
+    tmpsession = SIPSession(account, protocol)
+    notifyMWI(tmpsession, '2609', '192.168.10.95', '5060', '5', '3')
+    account = SIPAccount('192.168.10.175', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
+    tmpsession = SIPSession(account, protocol)
+    notifyMWI(tmpsession, '2610', '192.168.10.175', '5060', '17', '21')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)
