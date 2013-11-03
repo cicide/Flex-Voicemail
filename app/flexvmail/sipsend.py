@@ -137,7 +137,7 @@ class SIPSession():
             msgWait = "yes"
         else:
             msgWait = "no"
-        n = Mwi(self.account, self.protocol, msgWait, newCount, oldCount, user, host, port)
+        n = Mwi(self.account, self.protocol, msgWait, user, host, port, newCount, oldCount, newUrgent, oldUrgent, newFax, oldFax)
         return n.deferred
     
 class SIPVia(sip.Via):
