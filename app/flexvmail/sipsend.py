@@ -186,7 +186,7 @@ class Mwi(SIPSession):
         self.oldCount = oldCount
         self.notifyUser = user
         self.notifyHost = host
-        self.notifyPort = port
+        self.notifyPort = int(port)
         self.msgContent,self.msgLength = self.genMwiContent()
         self.deferred = defer.Deferred()
         self.start()
