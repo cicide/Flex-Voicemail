@@ -132,7 +132,7 @@ class SIPSession():
         
         return 'Digest {0}'.format(header)
     
-    def notifyMWI(self, user, host, port, newCount=0, oldCount=0):
+    def notifyMWI(self, user, host, port, newCount=0, oldCount=0, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
         if int(newCount) > 0:
             msgWait = "yes"
         else:
@@ -266,7 +266,7 @@ def notifyMWI(session, user, host, port, new, old, newUrgent=0, oldUrgent=0, new
     def onErr(reason):
         log.error(reason)
         
-    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), str(newUrgent), str(oldUrgent), str(newFax), str(oldFax))
+    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), newUrgent=str(newUrgent), oldUrgent=str(oldUrgent), newFax=str(newFax), oldFax=str(oldFax))
     dmwi.addCallback(onNotify).addErrback(onErr)
         
         
