@@ -187,7 +187,6 @@ class Mwi(SIPSession):
         self.notifyUser = user
         self.notifyHost = host
         self.notifyPort = port
-        self.notifyURI = 'sip:%s@%s' % (user, host)
         self.msgContent,self.msgLength = self.genMwiContent(msgWait, newCount, oldCount, self.notifyURI)
         self.deferred = defer.Deferred()
         self.start()
@@ -200,21 +199,20 @@ class Mwi(SIPSession):
         self.state = states['waiting']
         
     def genMwiContent(self, msgWait, new, old, uri):
-        msg = """\n\r\n\n\rMessages-Waiting: %s\r\n
-                 Message-Account: %s\r\n
-                 Voice-Message: %s/%s (%s/%s)""" % (msgWait, uri, new, old, new, old)
+        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (msgWait, uri, new, old, new, old)
         return msg, len(msg)
     
     def requestMessage(self):
         self.seq +=1
         msg = SIPRequest(self.method, 'sip:{0}@{1}'.format(self.notifyUser, self.notifyHost))
         sub = SIPSession.requestMessage(self, msg)
-        sub.addHeader('Route','<sip:192.168.10.131:5060;lr>', 0)
-        sub.addHeader('to', self.notifyURI)
-        sub.addHeader('contact', '<sip:{0}@{1}>'.format(self.account.username, self.account.ip) )
-        sub.addHeader('Accept','application/simple-message-summary')
-        sub.addHeader('Allow', 'INVITE,ACK,OPTIONS,BYE,CANCEL,SUBSCRIBE,NOTIFY,REFER,MESSAGE,INFO,PING')
+        sub.addHeader('Route','<sip:{0}@{1}:{2};lr>'.format(self.notifyUser, self.notifyHost, self.notifyPort), 0)
+        sub.addHeader('to', '<sip:{0}@{1};tag={2}>'.format(self.account.username, self.account.ip, self.account.tag))
+        sub.addHeader('contact', '<sip:{0}@{1}:{2}>'.format(self.account.username, self.account.ip, self.account.port))
+        #sub.addHeader('Accept','application/simple-message-summary')
+        #sub.addHeader('Allow', 'INVITE,ACK,OPTIONS,BYE,CANCEL,SUBSCRIBE,NOTIFY,REFER,MESSAGE,INFO,PING')
         sub.addHeader('Event',"message-summary")
+        sub.addHeader('Content-Type','application/simple-message-summary')
         sub.addHeader('Content-Length', self.msgLength)
         sub.addHeader('Max-Forwards', 70)
         sub.bodyDataReceived(self.msgContent)
@@ -244,9 +242,10 @@ class Mwi(SIPSession):
         
     
 protocol = SIPClient()
-account = SIPAccount('192.168.10.131','flexvmail',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
+account = SIPAccount('192.168.10.175','asterisk',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
+session = SIPSession(svrAccount, protocol)
 
-def notifyMWI(session, user, host, port, new, old):
+def notifyMWI(svrSession, destSession, user, host, port, new, old):
     def onNotify(result):
         log.debug('Notification came back!')
     def onErr(reason):
@@ -258,12 +257,12 @@ def notifyMWI(session, user, host, port, new, old):
         
 def runTests():
     log.debug('Running SIP test.')
-    account = SIPAccount('192.168.10.95', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
-    tmpsession = SIPSession(account, protocol)
-    notifyMWI(tmpsession, '2609', '192.168.10.95', '5060', '5', '3')
-    account = SIPAccount('192.168.10.175', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
-    tmpsession = SIPSession(account, protocol)
-    notifyMWI(tmpsession, '2610', '192.168.10.175', '5060', '17', '21')
+    #account = SIPAccount('192.168.10.95', username='2609', ip=tag=uuid.uuid4().hex, display='Flex Voicemail')
+    #session = SIPSession(account, protocol)
+    notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3')
+    #account = SIPAccount('192.168.10.175', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
+    #session = SIPSession(account, protocol)
+    notifyMWI(session, '2610', '192.168.10.175', '5060', '17', '21')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)
