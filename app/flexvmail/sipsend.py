@@ -198,8 +198,9 @@ class Mwi(SIPSession):
         self.protocol.sendMessage(self.account, reg)
         self.state = states['waiting']
         
-    def genMwiContent(self, msgWait, new, old, uri):
-        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (msgWait, uri, new, old, new, old)
+    def genMwiContent(self):
+        uri = 'sip:{0}@{1}'.format(self.account.username, self.account.ip)
+        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (self.msgWaiting, uri, self.newCount, self.oldCount, self.newCount, self.oldCount)
         return msg, len(msg)
     
     def requestMessage(self):
