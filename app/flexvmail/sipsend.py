@@ -29,6 +29,37 @@ class SIPAccount(sip.URL):
             self.proxy = proxy
         else:
             self.proxy = host
+            
+    def toString(self, includeTag=True):
+        l = []; w = l.append
+        w("{0} <sip:".format(self.display if includeTag else ''))
+        if self.username is not None:
+            w(self.username)
+            w("@")
+        w(self.host)
+        if self.port is not None:
+            w(":%d" % self.port)
+        w(">")
+        if self.usertype is not None:
+            w(";user=%s" % self.usertype)
+        for n in ("transport", "ttl", "maddr", "method", "tag"):
+            v = getattr(self, n)
+            if v is not None:
+                if n == 'tag' and includeTag == False:
+                    pass
+                else:
+                    w(";%s=%s" % (n, v))
+        for v in self.other:
+            w(";%s" % v)
+        if self.headers:
+            w("?")
+            w("&".join([("%s=%s" % (specialCases.get(h) or dashCapitalize(h), v)) for (h, v) in self.headers.items()]))
+        
+        return "".join(l)
+        
+        
+    def __str__(self):
+        return self.toString()
     
 class SIPClient(sip.Base):
     
@@ -183,7 +214,6 @@ class Mwi(SIPSession):
         sub.addHeader('contact', '<sip:{0}@{1}>'.format(self.account.username, self.account.ip) )
         sub.addHeader('Accept','application/simple-message-summary')
         sub.addHeader('Allow', 'INVITE,ACK,OPTIONS,BYE,CANCEL,SUBSCRIBE,NOTIFY,REFER,MESSAGE,INFO,PING')
-        sub.addHeader('Expires',3600)
         sub.addHeader('Event',"message-summary")
         sub.addHeader('Content-Length', self.msgLength)
         sub.addHeader('Max-Forwards', 70)
