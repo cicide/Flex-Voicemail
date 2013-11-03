@@ -260,13 +260,13 @@ protocol = SIPClient()
 account = SIPAccount('192.168.10.175', 'asterisk', None, None, ip='192.168.10.175', port=5060, tag=uuid.uuid4().hex, display='Flex Voicemail')
 session = SIPSession(account, protocol)
 
-def notifyMWI(session, user, host, port, new, old):
+def notifyMWI(session, user, host, port, new, old, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
     def onNotify(result):
         log.debug('Notification came back!')
     def onErr(reason):
         log.error(reason)
         
-    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old))
+    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), str(newUrgent), str(oldUrgent), str(newFax), str(oldFax))
     dmwi.addCallback(onNotify).addErrback(onErr)
         
         
@@ -277,7 +277,7 @@ def runTests():
     notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3')
     #account = SIPAccount('192.168.10.175', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
     #session = SIPSession(account, protocol)
-    notifyMWI(session, '2610', '192.168.10.175', '5060', '17', '21')
+    notifyMWI(session, '2610', '192.168.10.175', '5060', '17', '21', '2', '0', '0','3')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)
