@@ -149,17 +149,17 @@ class Mwi(SIPSession):
     method = 'NOTIFY'
     
     def __init__(self, account, protocol, msgWait, newCount, oldCount, user, host, port):
-            SIPSession.__init__(self, account, protocol)
-            self.msgWaiting = msgWait
-            self.newCount = newCount
-            self.oldCount = oldCount
-            self.notifyUser = user
-            self.notifyHost = host
-            self.notifyPort = port
-            self.notifyURI = 'sip:%s@%s' % (user, host)
-            self.msgContent,self.msgLength = self.genMwiContent(msgWait, newCount, oldCount, self.notifyURI)
-            self.deferred = defer.Deferred()
-            self.start()
+        SIPSession.__init__(self, account, protocol)
+        self.msgWaiting = msgWait
+        self.newCount = newCount
+        self.oldCount = oldCount
+        self.notifyUser = user
+        self.notifyHost = host
+        self.notifyPort = port
+        self.notifyURI = 'sip:%s@%s' % (user, host)
+        self.msgContent,self.msgLength = self.genMwiContent(msgWait, newCount, oldCount, self.notifyURI)
+        self.deferred = defer.Deferred()
+        self.start()
         
     def start(self):
         reg = self.requestMessage()
@@ -169,7 +169,7 @@ class Mwi(SIPSession):
         self.state = states['waiting']
         
     def genMwiContent(self, msgWait, new, old, uri):
-        msg = """Messages-Waiting: %s\r\n
+        msg = """\n\r\n\n\rMessages-Waiting: %s\r\n
                  Message-Account: %s\r\n
                  Voice-Message: %s/%s (%s/%s)""" % (msgWait, uri, new, old, new, old)
         return msg, len(msg)
@@ -185,7 +185,7 @@ class Mwi(SIPSession):
         sub.addHeader('Allow', 'INVITE,ACK,OPTIONS,BYE,CANCEL,SUBSCRIBE,NOTIFY,REFER,MESSAGE,INFO,PING')
         sub.addHeader('Expires',3600)
         sub.addHeader('Event',"message-summary")
-        sub.addHeader('Content-Length', 0)
+        sub.addHeader('Content-Length', self.msgLength)
         sub.addHeader('Max-Forwards', 70)
         sub.bodyDataReceived(self.msgContent)
         #sub.addHeader('Allow-Events','talk, hold, conference, LocalModeStatus')
@@ -230,7 +230,7 @@ def notifyMWI(user, host, port, new, old):
 def runTests():
     log.debug('Running SIP test.')
     notifyMWI('2609', '192.168.10.95', '5060', '5', '3')
-    
+    notifyMWI('2610', '192.168.10.175', '5060', '17', '21')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)
