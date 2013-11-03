@@ -224,7 +224,7 @@ def notifyMWI(user, host, port, new, old):
         
     session = SIPSession(account, protocol)
     dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old))
-    dmwi.addCallabck(onNotify).addErrback(onErr)
+    dmwi.addCallback(onNotify).addErrback(onErr)
         
         
 def runTests():
