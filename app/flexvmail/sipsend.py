@@ -11,7 +11,13 @@ log = utils.get_logger("SIPService")
 
 sipport = 5065
 
-
+states = {'idle': 0,
+          'waiting':1,
+          'incall':2,
+          'scheduled':3,
+          'finished': 4,
+          'failed': 5
+          }
 
 class SIPAccount(sip.URL):
     def __init__(self, host, username=None, password=None, proxy=None, port=None, ip=None, tag=None, display=''):
