@@ -45,28 +45,28 @@ class DialerProtocol(AMIProtocol):
         self.ami = ami
         self.host_id = self.factory.hostname
         #create a list in the factory for tracking of active calls should we lose connection so we can clear the maps out
-        log.debug('Initializing Server.')
-        # query server for device status
-        self.initServer()
         log.debug('registering User Events')
         ami.registerEvent('UserEvent', self.onUserEvent)
         log.debug('registering Hangups')
         ami.registerEvent('Hangup', self.onHangup)
-        log.debug('registering New Channels')
-        ami.registerEvent('Newchannel', self.onNewChannel)
-        log.debug('registering New States')
-        ami.registerEvent('Newstate', self.onNewState)
-        log.debug('registering Dial')
-        ami.registerEvent('Dial', self.onDialEvent)
-        log.debug('registering Bridge')
-        ami.registerEvent('Bridge', self.onBridgeEvent)
+        #log.debug('registering New Channels')
+        #ami.registerEvent('Newchannel', self.onNewChannel)
+        #log.debug('registering New States')
+        #ami.registerEvent('Newstate', self.onNewState)
+        #log.debug('registering Dial')
+        #ami.registerEvent('Dial', self.onDialEvent)
+        #log.debug('registering Bridge')
+        #ami.registerEvent('Bridge', self.onBridgeEvent)
         log.debug('registering DTMF')
         ami.registerEvent('DTMF', self.onDtmf)
         log.debug('registering Peer Status Events')
         ami.registerEvent('PeerStatus')
-        
+        d = ami.sipPeers()
+        d.addCallback(self.onPeerList)
+        log.debug('whoo hoo')
         
     def initServer():
+        # doesnt work
         log.debug('requesting sip Peer list')
         d = self.ami.sipPeers()
         d.addCallback(self.onPeerList).addErrback(self.onFailure, 'sipPeers')
