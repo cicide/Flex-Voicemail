@@ -1,7 +1,7 @@
 import uuid
 from twisted.application import internet
 from twisted.protocols import sip
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 from UserDict import UserDict
 import utils, call
 
