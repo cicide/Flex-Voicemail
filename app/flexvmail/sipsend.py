@@ -25,6 +25,10 @@ class SIPAccount(sip.URL):
         self.ip = ip
         self.display = '"{0}"'.format(display)
         
+        if proxy:
+            self.proxy = proxy
+        else:
+            self.proxy = host
     
 class SIPClient(sip.Base):
     
