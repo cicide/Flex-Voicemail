@@ -42,6 +42,7 @@ class SIPClient(sip.Base):
             raise RuntimeError, "only UDP currently supported"
         if self.debug:
             log.debug("Sending %r to %r" % (message.toString(), destURL))
+        log.debug(self.transport)
         self.transport.write(message.toString(), (destURL.proxy, destURL.port or self.PORT))
         
         
