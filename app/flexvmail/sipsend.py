@@ -245,7 +245,7 @@ protocol = SIPClient()
 account = SIPAccount('192.168.10.175','asterisk',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
 session = SIPSession(account, protocol)
 
-def notifyMWI(svrSession, destSession, user, host, port, new, old):
+def notifyMWI(session, user, host, port, new, old):
     def onNotify(result):
         log.debug('Notification came back!')
     def onErr(reason):
