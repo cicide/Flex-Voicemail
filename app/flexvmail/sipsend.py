@@ -208,9 +208,6 @@ class Mwi(SIPSession):
         else:
             self.deferred.callback(self)    
         
-        
-class sipfactory(ServerFactory):
-    protocol = SIPClient()
     
 protocol = SIPClient()
 account = SIPAccount('192.168.10.131','flexvmail',None,None,tag=uuid.uuid4().hex, display='Flex Voicemail')
@@ -232,8 +229,6 @@ def runTests():
     
 
 def getService():
-    sipsvr = sipfactory()
-    protocol = sipsvr.protocol
     service = internet.UDPServer(sipport, protocol)
     service.setName("SIPService")
     return service
