@@ -192,10 +192,11 @@ class Mwi(SIPSession):
         self.start()
         
     def start(self):
-        reg = self.requestMessage()
-        log.debug('Sending %s' % str(reg))
+        notify = self.requestMessage()
+        log.debug('Sending %s' % str(notify))
         self.protocol.sessions[self.callid] = self.handle_response
-        self.protocol.sendMessage(self.account, reg)
+        destAccount = SIPAccount(self.notifyHost, username=self.notifyUser,ip=self.notifyHost,port=self.notifyPort,tag=uuid.uuid4().hex, display='Flex Voicemail')
+        self.protocol.sendMessage(destAccount, notify)
         self.state = states['waiting']
         
     def genMwiContent(self):
