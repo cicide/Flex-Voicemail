@@ -208,8 +208,8 @@ class Mwi(SIPSession):
     def requestMessage(self):
         self.seq +=1
         msg = SIPRequest(self.method, 'sip:{0}@{1}'.format(self.notifyUser, self.notifyHost))
-        sub = SIPSession.requestMessage(self)
-        #sub.addHeader('Route','<sip:192.168.10.131:5060;lr>', 0)
+        sub = SIPSession.requestMessage(self, msg)
+        sub.addHeader('Route','<sip:192.168.10.131:5060;lr>', 0)
         sub.addHeader('to', self.notifyURI)
         sub.addHeader('contact', '<sip:{0}@{1}>'.format(self.account.username, self.account.ip) )
         sub.addHeader('Accept','application/simple-message-summary')
