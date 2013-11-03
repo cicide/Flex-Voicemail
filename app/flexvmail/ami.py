@@ -45,6 +45,9 @@ class DialerProtocol(AMIProtocol):
         self.ami = ami
         self.host_id = self.factory.hostname
         #create a list in the factory for tracking of active calls should we lose connection so we can clear the maps out
+        log.debug('Initializing Server.')
+        # query server for device status
+        self.initServer()
         log.debug('registering User Events')
         ami.registerEvent('UserEvent', self.onUserEvent)
         log.debug('registering Hangups')
@@ -61,8 +64,7 @@ class DialerProtocol(AMIProtocol):
         ami.registerEvent('DTMF', self.onDtmf)
         log.debug('registering Peer Status Events')
         ami.registerEvent('PeerStatus')
-        # query server for device status
-        self.initServer()
+        
         
     def initServer():
         log.debug('requesting sip Peer list')
