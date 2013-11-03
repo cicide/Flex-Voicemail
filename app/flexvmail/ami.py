@@ -60,10 +60,9 @@ class DialerProtocol(AMIProtocol):
         log.debug('registering DTMF')
         ami.registerEvent('DTMF', self.onDtmf)
         log.debug('registering Peer Status Events')
-        ami.registerEvent('PeerStatus')
-        d = ami.sipPeers()
-        d.addCallback(self.onPeerList)
-        log.debug('whoo hoo')
+        ami.registerEvent('PeerStatus', self.onPeerStatus)
+        log.debug('Event Registration Completed')
+        self.initServer()
         
     def initServer():
         # doesnt work
