@@ -167,7 +167,7 @@ class Mwi(SIPSession):
         msg = """Messages-Waiting: %s\r\n
                  Message-Account: %s\r\n
                  Voice-Message: %s/%s (%s/%s)""" % (msgWait, uri, new, old, new, old)
-        return msg
+        return msg, len(msg)
     
     def requestMessage(self):
         self.seq +=1
