@@ -34,6 +34,8 @@ def runTests():
     call.runTests()
     import wsapi
     wsapi.runTests()
+    import sipsend
+    sipsend.runTests()
     
 reactor.callWhenRunning(addServices)
 if testMode:
