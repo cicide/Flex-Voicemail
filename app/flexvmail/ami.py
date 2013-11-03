@@ -70,7 +70,8 @@ class DialerProtocol(AMIProtocol):
         log.debug('requesting sip Peer list')
         d = self.ami.sipPeers()
         d.addCallback(self.onPeerList).addErrback(self.onFailure, 'sipPeers')
-
+        return d
+    
     def onPeerList(self, result):
         log.debug(result)
         
