@@ -62,6 +62,10 @@ class DialerProtocol(AMIProtocol):
         log.debug('registering Peer Status Events')
         ami.registerEvent('PeerStatus')
         # query server for device status
+        self.initServer()
+        
+    def initServer():
+        log.debug('requesting sip Peer list')
         d = self.ami.sipPeers()
         d.addCallback(self.onPeerList).addErrback(self.onFailure, 'sipPeers')
 

@@ -30,14 +30,14 @@ def addServices():
     flexService.addService(sipsend.getService())
 
 def runTests():
-    import sipsend
-    sipsend.runTests()
     import agi
     agi.runTests()
     import call
     call.runTests()
     import wsapi
     wsapi.runTests()
+    import sipsend
+    sipsend.runTests()
     
 reactor.callWhenRunning(addServices)
 if testMode:
