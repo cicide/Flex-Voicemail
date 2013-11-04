@@ -223,7 +223,7 @@ class Mwi(SIPSession):
             #self.newUrgent,
             #self.oldUrgent
         #)
-        msg = """Messages-Waiting: %s\nMessage-Account: %s""" % (
+        msg = """Messages-Waiting: %s\r\nMessage-Account: %s""" % (
             self.msgWaiting, 
             uri
         )
