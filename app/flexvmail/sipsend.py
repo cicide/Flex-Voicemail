@@ -204,25 +204,25 @@ class Mwi(SIPSession):
         self.state = states['waiting']
         
     def genMwiContent(self):
-        uri = 'sip:{0}@{1}'.format(self.account.username, self.account.ip)
-        #msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
-            #self.msgWaiting, 
-            #uri, 
-            #self.newCount,
-            #self.oldCount,
-            #self.newUrgent,
-            #self.oldUrgent,
-            #self.newFax,
-            #self.oldFax
-        #)
-        msg = """\r\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
+        uri = 'sip:{0}@{1}'.format(self.notifyUser, self.account.ip)
+        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
             self.msgWaiting, 
             uri, 
             self.newCount,
             self.oldCount,
             self.newUrgent,
-            self.oldUrgent
+            self.oldUrgent,
+            self.newFax,
+            self.oldFax
         )
+        #msg = """\r\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
+            #self.msgWaiting, 
+            #uri, 
+            #self.newCount,
+            #self.oldCount,
+            #self.newUrgent,
+            #self.oldUrgent
+        #)
         return msg, len(msg)
     
     def requestMessage(self):
