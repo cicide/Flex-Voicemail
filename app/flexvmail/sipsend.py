@@ -205,15 +205,23 @@ class Mwi(SIPSession):
         
     def genMwiContent(self):
         uri = 'sip:{0}@{1}'.format(self.account.username, self.account.ip)
-        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
+        #msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
+            #self.msgWaiting, 
+            #uri, 
+            #self.newCount,
+            #self.oldCount,
+            #self.newUrgent,
+            #self.oldUrgent,
+            #self.newFax,
+            #self.oldFax
+        #)
+        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
             self.msgWaiting, 
             uri, 
             self.newCount,
             self.oldCount,
             self.newUrgent,
-            self.oldUrgent,
-            self.newFax,
-            self.oldFax
+            self.oldUrgent
         )
         return msg, len(msg)
     
@@ -272,11 +280,7 @@ def notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax,
         
 def runTests():
     log.debug('Running SIP test.')
-    #account = SIPAccount('192.168.10.95', username='2609', ip=tag=uuid.uuid4().hex, display='Flex Voicemail')
-    #session = SIPSession(account, protocol)
     notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3', '0', '0', '0', '0')
-    #account = SIPAccount('192.168.10.175', username='2609', tag=uuid.uuid4().hex, display='Flex Voicemail')
-    #session = SIPSession(account, protocol)
     notifyMWI(session, '2610', '192.168.10.175', '5060', '17', '21', '2', '0', '0','3')
     notifyMWI(session, '1111', '192.168.10.33', '24128', '3', '5', '1', '2', '0', '0')
 
