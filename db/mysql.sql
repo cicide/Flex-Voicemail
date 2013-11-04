@@ -7,6 +7,7 @@ name varchar(80) Comment 'Name of the user',
 create_date datetime NOT NULL COMMENT 'When the user was created',
 last_login datetime COMMENT 'When the user last logged in',
 status int(3) NOT NULL COMMENT 'Active or not',
+is_list tinyint(1) not NULL default 0 COMMENT '0-not a list, 1 - is list'
 primary key(id)
 ) engine=innodb
 DEFAULT CHARACTER SET = utf8;
@@ -143,3 +144,12 @@ key(uid)
 ) engine=innodb
 DEFAULT CHARACTER SET = utf8;
 
+
+create table user_list (
+id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
+list_id int(11) not NULL COMMENT 'id in the user table',
+user_id int(11) not NULL COMMENT 'User id for the user record',
+primary key(id),
+key(list_id)
+) engine = innodb
+DEFAULT CHARACTER SET = utf8;
