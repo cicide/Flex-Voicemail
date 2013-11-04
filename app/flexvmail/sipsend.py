@@ -205,7 +205,7 @@ class Mwi(SIPSession):
         
     def genMwiContent(self):
         uri = 'sip:{0}@{1}'.format(self.notifyUser, self.account.ip)
-        msg = """\n\r\n\n\rMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
+        msg = """Messages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\nFax-Messages: %s/%s""" % (
             self.msgWaiting, 
             uri, 
             self.newCount,
@@ -287,7 +287,7 @@ def runTests():
     log.debug('Running SIP test.')
     notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3', '0', '0', '0', '0')
     notifyMWI(session, '2614', '192.168.10.98', '5060', '17', '21', '2', '0', '0','3')
-    notifyMWI(session, '2615', '192.168.10.99', '5060', '3', '5', '1', '2', '0', '0')
+    notifyMWI(session, '2613', '192.168.10.98', '5060', '3', '5', '1', '2', '0', '0')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)
