@@ -24,8 +24,10 @@ flexService.setServiceParent(application)
 def addServices():
     import agi
     import ami
+    import sipsend
     flexService.addService(agi.getService())
     flexService.addService(ami.getService())
+    flexService.addService(sipsend.getService())
 
 def runTests():
     import agi
@@ -34,6 +36,8 @@ def runTests():
     call.runTests()
     import wsapi
     wsapi.runTests()
+    import sipsend
+    sipsend.runTests()
     
 reactor.callWhenRunning(addServices)
 if testMode:

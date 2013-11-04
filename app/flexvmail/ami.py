@@ -49,17 +49,26 @@ class DialerProtocol(AMIProtocol):
         ami.registerEvent('UserEvent', self.onUserEvent)
         log.debug('registering Hangups')
         ami.registerEvent('Hangup', self.onHangup)
-        log.debug('registering New Channels')
-        ami.registerEvent('Newchannel', self.onNewChannel)
-        log.debug('registering New States')
-        ami.registerEvent('Newstate', self.onNewState)
-        log.debug('registering Dial')
-        ami.registerEvent('Dial', self.onDialEvent)
-        log.debug('registering Bridge')
-        ami.registerEvent('Bridge', self.onBridgeEvent)
         log.debug('registering DTMF')
         ami.registerEvent('DTMF', self.onDtmf)
-
+        log.debug('registering Peer Status Events')
+        ami.registerEvent('PeerStatus', self.onPeerStatus)
+        log.debug('Event Registration Completed')
+        self.initServer()
+        
+    def initServer():
+        # doesnt work
+        log.debug('requesting sip Peer list')
+        d = self.ami.sipPeers()
+        d.addCallback(self.onPeerList).addErrback(self.onFailure, 'sipPeers')
+        return d
+    
+    def onPeerList(self, result):
+        log.debug(result)
+        
+    def onPeerStatus(self, ami, event):
+        log.debug(event)
+        
     def onDtmf(self, ami, event):
         def onSuccess(result):
             log.debug("dtmf capture success: %s" % result)
@@ -78,75 +87,6 @@ class DialerProtocol(AMIProtocol):
                 dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
             log.debug(dtmfBuffer[str(uid)])
                 
-    def onDialEvent(self, ami, event):
-        log.debug("got dial event: %s" % event)
-        uid = event['uniqueid']
-        subevent = event['subevent']
-        #if subevent == 'Begin':
-            #dest_uid = event['destuniqueid']
-            #if uid in self.answerMap:
-                #cuid = '%s-%s' % (self.host_id, uid)
-                #call.calls[cuid].setCurrentStatus('dialing')
-                #call.calls[cuid].logEvent('dialing')
-        #if subevent == 'End':
-            #if uid in self.answerMap:
-                #cuid = '%s-%s' % (self.host_id, uid)
-                #dialstatus = event['dialstatus']
-                #log.debug("got call termination notice with status: %s for uid: %s" % (dialstatus, uid))
-                #call.calls[cuid].setCurrentStatus('hangup')
-                #call.calls[cuid].logEvent('hangup')
-
-    def onBridgeEvent(self, ami, event):
-        uid = event['uniqueid1']
-        dest_uid = event['uniqueid2']
-        dest_phone = event['callerid2']
-        chan1 = event['channel1']
-        chan2 = event['channel2']
-        cuid = '%s-%s' % (self.host_id, uid)
-        dest_cuid = '%s-%s' % (self.host_id, dest_uid)
-        log.debug("BRIDGE EVENT bridging %s to %s" % (cuid, dest_cuid))
-        #if uid in self.answerMap:
-        #if cuid in call.calls:
-            #log.debug("got a bridge event for a call in the answerMap")
-            #call.calls[cuid].logBridgeEvent(dest_cuid, dest_phone, chan2)
-            #call.calls[cuid].logEvent('inCall')
-            #call.calls[cuid].setCurrentStatus('inCall')
-            #d = self.ami.getVar(chan1, 'THREE_WAY')
-            #d.addCallback(self.onGotThreeWay).addErrback(self.onFailure, 'onBridgeEvent')
-        #else:
-            ##log.debug("didn't find uid: %s in answerMap" % uid)
-            #call.registerChild(dest_cuid, cuid)
-            #log.debug("didn't find %s in call.calls" % cuid)
-        ##if dest_uid in self.answerMap:
-        #if dest_cuid in call.calls:
-            #log.debug("BRIDGE EVENT for a call in the answerMap")
-            #call.calls[dest_cuid].logBridgeEvent(dest_cuid, dest_phone, chan1)
-            #call.calls[dest_cuid].logEvent('inCall')
-            #call.calls[dest_cuid].setCurrentStatus('inCall')
-            #d = self.ami.getVar(chan2, 'THREE_WAY')
-            #d.addCallback(self.onGotThreeWay).addErrback(self.onFailure, 'onBridgeEvent')
-        #else:
-            ##log.debug("didn't find uid: %s in answerMap" % dest_uid)
-            #call.registerChild(cuid, dest_cuid)
-            #log.debug("didn't find %s in call.calls" % dest_cuid)
-    
-    def onGotThreeWay(self, result=None):
-        if result:
-            log.debug("Got three way result of %s" % result)
-        else:
-            log.debug("This call is not a three-way call")
-
-    def onNewChannel(self, ami, event):
-        uid = event['uniqueid']
-        chan = event['channel']
-        state = event['channelstate']
-        cuid = '%s-%s' % (self.host_id, uid)
-        if not str(uid) in dtmfBuffer:
-            dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
-        #if cuid not in chan_map:
-            #chan_map[cuid] = {'chan': chan, 'ami': self}
-        #log.debug('New channel at %s' % cuid)
-
     def onUserEvent(self, ami, event):
         log.info("Got user event of type: %s" % event['userevent'])
         hostid = event['hostid']
@@ -154,22 +94,6 @@ class DialerProtocol(AMIProtocol):
         exten = event['exten']
         etype = event['userevent']
         cuid = '%s-%s' % (hostid, uid)
-        #if etype == 'confJoin':
-            #if cuid in call.calls:
-                #call.calls[cuid].joinConference()
-            #else:
-                #log.debug("got confJoin request for unregistered call leg")
-        #elif etype == 'confDepart':
-            #if cuid in call.calls:
-                #call.calls[cuid].departConference()
-            #else:
-                #log.debug("got confDepart request for unregistered call leg")
-        #elif etype == 'callMap':
-            ##map this manager connection (asterisk instance) to this group, tying calls for this group
-            ##to this asterisk manager instance
-            #call.mapAMI(cuid, self)
-        #elif etype == 'answerMap':
-            #self.answerMap.append(uid)
 
     def onHangup(self, ami, event):
         log.debug("hangup called with event: %s" % event)
@@ -181,24 +105,6 @@ class DialerProtocol(AMIProtocol):
             tmp = dtmfBuffer.pop(str(uid))
             log.debug(tmp)
             tmp = None
-        #if cuid in call.calls:
-            #log.debug("hangup up call %s" % cuid)
-            #call.calls[cuid].hangup()
-        #else:
-            #log.debug("%s is not in %s" % (cuid, call.calls))
-        #if cuid in chan_map:
-            #log.debug("clearing %s from chan_map" % cuid)
-            #chan_map.pop(cuid)
-        #if uid in self.answerMap:
-            #log.debug("clearing %s from answer Map" % uid)
-            #self.answerMap.remove(uid)
-
-    def onNewState(self, ami, event):
-        uid = event['uniqueid']
-        channel = event['channel']
-        channel_state = event['channelstate']
-        channel_desc = event['channelstatedesc']
-        log.info("Channel %s has new state %s" % (channel, channel_desc))
 
     def origCall(self, call_params):
         number = call_params['number']
