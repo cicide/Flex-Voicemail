@@ -215,7 +215,7 @@ class Mwi(SIPSession):
             #self.newFax,
             #self.oldFax
         #)
-        msg = """\r\nMessages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)\r\n""" % (
+        msg = """Messages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
             self.msgWaiting, 
             uri, 
             self.newCount,
