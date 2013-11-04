@@ -215,13 +215,17 @@ class Mwi(SIPSession):
             #self.newFax,
             #self.oldFax
         #)
-        msg = """Messages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
+        #msg = """Messages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
+            #self.msgWaiting, 
+            #uri, 
+            #self.newCount,
+            #self.oldCount,
+            #self.newUrgent,
+            #self.oldUrgent
+        #)
+        msg = """Messages-Waiting: %s\nMessage-Account: %s""" % (
             self.msgWaiting, 
-            uri, 
-            self.newCount,
-            self.oldCount,
-            self.newUrgent,
-            self.oldUrgent
+            uri
         )
         return msg, len(msg)
     
@@ -230,7 +234,8 @@ class Mwi(SIPSession):
         msg = SIPRequest(self.method, 'sip:{0}@{1}'.format(self.notifyUser, self.notifyHost))
         sub = SIPSession.requestMessage(self, msg)
         sub.addHeader('Route','<sip:{0}@{1}:{2};lr>'.format(self.notifyUser, self.notifyHost, self.notifyPort), 0)
-        sub.addHeader('to', '<sip:{0}@{1};tag={2}>'.format(self.account.username, self.account.ip, self.account.tag))
+        #sub.addHeader('to', '<sip:{0}@{1};tag={2}>'.format(self.account.username, self.account.ip, self.account.tag))
+        sub.addHeader('to', '<sip:{0}@{1};tag={2}>'.format(self.notifyUser, self.account.ip, self.account.tag))
         sub.addHeader('contact', '<sip:{0}@{1}:{2}>'.format(self.account.username, self.account.ip, self.account.port))
         #sub.addHeader('Accept','application/simple-message-summary')
         #sub.addHeader('Allow', 'INVITE,ACK,OPTIONS,BYE,CANCEL,SUBSCRIBE,NOTIFY,REFER,MESSAGE,INFO,PING')
