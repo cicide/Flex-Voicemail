@@ -285,7 +285,7 @@ def handleKey(request):
     user_session = getUserSession(callid, user)
     state = user_session.getCurrentState()
     if not key:
-        return stillThereLoop(request, user, user_session, menu, step)
+        return stillThereLoop(request, user, user_session)
     else:
         state.dtmf = None
         state.nextaction = None
@@ -302,11 +302,12 @@ def handleKey(request):
             'handlekey',
             _query={'user': extension, 'menu': 'main', 'uid':callid})
         state.dtmf = ['1', '2', '3', '5', '7', '*4']
+        state.menu = 'main'
         user_session.saveState(state)
         return dict(
             action="play",
             prompt=prompt.getFullPrompt(),
-            nextaction=state.nextaction.
+            nextaction=state.nextaction,
             invalidaction=request.route_url('invalidmessage'),
             dtmf = state.dtmf
         )
@@ -320,6 +321,8 @@ def handleKey(request):
                     _query={'user': extension, 'menu': 'record', 'uid': callid, 'type':'send', 'step': 'record'}
                 )
             state.dtmf = ['#']
+            state.menu = 'record'
+            state.step = 'record'
             user_session.saveState(state)
             return dict(
                 action="record",
@@ -331,13 +334,15 @@ def handleKey(request):
                 )
         elif key == "2":
             return getMessage(
-                request=request, menu="vmaccess", user=user, state=state)
+                request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "3":
             prompt = Prompt.getByName(name=Prompt.personalGreeting)
             state.nextaction=request.route_url(
                 'handlekey',
                 _query={'user': extension, 'menu': 'personal', 'uid':callid})
             state.dtmf=['1', '2', '3', '4']
+            state.menu = 'personal'
+            state.step=None
             user_session.saveState(state)
             return dict(
                 action="play",
@@ -352,6 +357,8 @@ def handleKey(request):
                 'handlekey',
                 _query={'user': extension, 'menu': 'options', 'uid':callid})
             state.dtmf=['1', '3', '4', '6', '*4', '*7']
+            state.menu = 'options'
+            state.step = None
             user_session.saveState(state)
             return dict(
                 action="play",
@@ -378,6 +385,8 @@ def handleKey(request):
                 'handlekey',
                 _query={'user': extension, 'menu': 'main', 'uid':callid})
             state.dtmf=['1', '2', '3', '5', '7', '*4']
+            state.menu ='main'
+            state.step = None
             user_session.saveState(state)
             return dict(
                 action="play",
@@ -387,13 +396,17 @@ def handleKey(request):
                 dtmf=state.dtmf
             )
         elif key == "2":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="unavail") 
+            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="unavail", state=state, user_session=user_session) 
         elif key == "3":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="busy") 
+            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="busy", state=state, user_session=user_session) 
         elif key == "4":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp") 
+            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp", state=state, user_session=user_session) 
     elif menu == "record":
         if step == 'record':
+            #TODO Check this duration condition.
+            #seems like this should be if vmfile is not there
+            #also it shouldn't play the still there loop here should be 
+            #something different
             if not duration:
                 # do still there loop
                 return stillThereLoop( request=request, user=user, user_session=user_session)
@@ -408,7 +421,8 @@ def handleKey(request):
 
                 state.nextaction=request.route_url( 'handlekey', _query=_query)
                 state.dtmf=['1', '23', '*3', '#']                
-                state.stillTherePrompt = Prompt.rsfInputRecordNow #TODO Check the prompt
+                state.menu='record'
+                state.step='approve'
                 user_session.saveState(state)
                 return dict(
                     action="play",
@@ -427,7 +441,8 @@ def handleKey(request):
                     _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'msgtype': msgtype}
                 state.nextaction=request.route_url( 'handlekey', _query=_query)
                 state.dtmf=['#']
-                state.stillTherePrompt = Prompt.rsfInputRecordNow
+                state.menu='record'
+                state.step='record'
                 user_session.saveState(state)
                 return dict(
                     action="record",
@@ -448,7 +463,8 @@ def handleKey(request):
                     _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'step': 'approve', 'msgtype': msgtype}
                 state.nextaction=request.route_url( 'handlekey', _query=_query)
                 state.dtmf=['1', '23', '*3', '*7', '#']                
-                state.stillTherePrompt = Prompt.rsfInputRecordNow
+                state.menu='record'
+                state.step='approve'
                 user_session.saveState(state)
                 return dict(
                     action="play",
@@ -465,7 +481,8 @@ def handleKey(request):
                 state.nextaction=request.route_url( 'handlekey', 
                         _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'vmid':vmid, 'step': 'approve', 'msgtype': msgtype})
                 state.dtmf=['1', '23', '*3', '*7', '#']                
-                state.stillTherePrompt = Prompt.rsfInputRecordNow
+                state.menu='record'
+                state.step='approve'
                 user_session.saveState(state)
                 return dict(
                     action="play",
@@ -479,45 +496,59 @@ def handleKey(request):
                 if msgtype == 'fwd' or msgtype == 'send':
                     promptSecond = Prompt.getByName(name=Prompt.sendInputList)
                     prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                    state.nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile, 'step': 'input'}
+                    )
+                    state.dtmf=['!', '*7', '#']
+                    state.maxkeylength = 6
+                    state.menu = 'send'
+                    state.step = 'input'
+                    user_session.saveState(state)
                     return dict(
                         action="play",
                         prompt=prompt,
-                        nextaction=request.route_url(
-                            'handlekey',
-                            _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile, 'step': 'input'}
-                        ),
                         invalidaction=request.route_url('invalidmessage'),
-                        dtmf=['!', '*7', '#'],
-                        maxkeylength = 6
+                        nextaction=state.nextaction,
+                        dtmf=state.dtmf,
+                        maxlength=state.maxlength
                     )                    
                 elif msgtype == 'reply':
                     promptSecond = Prompt.getByName(name=Prompt.rsfCreateForward)
                     prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                    state.nextaction=request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'vmid':vmid, 'step': 'reply', 'msgtype': msgtype}
+                    )
+                    state.dtmf=['0', '*7', '#']
+                    state.menu = 'record'
+                    state.step = 'reply'
+                    user_session.saveState(state)
                     return dict(
                         action="play",
                         prompt=prompt,
-                        nextaction=request.route_url(
-                            'handlekey',
-                            _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmfile':vmfile, 'vmid':vmid, 'step': 'reply', 'msgtype': msgtype}
-                        ),
                         invalidaction=request.route_url('invalidmessage'),
-                        dtmf=['0', '*7', '#']
+                        nextaction=state.nextaction,
+                        dtmf=state.dtmf
                         )
-            else:
-                return stillThereLoop( request=request, user=user, user_session=user_session)
         elif step == 'reply':
             if key == '0':
                 #
                 # TODO - Delete cron job
                 prompt = combinePrompts(user, None, None, Prompt.rsfCancelled, Prompt.activityMenu)
-                return dict(
-                action="play",
-                prompt=prompt,
-                nextaction=request.route_url(
+                state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user':extension, 'menu':'main', 'uid':callid}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '2', '3', '5', '7', '*4']
+                    _query={'user':extension, 'menu':'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu='main'
+                state.step=None
+                user_session.saveState(state)
+                return dict(
+                    action="play",
+                    prompt=prompt,
+                    invalidaction=request.route_url('invalidmessage'),
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf
                 )
             elif key == '#':
                 curvm = DBSession.query(Voicemail).filter_by(id=vmid).first()
@@ -539,36 +570,22 @@ def handleKey(request):
                         
                 # TODO this should go back to playing the nxt message. Check with Chris
                 prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user':extension, 'menu':'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu='main'
+                state.step = None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user':extension, 'menu':'main', 'uid':callid}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '2', '3', '5', '7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
-            else:
-                # still there?
-                curposition = handleKey(request=request)
-                return stillThereLoop(
-                    request=request, user=user, user_session=user_session,
-                    dtmf=curposition['dtmf'],
-                    nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.rsfRecordStillThere
-                )                
     elif menu == "send":
-        if not key:
-            # no entry
-            # do still there loop
-            curposition = handleKey(request=request)
-            return stillThereLoop(
-                request=request, user=user, user_session=user_session,
-                dtmf=curposition['dtmf'],
-                nextaction=curposition['nextaction'],
-                extraPrompt=Prompt.rsfFrowardStillThere
-            )
-        elif key == '#':
+        if key == '#':
             # done entering list
             if len(state.destlist):
                 # process list - deliver messages
@@ -603,46 +620,60 @@ def handleKey(request):
                 # TODO should the next step be play next message or go to main menu
                 # TODO check with Chris
                 prompt = Prompt.getByName(name=Prompt.sendApprovedCount)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu='main'
+                state.step = None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(param=listcount),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '2', '3', '5', '7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf
                 )                                       
             else:
                 # drop back to list entry loop
                 promptFirst = Prompt.getByName(name=Prompt.sendInvalid)
                 promptSecond = Prompt.getByName(name=Prompt.sendInputList)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                )
+                state.dtmf=['!', '*7', '#']
+                state.maxkeylength = 6
+                state.menu='send'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['!', '*7', '#'],
-                    maxkeylength = 6
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )
         elif key == '0':
             # Cancel list entry
-            state.destlist = None
-            user_session.saveState(state)
             promptFirst = Prompt.getByName(name=Prompt.rsfCancelled)
             promptSecond = Prompt.getByName(name=Prompt.activityMenu)
             prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'main', 'uid':callid}),
+            state.dtmf=['1', '2', '3', '5', '7', '*4']
+            state.destlist = None
+            state.menu='main'
+            state.step=None
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt,
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '2', '3', '5', '7', '*4']
+                nextaction=state.nextaction,
+                dtmf=state.dtmf
             )
             
         else:
@@ -653,16 +684,22 @@ def handleKey(request):
                 promptFirst = Prompt.getByName(name=Prompt.sendInvalid)
                 promptSecond = Prompt.getByName(name=Prompt.sendStillThere)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                ),
+                state.dtmf=['!', '*7', '#'],
+                state.maxkeylength = 6
+                state.menu='send'
+                state.step=None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['!', '*7', '#'],
-                    maxkeylength = 6
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )
             else:
                 # entered value matches a user or list, add to / delete fromlist of entered destinations
@@ -675,6 +712,14 @@ def handleKey(request):
                     state.destlist.append(key)
                     promptSecond = Prompt.getByName(name=Prompt.sendAdded)
                     
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
+                ),
+                state.dtmf=['!', '*7', '#'],
+                state.maxkeylength = 6
+                state.menu='send'
+                state.step=None
                 user_session.saveState(state)
                 promptFirst = prompt.TTS  
                 promptThird = Prompt.getByName(name=Prompt.sendStillThere)
@@ -682,13 +727,10 @@ def handleKey(request):
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'send', 'uid': callid, 'vmfile':vmfile}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['!', '*7', '#'],
-                    maxkeylength = 6
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )                    
     elif menu == "help":
         if key == "1":
@@ -701,14 +743,19 @@ def handleKey(request):
             return returnPrompt(name=Prompt.invalidRequest)
         elif key == "*7":
             prompt = Prompt.getByName(name=Prompt.userVmAccess)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'main', 'uid':callid}),
+            state.dtmf=['1', '2', '3', '5', '7', '*4'],
+            state.menu='main'
+            state.step=None
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '2', '3', '5', '7', '*4'],
+                nextaction=state.nextaction,
+                dtfm=state.dtmf
             )
         elif key == "7":
             return returnPrompt(name=Prompt.invalidRequest)
@@ -717,27 +764,38 @@ def handleKey(request):
         if key == '1':
             # Administer mailing lists
             prompt = Prompt.getByName(name=Prompt.mailListMenu)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'})
+            state.dtmf=['0', '1', '*7', '*4']
+            state.menu = 'listadmin'
+            state.step = 'start'
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt.getFullPrompt(),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['0', '1', '*7', '*4']
+                nextaction=state.nextaction,
+                dtmf=state.dtmf
             )            
         elif key == '3':
             # Change Password
             prompt = Prompt.getByName(name=Prompt.passwordNew)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'})
+            state.maxkeylength = 8
+            state.dtmf=['!', '*7', '*4']
+            state.menu='password'
+            state.step='firstpass'
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt.getFullPrompt(),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'}),
                 invalidaction=request.route_url('invalidmessage'),
-                maxkeylength = 8,
-                dtmf=['!', '*7', '*4']
+                nextaction=state.nextaction,
+                dtmf=state.dtmf,
+                maxlength=state.maxlength
             )
         elif key == '4':
             #Record name
@@ -753,37 +811,38 @@ def handleKey(request):
                 promptThird = promptSecond = Prompt.getByName(name=Prompt.mailListRecord)
 
             prompt = combinePrompts(user, None, None, promptFirst, promptSecond, promptThird)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'recordoptions'})
+            state.dtmf=['1', '23', '*3', '#', '7', '*4']
+            state.menu = 'nameadmin'
+            state.step = 'recordoptions'
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt,
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'recordoptions'}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '*3', '#', '7', '*4']
+                nextaction=state.nextaction,
+                dtmf=state.dtmf,
             )
         elif key == '6':
             # Toggle auto-login on/off
             # TODO - No idea what this is 
             # placeholder returns to main Menu
             prompt = Prompt.getByName(name=Prompt.activityMenu)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'main', 'uid':callid}),
+            state.dtmf=['1', '2', '3', '5', '7', '*4']
+            state.menu='main'
+            state.step=None
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt.getFullPrompt(),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'main', 'uid':callid}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '2', '3', '5', '7', '*4']
-            )
-        else:
-            # invalid key - run the still there loopiness thingy function
-            curposition = handleKey(request=request)
-            return stillThereLoop(
-                request=request, user=user, user_session=user_session,
-                dtmf=curposition['dtmf'],
-                nextaction=curposition['nextaction'],
-                extraPrompt=Prompt.personalStillThere
+                nextaction=state.nextaction,
+                dtmf=state.dtmf,
             )
     elif menu == 'listadmin':
         listid = request.GET.get('list', None)
@@ -792,94 +851,116 @@ def handleKey(request):
         if step == 'start':
             if key == '1':
                 prompt = Prompt.getByName(name=Prompt.mailListName)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname'}
+                )
+                state.dtmf=['#']
+                state.menu = 'listadmin'
+                state.step='recordname'
+                user_session.saveState(state)
                 return dict(
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname'}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['#'],
                     folder=user.vm_prefs.getNameFolder(),
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                     )
             elif key == '0':
                 # TODO - Play List Names - need flow mapped
                 pass
-            else:
-                #Still There?
-                curposition = handleKey(request=request)
-                return stillThereLoop(
-                    request=request, user=user, user_session=user_session,
-                    dtmf=curposition['dtmf'],
-                    nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.mailListMenuStillThere
-                )
         elif step == 'recordname':
             # TODO - check recording duration - re-record if not there
             prompt = Prompt.getByName(name=Prompt.mailListRecord)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'approve', 'vmfile': vmfile}),
+            state.dtmf=['1', '23', '#', '*3', '*7', '*4']
+            state.menu = 'listadmin'
+            state.step='approve'
+            user_session.saveState(state)
             return dict(
                 action="play",
                 prompt=prompt.getFullPrompt(),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'approve', 'vmfile': vmfile}),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '#', '*3', '*7', '*4']
+                nextaction=state.nextaction,
+                dtmf=state.dtmf,
             )
         elif step == 'approve':
             if key == '1':
                 # re-record
                 prompt = Prompt.getByName(name=Prompt.mailListName)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname'}
+                )
+                state.dtmf=['#']
+                state.menu = 'listadmin'
+                state.step='recordname'
+                user_session.saveState(state)
                 return dict(
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'step': 'recordname'}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['#'],
                     folder=user.vm_prefs.getNameFolder(),
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             elif key == '23':
                 # play back recording
                 promptMsg = {'uri':vmfile, 'delayafter' : 10}
                 prompt = combinePrompts(user, None, None, promptMsg, Prompt.mailListRecord)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'vmfile':vmfile, 'step': 'approve'}
+                ),
+                state.dtmf=['1', '23', '#', '*3', '*7', '*4']                
+                state.menu = 'listadmin'
+                state.step = 'approve'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid': callid, 'vmfile':vmfile, 'step': 'approve'}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '23', '#', '*3', '*7', '*4']                
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             elif key == '*3':
                 # exit to top menu
                 prompt = Prompt.getByName(name=Prompt.mailListMenu)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'})
+                state.dtmf=['0', '1', '*7', '*4']
+                state.menu = 'listadmin'
+                state.step = 'start'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['0', '1', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             elif key == '#':
                 # approve recording, set passcode
                 prompt = Prompt.getByName(name=Prompt.mailListCode)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'vmfile':vmfile})
+                state.maxkeylength = 6,
+                state.dtmf=['!', '#', '*7', '*4']
+                state.menu = 'listadmin'
+                state.step = 'keycode'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'vmfile':vmfile}),
                     invalidaction=request.route_url('invalidmessage'),
-                    maxkeylength = 6,
-                    dtmf=['!', '#', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )
         elif step == 'keycode':
             # validate keycode - make sure it's available, if not send them back to get a new keycode
@@ -887,41 +968,57 @@ def handleKey(request):
             if not user:
                 # we have an available list keycode, accept it
                 prompt = Prompt.getByName(name=Prompt.mailListApprove)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'codeapprove', 'keycode': key, 'vmfile':vmfile}),
+                state.dtmf=['0', '#', '*7', '*4']
+                state.menu = 'listadmin'
+                state.step = 'keycode'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'codeapprove', 'keycode': key, 'vmfile':vmfile}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['0', '#', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             else:
                 # invalid list keycode, try again.
                 promptFirst = Prompt.getByName(name=Prompt.mailListExists)
                 promptSecond = Prompt.getByName(name=Prompt.mailListCode)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'vmfile':vmfile}),
+                state.maxkeylength = 6,
+                state.dtmf=['!', '#', '*7', '*4']
+                state.menu = 'listadmin'
+                state.step = 'keycode'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'keycode', 'vmfile':vmfile}),
                     invalidaction=request.route_url('invalidmessage'),
-                    maxkeylength = 6,
-                    dtmf=['!', '#', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )                
         elif step == 'codeapprove':
             if key == '0':
                 prompt = Prompt.getByName(name=Prompt.mailListMenu)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'})
+                state.dtmf=['0', '1', '*7', '*4']
+                state.menu = 'listadmin'
+                state.step = 'start'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'listadmin', 'uid':callid, 'step': 'start'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['0', '1', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             elif key == '#':
                 # TODO - save list & name
@@ -931,63 +1028,63 @@ def handleKey(request):
                 promptFirst = Prompt.getByName(name=Prompt.messageSaved)
                 promptSecond = Prompt.getByName(name=Prompt.personalOptions)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'options', 'uid':callid})
+                state.dtmf=['1', '3', '4', '6', '*4', '*7']
+                state.menu = 'options'
+                state.step = None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'options', 'uid':callid}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '3', '4', '6', '*4', '*7']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
     elif menu == 'password':
         # Need to test this. I think this is done
         if step == 'firstpass':
-            if not key:
-                curposition = handleKey(request=request)
-                return stillThereLoop(
-                    request=request, user=user, user_session=user_session,
-                    dtmf=curposition['dtmf'],
-                    nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.passwordNew
-                )
-            elif len(key) < 4:
+            if len(key) < 4:
                 prompt = Prompt.getByName(name=Prompt.passwordNew)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'})
+                state.maxkeylength = 8
+                state.dtmf=['!', '*7', '*4']
+                state.menu = 'password'
+                state.step = 'firstpass'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'firstpass'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    maxkeylength = 8,
-                    dtmf=['!', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )
             else:
-                state.password = key
-                user_session.saveState(state)
                 prompt = Prompt.getByName(name=Prompt.passwordReEnter)
+                state.password = key
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass'}),
+                state.maxkeylength = 8,
+                state.dtmf=['!', '*7', '*4']
+                state.menu = 'password'
+                state.step = 'secondpass'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    maxkeylength = 8,
-                    dtmf=['!', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )            
         if step == 'secondpass':
             firstpass = state.password
-            if not key:
-                curposition = handleKey(request=request)
-                return stillThereLoop(
-                    request=request, user=user, user_session=user_session,
-                    dtmf=curposition['dtmf'],
-                    nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.passwordNew
-                )
-            elif key == firstpass:
+            if key == firstpass:
                 # Save the password in the db
                 user.pin = key
                 state.password = None
@@ -996,51 +1093,59 @@ def handleKey(request):
                 promptFirst = Prompt.getByName(name=Prompt.passwordChanged)
                 promptSecond = Prompt.getByName(name=Prompt.activityMenu)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu = 'main'
+                state.step = None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '2', '3', '5', '7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             else:
                 prompt = Prompt.getByName(name=Prompt.passwordReEnter)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass'})
+                state.maxkeylength = 8
+                state.dtmf=['!', '*7', '*4']
+                state.menu = 'password'
+                state.step = 'secondpass'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'password', 'uid':callid, 'step': 'secondpass'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    maxkeylength = 8,
-                    dtmf=['!', '*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
+                    maxlength=state.maxlength
                 )
     elif menu == 'nameadmin':
         # Change name Recording
         if step == 'recordoptions':
             vmfile = request.GET.get('vmfile', None)
-            if not key:
-                curposition = handleKey(request=request)
-                return stillThereLoop(
-                    request=request, user=user, user_session=user_session,
-                    dtmf=curposition['dtmf'],
-                    nextaction=curposition['nextaction'],
-                    extraPrompt=Prompt.passwordNew
-                )
-            elif key =='1':
+            if key =='1':
                 prompt = Prompt.getByName(name=Prompt.recordName)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid': callid, 'step': 'recordname'}
+                ),
+                state.dtmf=['#'],
+                state.menu = 'nameadmin'
+                state.step = 'recordname'
+                user_session.saveState(state)
                 return dict(
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'nameadmin', 'uid': callid, 'step': 'recordname'}
-                    ),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['#'],
                     folder=user.vm_prefs.getNameFolder(),  
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                     )
             elif key =='23':
                 # handle both newly recorded and previously recorded names
@@ -1052,14 +1157,19 @@ def handleKey(request):
                     promptFirst = Prompt.getByName(name=Prompt.greetingsNotSet)
                 promptSecond = Prompt.getByName(name=Prompt.mailListRecord)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'})
+                state.dtmf=['1', '23', '*3', '#', '7', '*4']
+                state.menu = 'nameadmin'
+                state.step = 'recordoptions'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '23', '*3', '#', '7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
             elif key == '*3':
                 # delete current recording or previous recording
@@ -1069,14 +1179,19 @@ def handleKey(request):
                 promptFirst = Prompt.getByName(name=Prompt.rsfMessageDeleted)
                 promptSecond = Prompt.getByName(name=Prompt.recordNameIs)
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'start'})
+                state.dtmf=['*7', '*4']
+                state.menu = 'nameadmin'
+                state.step = 'start'
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt,
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'start'}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['*7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )                
             elif key == '#':
                 if vmfile:
@@ -1084,14 +1199,19 @@ def handleKey(request):
                     DBSession.add(user.vm_prefs)
                 promptFirst = Prompt.getByName(name=Prompt.messageSaved)
                 promptSecond = Prompt.getByName(name=Prompt.activityMenu)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu = 'main'
+                state.step = None
+                user_session.saveState(state)
                 return dict(
                     action="play",
                     prompt=prompt.getFullPrompt(),
-                    nextaction=request.route_url(
-                        'handlekey',
-                        _query={'user': extension, 'menu': 'main', 'uid':callid}),
                     invalidaction=request.route_url('invalidmessage'),
-                    dtmf=['1', '2', '3', '5', '7', '*4']
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf,
                 )
         elif step == 'recordname':
             # TODO - handle post-recording 
@@ -1103,9 +1223,6 @@ def handleKey(request):
         log.debug(
             "HandleKey called with extension %s key %s vmid %s menu %s",
             extension, key, vmid, menu)
-        if key != "False":
-            state.retryCount = 0
-            user_session.saveState(state=state)
         if key == "0":
             # listen to the message
             # TODO what to do here?
@@ -1114,16 +1231,21 @@ def handleKey(request):
         if key == "1":
             # forward / reply to the message
             prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+            state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmid':vmid, 'type':'reply', 'step': 'record'}
+            )
+            state.dtmf=['#']
+            state.menu = 'record'
+            state.step = 'record'
+            user_session.saveState(state)
             return dict(
                 action="record",
                 prompt=prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'vmid':vmid, 'type':'reply', 'step': 'record'}
-                ),
                 invalidaction=request.route_url('invalidmessage'),
-                dtmf=['#'],
                 folder=user.vm_prefs.getVmFolder(),
+                nextaction=state.nextaction,
+                dtmf=state.dtmf,
                 )
         elif key == "*3":
             # delete the message
@@ -1132,9 +1254,11 @@ def handleKey(request):
             v.deleted_on = datetime.datetime.utcnow()
             DBSession.add(v)
             state.nextMessage()
+            state.menu='vmaccess'
+            state.step=None
             user_session.saveState(state=state)
             return getMessage(
-                request=request, menu="vmaccess", user=user, state=state)
+                request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "#":
             # skip message
             v = DBSession.query(Voicemail).filter_by(id = vmid).first()
@@ -1142,9 +1266,11 @@ def handleKey(request):
             v.read_on = datetime.datetime.utcnow()
             DBSession.add(v)
             state.nextMessage()
+            state.menu='vmaccess'
+            state.step=None
             user_session.saveState(state=state)
             return getMessage(
-                request=request, menu="vmaccess", user=user, state=state)
+                request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "23":
             # play header
             return returnPrompt(name=Prompt.invalidRequest)
@@ -1163,15 +1289,6 @@ def handleKey(request):
         elif key == "4":
             # play header
             return returnPrompt(name=Prompt.invalidRequest)
-        elif key == "False":
-            curposition = getMessage(
-                request=request, menu="vmaccess", user=user, state=state)
-            return stillThereLoop(
-                request=request, user=user, user_session=user_session,
-                dtmf=curposition['dtmf'],
-                nextaction=curposition['nextaction'],
-                extraPrompt=Prompt.stillThereGetMessage
-            )
         else:
             log.debug(
                 "Invalid Input with extension %s key %s vmid %s menu %s",
@@ -1191,7 +1308,7 @@ def scanmessages(request):
     
     
     
-def getMessage(request, menu, user, state=None, vmid=None):
+def getMessage(request, menu, user, state=None, vmid=None,user_session=None):
     # Lets check if unread vms are there
     # if not then old messages
     # else no message
@@ -1229,15 +1346,20 @@ def getMessage(request, menu, user, state=None, vmid=None):
     p = prompt.getFullPrompt(user=user)
     for i in p:
         retPrompt.append(i)
+    state.nextaction = request.route_url(
+            'handlekey',
+            _query={
+                'user':user.extension, 'menu': 'vmaccess', 'vmid': v.id, 'uid':state.uid})
+    state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44']
+    state.menu='vmaccess'
+    state.step = None
+    user_session.saveState(state)
     return dict(
         action="play",
         prompt=retPrompt,
-        nextaction=request.route_url(
-            'handlekey',
-            _query={
-                'user':user.extension, 'menu': 'vmaccess', 'vmid': v.id, 'uid':state.uid}),
         invalidaction=request.route_url('invalidmessage'),
-        dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44'],
+        nextaction=state.nextaction,
+        dtmf=state.dtmf,
     )
 
 
@@ -1280,7 +1402,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
     else:
         return returnPrompt(name=Prompt.goodbye)
 
-    retPrompt = combinePrompt(user, None, None, Prompt.stillThere, state.stillTherePrompt)
+    retPrompt = combinePrompt(user, None, None, Prompt.stillThere)
 
     return dict(
         action="play",
@@ -1306,7 +1428,7 @@ def invalidMessage(request):
     return returnPrompt(name=Prompt.invalidMessage)
 
 
-def doPersonalGreeting(request, callid, user, menu, key, step, type):
+def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user_session):
     firstPrompt = None
     promptName = Prompt.greetingsNotSet
     secondPrompt = Prompt.greetingsRecordMenu
@@ -1330,71 +1452,65 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type):
         else:
             secondPrompt = Prompt.greetingsRecordTmp
     
+    retPrompt = None
+    action = None
+    invalidaction=request.route_url('invalidmessage')
+    folder = None
     if step == '0':
         retPrompt = combinePrompts(user, None, None, firstPrompt, promptName, secondPrompt)
-        return dict(
-            action="play",
-            prompt=retPrompt,
-            nextaction=request.route_url(
-                'handlekey',
-                _query={'user': extension, 'type':type, 'menu': 'personal', 'uid':callid, 'step':'1'}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '23', '#'],
-        )
+        state.nextaction=request.route_url(
+            'handlekey',
+            _query={'user': extension, 'type':type, 'menu': 'personal', 'uid':callid, 'step':'1'})
+        state.dtmf=['1', '23', '#']
+        state.menu='personal'
+        state.step ='1'
+        action="play"
     elif step == '1':
         if key == '1':
-            prompt = Prompt.getByName(Prompt.greetingsRecordMenu)
-            return dict(
-                action="record",
-                prompt = Prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
+            retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
+            action="record"
+            folder=user.vm_prefs.getGreetingFolder()
+            state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'2'}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '#', ],
-                folder=user.vm_prefs.getGreetingFolder(),
-            )
+                            'type':type, 'menu':'personal', 'step':'2'})
+            state.dtmf=['1', '23', '#', ]
+            state.menu='personal'
+            state.step='2'
         elif key == '23':
             retPrompt = combinePrompts(user, None, None, firstPrompt, promptName, secondPrompt)
-            return dict(
-                action="play",
-                prompt=retPrompt,
-                nextaction=request.route_url(
+            action="play"
+            state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'1'}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '#' ],
-                folder=user.vm_prefs.getGreetingFolder(),
-            )
+                            'type':type, 'menu':'personal', 'step':'1'})
+            state.dtmf=['1', '23', '#' ]
+            state.menu='personal'
+            state.step='1'
+            folder=user.vm_prefs.getGreetingFolder()
     elif step == '2':
         if key == '1':
-            prompt = Prompt.getByName(Prompt.greetingsRecordMenu)
-            return dict(
-                action="record",
-                prompt = Prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
+            retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
+            action="record",
+            state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'2'}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '#', ],
-                folder=user.vm_prefs.getGreetingFolder(),
-            )
+                            'type':type, 'menu':'personal', 'step':'2'})
+            state.dtmf=['1', '23', '#', ]
+            folder=user.vm_prefs.getGreetingFolder()
+            state.menu='personal'
+            state.step='2'
         elif key == '23':
             file = request.get('file', None)
-            prompt =  {'uri':file, 'delayafter':10}
-            return dict(
-                action="play",
-                prompt=prompt,
-                nextaction=request.route_url(
+            retPrompt =  {'uri':file, 'delayafter':10}
+            action="play"
+            state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,'file':file,
-                            'type':type, 'menu':'personal', 'step':'2'}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '23', '#' ],
-                )
+                            'type':type, 'menu':'personal', 'step':'2'})
+            state.dtmf=['1', '23', '#' ]
+            state.menu='personal'
+            state.step='2'
         elif key == '#':
             file = request.get('file', None)
             if type == "unavail":
@@ -1405,12 +1521,19 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type):
                 user.vm_prefs.tmp_greeting = file
             DBSession.add(user.vm_prefs)
             retPrompt = combinePrompts(user, None, None, Prompt.greetingsApproved, Prompt.activityMenu)
-            return dict(
-                action="play",
-                prompt=retprompt,
-                nextaction=request.route_url(
+            action="play"
+            state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user':extension, 'menu':'main', 'uid':callid}),
-                invalidaction=request.route_url('invalidmessage'),
-                dtmf=['1', '2', '3', '5', '7', '*4']
-                )
+                    _query={'user':extension, 'menu':'main', 'uid':callid})
+            state.dtmf=['1', '2', '3', '5', '7', '*4']
+            state.menu='main'
+            state.step=None
+    user_session.saveState(state)
+    return dict(
+        action=action,
+        prompt=retPrompt,
+        nextaction=state.nextaction,
+        dtmf=state.dtmf,
+        folder=folder,
+        invalidaction=invalidaction
+    )

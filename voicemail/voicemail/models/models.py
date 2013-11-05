@@ -466,7 +466,9 @@ class State():
         self.destlist = None
         self.dtmf = None
         self.nextaction = None
-        self.stillTherePrompt = None
+        self.maxlength = None
+        self.menu = None
+        self.step = None
 
     def nextMessage(self):
         if self.message_type == "Unread":
