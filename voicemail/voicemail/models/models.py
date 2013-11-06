@@ -48,6 +48,11 @@ user_groups = Table('user_groups', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
     Column('group_id', Integer, ForeignKey('groups.id')))
 
+user_list = Table('userlist', Base.metadata,
+      Column("id", Integer, primary_key=True, autoincrement=True),
+      Column("list_id", Integer, ForeignKey('users.id')),
+      Column("user_id", Integer, ForeignKey('users.id')))
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -58,11 +63,17 @@ class User(Base):
     create_date = Column(DateTime, nullable=False, default=datetime.datetime.utcnow )
     last_login = Column(DateTime)
     status = Column(Integer, nullable=False)
+    is_list = Column(Boolean, default=False)
 
     voicemails = relationship("Voicemail", backref='user', cascade="all, delete, delete-orphan", 
         order_by="(desc(Voicemail.is_read), desc(Voicemail.create_date))")
     role = relationship("UserRole", backref='users')
     vm_prefs = relationship("UserVmPref", uselist=False, backref='user')
+
+    members = relationship("User", secondary=user_list,
+              primaryjoin=id==user_list.c.list_id,
+              secondaryjoin=id==user_list.c.user_id,
+              backref="lists")
 
     unreadCount = 0
     readCount = 0
@@ -149,6 +160,16 @@ class UserVmPref(Base):
 
     greeting = relationship('Prompt')
     ivr = relationship('IvrTree')
+
+    def getVmFolder(self):
+        return self.folder
+
+    def getNameFolder(self):
+        return self.folder + "/name"
+
+    def getGreetingFolder(self):
+        return self.folder + "/greeting"
+
 
 class IvrTree(Base):
     __tablename__ = 'ivr_tree'
@@ -265,6 +286,9 @@ class Prompt(Base):
     userBusyGreeting = "User_Busy_Greeting"                           # 72
     userTmpGreeting = "User_Tmp_Greeting"                             # 73
     userName = "User_Name"                                            # 74
+
+    sayNumber = "Say_Number"                                          #78
+    TTS  = "TTS"                                                      #79
     
 
     @staticmethod
@@ -272,15 +296,15 @@ class Prompt(Base):
         return DBSession.query(Prompt).filter_by(name=name).first()
 
 
-    def getFullPrompt(self, user=None, vm=None, number=None):
+    def getFullPrompt(self, user=None, vm=None, param=None):
         listprompt = []
         for i in self.details:
             if i.prompt_type == 1:
                 listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
             elif i.prompt_type == 2:
-                if i.path == "Extension":
+                if i.path == "tts":
                     extension = user.extension
-                    listprompt.append({'tts':list(extension), 'delayafter':i.delay_after})
+                    listprompt.append({'tts':list(param), 'delayafter':i.delay_after})
                 elif i.path == "Unread-Count":
                     listprompt.extend(self._getSubPrompt(count=user.getUnreadCount(), new=1))
                 elif i.path == "Read-Count":
@@ -288,7 +312,7 @@ class Prompt(Base):
                 elif i.path == "VM-Header":
                     listprompt.extend(self._getVmTime(vm=vm))
                 elif i.path == "sayNum":
-                    listprompt.append({'sayNum':'%s'%number, 'delayafter':i.delay_after})
+                    listprompt.append({'sayNum':'%s'%param, 'delayafter':i.delay_after})
             elif i.prompt_type == 3:
                 if user.vm_prefs.vm_name_recording:
                     listprompt.append({'uri':user.vm_prefs.vm_name_recording, 'delayafter':i.delay_after})
@@ -363,7 +387,7 @@ class Group(Base):
 class ReplyTo(Base):
     __tablename__ = 'ReplyTo'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    vm_id = Column(Integer, nullable = False)
+    vm_id = Column(Integer,  ForeignKey('voicemails.id'))
 
 class UserSession(Base):
     __tablename__ = 'user_session'
@@ -372,21 +396,61 @@ class UserSession(Base):
     data = Column(Text)
     create_date = Column(DateTime, nullable=False, default=datetime.datetime.utcnow )
     last_updated = Column(DateTime)
+
     
-    def getState(self):
+    def loadState(self, user, callid):
+        self.uid = callid
+        self.create_date = datetime.datetime.utcnow()
+        state = State()
+        state.unread = []
+        state.read = []
+        state.curmessage = 1
+        state.uid = callid
+        for i in user.voicemails:
+            if i.status == 1:
+                continue
+            if i.is_read:
+                state.read.append(i.id)
+            else:
+                state.unread.append(i.id)
+        self.saveState(state=state)
+
+
+    def reloadState(self, user):
+        state = State()
+        state.unread = []
+        state.read = []
+        state.curmessage = 1
+        state.uid = callid
+        for i in user.voicemails:
+            if i.status == 1:
+                continue
+            if i.is_read:
+                state.read.append(i.id)
+            else:
+                state.unread.append(i.id)
+        self.saveState(state=state)
+
+    def getCurrentState(self):
         s = State()
         cdata =  json.loads(self.data)
-        s.unread = cdata.get('unread', None)
-        s.read = cdata.get('read', None)
-        s.uid = self.uid
-        s.curmessage = cdata.get('curmessage', None)
-        s.message_type = cdata.get('message_type', None)
-        s.retryCount = cdata.get('retryCount', None)
+        for i in s.__dict__:
+            s.__dict__[i] = cdata.get(i, None)
         return s
     
+    def setStillThere(self, nextaction, dtmf, stillTherePrompt):
+        s = self.getCurrentState()
+        s.nextaction = nextaction
+        s.dtmf = dtmf
+        s.stillTherePrompt = stillTherePrompt
+        self.saveState(s)
+
+
     def saveState(self, state):
         self.last_updated = datetime.datetime.utcnow()
         self.data = json.dumps(state, default=lambda o: o.__dict__)
+        DBSession.add(self)
+        DBSession.flush()
        
 
 class State():
@@ -398,6 +462,13 @@ class State():
         self.uid = None
         self.message_type = "Unread"
         self.retryCount = 0
+        self.password = None
+        self.destlist = None
+        self.dtmf = None
+        self.nextaction = None
+        self.maxlength = None
+        self.menu = None
+        self.step = None
 
     def nextMessage(self):
         if self.message_type == "Unread":
@@ -408,3 +479,5 @@ class State():
                 self.curmessage = 1
         else:
             self.curmessage = self.curmessage + 1
+
+
