@@ -215,18 +215,6 @@ class Mwi(SIPSession):
             self.newFax,
             self.oldFax
         )
-        #msg = """Messages-Waiting: %s\nMessage-Account: %s\nVoice-Message: %s/%s (%s/%s)""" % (
-            #self.msgWaiting, 
-            #uri, 
-            #self.newCount,
-            #self.oldCount,
-            #self.newUrgent,
-            #self.oldUrgent
-        #)
-        #msg = """Messages-Waiting: %s\r\nMessage-Account: %s""" % (
-            #self.msgWaiting, 
-            #uri
-        #)
         return msg, len(msg)
     
     def requestMessage(self):
