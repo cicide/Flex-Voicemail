@@ -39,9 +39,10 @@ class Call:
 
     def registerForDtmf(self, keyList=[], requestObject=None):
         """
+        Register for dtmf results, passing a list of valid dtmf responses to the registration object
 
-        @param keyList:
-        @param requestObject:
+        @param keyList: a list of valid dtmf responses
+        @param requestObject: a method to call with the result (optional)
         """
         self.dtmfResult = None
         if not keyList:
@@ -56,7 +57,8 @@ class Call:
             for key in self.dtmfKeyList:
                 if len(key) > self.maxKeyLen:
                     self.maxKeyLen = len(key)
-            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf)
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf,
+                                               purgeonfail=True, purgeonsuccess=True)
 
     def handleDtmf(self, result):
         log.debug('got a registered dtmf value: %s' % result)
@@ -333,7 +335,7 @@ class Call:
         #return self.onActionResponse(actionRequest)
 
 
-def newCall(pbxCallObj, pbxContObj, uid):
+def newCall(pbxCallObj, uid):
     """
 
     @param pbxCallObj:
