@@ -456,15 +456,19 @@ class astCall:
         """
         log.debug('agi:actionRecord called')
         log.debug(prompt)
+
         def onError(reason):
             log.debug('got error in agi:actionRecord')
             log.error(reason)
             return self.onError(reason)
+
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
             if len(result) == 3:
                 duration = (int(result[2])/10000)+1
+                keyval = result[0]
+                reason = result[1]
             else:
                 duration = 0
             response = {}
@@ -472,6 +476,9 @@ class astCall:
             response['vmfile'] = """file:/%s.%s""" % (file_loc, self.mediaType)
             response['vmfolder'] = folder
             response['type'] = 'record'
+            response['duration'] = duration
+            response['keyval'] = keyval
+            response['reason'] = reason
             vmFile = '%s.txt' % file_loc
             log.debug('calling message write for %s' % vmFile)
             #write out the msgxxxx.txt file here
@@ -491,6 +498,7 @@ class astCall:
                        '', 
                        str(duration))
             return response
+
         def onPromptSuccess(result, folder, dtmf, retries, beep):
             
             def onSuccess(msgFile, folder):
@@ -518,6 +526,8 @@ class astCall:
         
         if len(prompt):
             log.debug('calling play prompt')
+            log.debug('allowed dtmf:')
+            log.debug(dtmf)
             result = self.playPromptList(result=None, promptList=prompt, interrupKeys=dtmf)
             result.addCallback(onPromptSuccess, folder, dtmf, retries, beep).addErrback(onError)
             log.debug('returned from play prompt')
