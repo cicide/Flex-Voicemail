@@ -60,6 +60,9 @@ class Call:
             for key in self.dtmfKeyList:
                 if len(key) > self.maxKeyLen:
                     self.maxKeyLen = len(key)
+            log.debug(self.dtmfKeyList)
+            log.debug(self.maxKeyLen)
+            log.debug(self.dtmfSubscriber)
             self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf,
                                                purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
