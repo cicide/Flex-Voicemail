@@ -159,7 +159,7 @@ for svr in wsApiServers:
 
 def getService():
     root = resource.Resource()
-    mwi = mwiResponse()
+    mwi = mwiApi()
     root.putChild("", mwi)
     root.putChild("mwi", mwi)
     site = server.Site(root)
