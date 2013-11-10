@@ -603,17 +603,8 @@ class astCall:
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
-            if not asciCode:
-                log.debug('no key pressed')
-                if retries:
-                    log.debug('retrying')
-                    retries -= 1
-                    # TODO: We need to add some delays in here before retrying
-                    d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
-                    d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
-                    return d
-                else:
-                    return {'type': 'response', 'value': False}
+            if 'type' in result:
+                return result
             else:
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
