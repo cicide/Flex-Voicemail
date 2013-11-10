@@ -362,9 +362,10 @@ class astCall:
                         log.debug('adding delay before of %s' % delay)
                         sequence.append(self.agi.wait,delay)
                     intKeys = str("".join(interrupKeys))
+                    log.debug('escape Digits: %s ' % intKeys)
                     while len(ttsLocSeq):
                         promptLoc = ttsLocSeq.pop(0)
-                        sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                        sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
                         if delayafter:
                             delay = float(delayafter)/1000
                             log.debug('adding delay after of %s' % delay)
@@ -417,7 +418,7 @@ class astCall:
                 intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
-                sequence.append(self.agi.streamFile,str(promptLoc), escapeDigits=intKeys, offset=0)
+                sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
@@ -445,7 +446,7 @@ class astCall:
             if delayafter:
                 delay = float(delayafter)/1000
                 log.debug('adding delay after of %s' % delay)
-                sequence.append(self.agi.wait,delay) 
+                sequence.append(self.agi.wait, delay)
             log.debug('playing number')
             return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         else:
