@@ -90,6 +90,7 @@ class Call:
     
     def executeAction(self, action, nextAction, invalidAction, wsapiResponse, respKeys):
         log.debug('got a valid action!')
+        log.debug('nextaction: %s' % nextAction)
         if action == 'play':
             if not 'prompt' in wsapiResponse:
                 log.warning('missing play prompt.  What should I do, play silence?')

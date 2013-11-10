@@ -331,12 +331,11 @@ class astCall:
             else:
                 ttsLocSeq = []
                 for ttsValue in ttsString:
-                    if str(ttsValue) in ['0','1','2','3','4','5','6','7','8','9']:
+                    if str(ttsValue) in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
                         log.debug('found a digit: %s' % ttsValue)
                         ttsLoc = '/var/lib/asterisk/sounds/en/digits/%s' % str(ttsValue)
-                    elif ttsValue in ['a','b','c','d','e','f','g','h','i','j','l',
-                                      'm','n','o','p','q','r','s','t','u','v','w',
-                                      'x','y','z','#',"*"]:
+                    elif ttsValue in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'l', 'm', 'n', 'o', 'p', 'q',
+                                      'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '#', "*"]:
                         log.debug('found a letter: %s' % ttsValue)
                         ttsLoc = '/var/lib/asterisk/sounds/en/letters/%s' % str(ttsValue)
                     elif str(int(ttsValue)) == ttsValue:
