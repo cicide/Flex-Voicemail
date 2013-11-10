@@ -219,8 +219,6 @@ class Call:
                 else:
                     returnKey = False
                 reason = result['reason']
-                if len(recResult) == 3:
-                    keyresult, keytype, duration
                 vmFile = str(result['vmfile'])
                 log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
