@@ -292,7 +292,7 @@ def handleKey(request):
         return retdict
     user_session = getUserSession(callid, user)
     state = user_session.getCurrentState()
-    if not key:
+    if not key or key == "False":
         return stillThereLoop(request, user, user_session)
     else:
         state.dtmf = None
@@ -1339,7 +1339,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
     if msgToGet:
         v = DBSession.query(Voicemail).filter_by(id=msgToGet).first()
 
-    retPrompt = combinePrompts(user, v, user.extension, prompt, Prompt.vmMessage, Prompt.postMessage)
+    retPrompt = combinePrompts(user, v, state.curmessage, prompt, Prompt.vmMessage, Prompt.postMessage)
 
     state.nextaction = request.route_url(
             'handlekey',
