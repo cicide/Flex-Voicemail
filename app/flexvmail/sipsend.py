@@ -255,8 +255,8 @@ def notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax,
 def runTests():
     log.debug('Running SIP test.')
     notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3', '0', '0', '0', '0')
-    notifyMWI(session, '2614', '192.168.10.98', '5060', '17', '21', '2', '0', '0','3')
-    notifyMWI(session, '2613', '192.168.10.98', '5060', '3', '5', '1', '2', '0', '0')
+    #notifyMWI(session, '2614', '192.168.10.98', '5060', '17', '21', '2', '0', '0','3')
+    #notifyMWI(session, '2613', '192.168.10.98', '5060', '3', '5', '1', '2', '0', '0')
 
 def getService():
     service = internet.UDPServer(sipport, protocol)

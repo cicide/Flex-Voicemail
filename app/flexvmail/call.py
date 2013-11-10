@@ -64,12 +64,17 @@ class Call:
             nextaction = 'hangup'
         else:
             log.debug('handling nextaction')
+            log.debug(respKeys)
             respKeys.remove('nextaction')
             # fix broken reference to agi in nextaction
+            log.debug('fixing broken references')
             if result['nextaction'].split(':')[0] == 'agi':
+                log.debug('splitting nextaction')
                 nextaction = result['nextaction'].split(':')[1]
             else:
+                log.debug('no correction required')
                 nextaction = result['nextaction']
+        log.debug('processing invalidaction')
         if not 'invalidaction' in result:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
             invalidaction = 'hangup'
