@@ -388,14 +388,14 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='Q')
-                sequence.append(self.agi.streamFile, 'digits/at')
-                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='IMp')
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='Q')
+                sequence.append(self.agi.streamFile, 'digits/at', escapeDigits=intKeys)
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                log.debug('playing tts prompt.')
+                log.debug('playing date time prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
             log.debug('found uri in prompt list')
