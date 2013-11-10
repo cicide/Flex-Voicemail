@@ -270,7 +270,7 @@ def handleKey(request):
     log.debug(
         "HandleKey called with extension %s key %s vmid %s menu %s",
         extension, key, vmid, menu)
-    if extension is None or (key is None and vmid is None) or menu is None \
+    if extension is None or menu is None \
             or callid is None:
         log.debug(
             "Invalid parameters extension %s key %s menu %s",
