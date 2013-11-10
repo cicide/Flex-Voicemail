@@ -69,12 +69,12 @@ class Call:
             # fix broken reference to agi in nextaction
             log.debug('fixing broken references')
             log.debug(result)
-            if result['nextaction'].split(':')[0] == 'agi':
+            if result['nextaction'][0].split(':')[0] == 'agi':
                 log.debug('splitting nextaction')
-                nextaction = result['nextaction'].split(':')[1]
+                nextaction = result['nextaction'][0].split(':')[1]
             else:
                 log.debug('no correction required')
-                nextaction = result['nextaction']
+                nextaction = result['nextaction'][0]
         log.debug('processing invalidaction')
         if not 'invalidaction' in result:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
