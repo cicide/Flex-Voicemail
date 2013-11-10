@@ -86,6 +86,8 @@ class DialerProtocol(AMIProtocol):
                 dtmfBuffer[str(uid)]['buffer'].append(str(digit))
             else:
                 dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
+            if str(uid) in dtmfReg:
+                dtmfReg[str(uid)].receiveDtmf(str(digit))
             log.debug(dtmfBuffer[str(uid)])
                 
     def onUserEvent(self, ami, event):
@@ -235,6 +237,7 @@ class DtmfRegistration(object):
         log.debug('dtmf buffer purged')
 
     def receiveDtmf(self, dtmfVal=None):
+        log.debug('dtmf registration for %s received value %s' % (self.uid, dtmfVal))
         if dtmfVal:
             self.dtmfbuffer.append(str(dtmfVal))
             self.lasttime = time.time()
