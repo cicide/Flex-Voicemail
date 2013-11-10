@@ -68,6 +68,7 @@ class Call:
             respKeys.remove('nextaction')
             # fix broken reference to agi in nextaction
             log.debug('fixing broken references')
+            log.debug(result)
             if result['nextaction'].split(':')[0] == 'agi':
                 log.debug('splitting nextaction')
                 nextaction = result['nextaction'].split(':')[1]
