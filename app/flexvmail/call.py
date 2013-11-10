@@ -69,13 +69,17 @@ class Call:
             # fix broken reference to agi in nextaction
             log.debug('fixing broken references')
             log.debug(result)
+            if type(result['nextaction']) == list:
+                naction = result['nextaction'][0]
+            else:
+                naction = result['nextaction']
             # TODO - Why is next action a list?  what should we do if it has more than one item?
-            if result['nextaction'][0].split(':')[0] == 'agi':
+            if naction.split(':')[0] == 'agi':
                 log.debug('splitting nextaction')
-                nextaction = result['nextaction'][0].split(':')[1]
+                nextaction = naction.split(':')[1]
             else:
                 log.debug('no correction required')
-                nextaction = result['nextaction'][0]
+                nextaction = naction
         log.debug('processing invalidaction')
         if not 'invalidaction' in result:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
