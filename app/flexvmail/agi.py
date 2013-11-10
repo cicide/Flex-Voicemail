@@ -342,6 +342,7 @@ class astCall:
                     elif str(int(ttsValue)) == ttsValue:
                         log.debug('Found a number: %s' % ttsValue)
                         # sayNumber returns a list, so just fill it directly with the response.
+                        ttsLoc = None
                         ttsLocSeq = self.sayNumber(ttsValue)
                     else:
                         ttsLoc = None
