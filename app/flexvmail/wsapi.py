@@ -153,9 +153,9 @@ def getHost():
 def runTests():
     pass
 
-for server in wsApiServers:
-    log.debug(server)
-    wsApiList.append(wsApiServer(server[0],server[1]))
+for svr in wsApiServers:
+    log.debug(svr)
+    wsApiList.append(wsApiServer(svr[0],svr[1]))
 
 def getService():
     site = server.Site(mwiResponse)
