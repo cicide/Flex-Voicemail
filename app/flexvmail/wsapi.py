@@ -31,6 +31,20 @@ log.debug('Listening on TCP 8011')
 reactor.listenTCP(8011, site)
 
 
+class mwiApi(resource.Resource):
+    isLeaf = True
+
+    def render_GET(self, request):
+        log.debug(request.args)
+        request.setResponseCode(200)
+        return "<html> Sorry, not here. </html>"
+
+    def render_POST(self, request):
+        log.debug(request.args)
+        request.setResponseCode(200)
+        return "<html> Sorry, not here. </html>"
+
+
 class wsapiResponse(Protocol):
     def __init__(self, finished):
         log.debug('wsapi:wsapiResponse initialized')
@@ -141,3 +155,11 @@ def runTests():
 for server in wsApiServers:
     log.debug(server)
     wsApiList.append(wsApiServer(server[0],server[1]))
+
+def getService():
+    site = server.Site(mwiResponse)
+    service = internet.TCPServer(8012, site)
+    service.setName("mwiAPI")
+    return service
+
+

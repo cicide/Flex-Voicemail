@@ -25,9 +25,11 @@ def addServices():
     import agi
     import ami
     import sipsend
+    import wsapi
     flexService.addService(agi.getService())
     flexService.addService(ami.getService())
     flexService.addService(sipsend.getService())
+    flexService.addService(wsapi.getService())
 
 def runTests():
     import agi
