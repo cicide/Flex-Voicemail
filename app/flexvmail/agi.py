@@ -34,6 +34,7 @@ class astCall:
         @param testMode:
         """
         self.agi = agi
+        self.ami = ami
         self.intType = 'asterisk'
         self.mediaType = 'wav'
         if testMode:
@@ -301,6 +302,10 @@ class astCall:
             if not result:
                 result = False
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        # Check for valid dtmf during prompt sequences
+        dtmfResult = self.call.getDtmfResults()
+        if dtmfResult:
+            return result # TODO - this should include the dtmf values we got
         if not len(promptList):
             log.debug('prompt list is empty, returning')
             return result
@@ -393,6 +398,7 @@ class astCall:
             log.debug('found uri in prompt list')
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
+            # TODO - check for null prompt, and skip
             promptType, promptLoc = promptUri.split(':')
             # format the file location for asterisk by removing the extra / at the beginning 
             # and any file type from the end
@@ -544,9 +550,11 @@ class astCall:
         @return:
         """
 
+    # TODO - Catch invalid uri's
+
         def onKeyBuffCheck():
             log.debug('checking keyBuffer')
-            keyBuff = ami.fetchDtmfBuffer(self.uid)
+            keyBuff = self.ami.fetchDtmfBuffer(self.uid)
             log.debug(keyBuff)
             last = keyBuff['last']
             buff = keyBuff['buffer']
@@ -617,7 +625,7 @@ class astCall:
                     return {'type': 'response', 'value': keyVal}
                 elif maxKeyLen > 1:
                     log.debug('result not YET valid')
-                    keyBuff = ami.fetchDtmfBuffer(self.uid)
+                    keyBuff = self.ami.fetchDtmfBuffer(self.uid)
                     last = keyBuff['last']
                     buff = keyBuff['buffer']
                     keyBuffLen = len(buff)
@@ -649,8 +657,9 @@ class astCall:
         log.debug('agi:actionPlay called')
         log.debug(prompt)
         log.debug(dtmf)
-        tmp = ami.purgeDtmfBuffer(self.uid)
+        tmp = self.ami.purgeDtmfBuffer(self.uid)
         log.debug(tmp)
+        self.call.registerForDtmf(dtmf)
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
@@ -658,7 +667,15 @@ class astCall:
             return d
         else:
             return {'type': 'response', 'value': False}
-        
+
+    def cancelDtmfRegistration(self):
+        self.ami.cancelDtmfRegistration(self.uid)
+
+    def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, purgeonfail=True, purgeonsuccess=True):
+        self.ami.startDtmfRegistrations(self.uid, keylist, maxkeylen, handleKeys,
+                                        purgeonfail=purgeonfail,
+                                        purgeonsuccess=purgeonsuccess)
+
     def actionHangup(self):
         """
 

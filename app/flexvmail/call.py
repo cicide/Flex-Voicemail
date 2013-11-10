@@ -31,8 +31,48 @@ class Call:
         self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
+        self.dtmfKeyList = []
+        self.dtmfSubscriber = None
+        self.maxKeyLen = 0
+        self.dtmfResult = None
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
-    
+
+    def registerForDtmf(self, keyList=[], requestObject=None):
+        """
+
+        @param keyList:
+        @param requestObject:
+        """
+        self.dtmfResult = None
+        if not keyList:
+            self.dmtfKeyList = []
+            self.dtmfSubscriber = None
+            self.pbxCall.cancelDtmfRegistration()
+            #cancel registration
+        else:
+            self.dmtfSubscriber = requestObject
+            self.maxKeyLen = 0
+            self.dtmfKeyList = keyList
+            for key in self.dtmfKeyList:
+                if len(key) > self.maxKeyLen:
+                    self.maxKeyLen = len(key)
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf)
+
+    def handleDtmf(self, result):
+        log.debug('got a registered dtmf value: %s' % result)
+        if self.dtmfSubscriber:
+            self.dtmfSubscriber(result)
+        else:
+            log.debug('What do I do with this dtmf?')
+            self.dtmfResult = result
+        self.dtmfKeyList = []
+        self.dtmfSubscriber = None
+        self.maxKeyLen = 0
+
+    def getDtmfResults(self):
+        result, self.dtmfResult = self.dtmfResult, None
+        return result
+
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
         """
@@ -293,7 +333,7 @@ class Call:
         #return self.onActionResponse(actionRequest)
 
 
-def newCall(pbxCallObj, uid):
+def newCall(pbxCallObj, pbxContObj, uid):
     """
 
     @param pbxCallObj:

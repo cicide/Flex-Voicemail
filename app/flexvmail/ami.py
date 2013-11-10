@@ -3,8 +3,8 @@
 from twisted.application import internet, service
 from twisted.internet import reactor, defer
 from starpy.manager import AMIFactory, AMIProtocol
-import os, time
-import utils, call
+import time
+import utils
 
 log = utils.get_logger("AMIService")
 
@@ -19,6 +19,7 @@ serverList=[]
 chan_map = {} # cuid: {chan: channel, ami: ami_obj}
 
 dtmfBuffer = {} # uid: {last: timestamp, buffer: [list of dtmf events]}
+dtmfReg = {} # { uid: dtmf registration object }
 
 
 class DialerProtocol(AMIProtocol):
@@ -216,6 +217,53 @@ class DialerFactory(AMIFactory):
         self.loginDefer = defer.Deferred()
         reactor.callLater(10,connector.connect)
 
+class DtmfRegistration(object):
+
+    def __init__(self, uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+        self.uid = uid
+        self.keylist = keylist
+        self.maxkeylen = maxkeylen
+        self.handler = handlekeys
+        self.dtmfbuffer = []
+        self.purgeonfail = purgeonfail
+        self.purgeonsuccess = purgeonsuccess
+        self.lasttime = time.time()
+        log.debug('completed dtmf registration for %s' % uid)
+
+    def purgeBuffer(self):
+        self.dtmfbuffer = []
+        log.debug('dtmf buffer purged')
+
+    def receiveDtmf(self, dtmfVal=None):
+        if dtmfVal:
+            self.dtmfbuffer.append(str(dtmfVal))
+            self.lasttime = time.time()
+        else:
+            pass
+        self.checkForMatch()
+
+    def checkForMatch(self):
+        dbuff = ''.join(self.dtmfbuffer)
+        if dbuff in keylist:
+            self.onSuccess()
+        elif len(self.dtmfbuffer) >= maxkeylen:
+            self.onFail()
+        else:
+            # we don't yet have a valid match or have collected all the keys yet
+            pass
+
+    def onSuccess(self):
+        dtmfresult = ''.join(self.dtmfbuffer)
+        if self.purgeonsuccess:
+            self.purgeBuffer()
+        self.handlekeys(dtmfresult)
+        pass
+
+    def onFail(self):
+        if self.purgeonfail:
+            self.purgeBuffer()
+
+
 def placeOutCall(number, account, cid, context, target, group, variable={}):
     #find an available server
     pbx_sys = None
@@ -263,6 +311,16 @@ def fetchDtmfBuffer(uid):
     else:
         log.debug('no dtmf buffer available for %s' % uid)
         return None
+
+def cancelDtmfRegistration(uid):
+    log.debug("Cancelleing DTMF registration for %s" % uid)
+    tmp = dtmfReg.pop(uid, None)
+
+def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+    log.debug("Starting DTMF registration for %s" % uid)
+    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys,
+                                    purgeonfail=purgeonfail,
+                                    purgeonsuccess=purgeonsuccess)
 
 def getService():
     from twisted.application import service
