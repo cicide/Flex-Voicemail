@@ -307,7 +307,7 @@ class astCall:
         dtmfResult = self.call.getDtmfResults()
         if dtmfResult:
             log.debug('Got DTMF response: %s' % dtmfResult)
-            return {'type': 'response', 'value': result}  # TODO - this should include the dtmf values we got
+            return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
         if not len(promptList):
             log.debug('prompt list is empty, returning')
             return result
@@ -603,8 +603,6 @@ class astCall:
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
-            dtmfList = dtmf
-            asciCode = result[0][0]
             if not asciCode:
                 log.debug('no key pressed')
                 if retries:
