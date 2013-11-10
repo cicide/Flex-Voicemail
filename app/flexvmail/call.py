@@ -23,6 +23,10 @@ callMap = {}
 class Call:
 
     def __init__(self, pbxCallObj):
+        """
+
+        @param pbxCallObj:
+        """
         self.pbxCall = pbxCallObj
         self.wsApiHost = wsapi.getHost()
         self.tree = None
@@ -31,13 +35,28 @@ class Call:
     
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
+        """
+
+        @param callerId:
+        @return:
+        """
         return None
         
     def onError(self, reason):
+        """
+
+        @param reason:
+        @return:
+        """
         log.debug(reason)
         return False
     
     def onActionResponse(self, result):
+        """
+
+        @param result:
+        @return:
+        """
         log.debug('call object handling wsapi response')
         log.debug(result)
         if not result:
@@ -74,6 +93,9 @@ class Call:
             else:
                 naction = result['nextaction']
             # TODO - Why is next action a list?  what should we do if it has more than one item?
+            if naction == None:
+                log.warning('Got no valid next action, assuming hangup')
+                naction = 'hangup'
             if naction.split(':')[0] == 'agi':
                 log.debug('splitting nextaction')
                 nextaction = naction.split(':')[1]
@@ -90,9 +112,17 @@ class Call:
             invalidaction = result['invalidaction']
         log.debug('leaving onActionResponse')
         return self.executeAction(action, nextaction, invalidaction, result, respKeys)
-            
-    
+
     def executeAction(self, action, nextAction, invalidAction, wsapiResponse, respKeys):
+        """
+
+        @param action:
+        @param nextAction:
+        @param invalidAction:
+        @param wsapiResponse:
+        @param respKeys:
+        @return:
+        """
         log.debug('got a valid action!')
         log.debug('nextaction: %s' % nextAction)
         if action == 'play':
@@ -166,8 +196,14 @@ class Call:
             return d
         else:
             log.debug('Unknown action type %s' % action)
-        
+
     def onExecuteActionSuccess(self, result, nextAction):
+        """
+
+        @param result:
+        @param nextAction:
+        @return:
+        """
         log.debug('entered: call:onExecuteActionSuccess')
         log.debug(result)
         log.debug(nextAction)
@@ -176,11 +212,20 @@ class Call:
             resType = result['type']
             if resType == 'record':
                 log.debug('found a record result type')
+                duration = str(result['duration'])
+                keyVal = result['keyval']
+                if keyVal:
+                    returnKey = chr(keyVal)
+                else:
+                    returnKey = False
+                reason = result['reason']
+                if len(recResult) == 3:
+                    keyresult, keytype, duration
                 vmFile = str(result['vmfile'])
                 log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
                 log.debug('act set to: %s' % act)
-                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile)
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile, key=returnKey, reason=reason, dur=duration)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             elif resType == 'play':
@@ -218,13 +263,23 @@ class Call:
         else:
             log.debug('No type found for successful action.')
             return False
-        
-    
+
     def onExecuteActionFailure(self, reason, invalidAction):
+        """
+
+        @param reason:
+        @param invalidAction:
+        @return:
+        """
         log.error(reason)
         return False
 
     def startCall(self, tree):
+        """
+
+        @param tree:
+        @return:
+        """
         log.debug('call started')
         if not tree:
             log.error("no valid tree supplied")
@@ -238,13 +293,25 @@ class Call:
         actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         #return self.onActionResponse(actionRequest)
-        
+
+
 def newCall(pbxCallObj, uid):
+    """
+
+    @param pbxCallObj:
+    @param uid:
+    @return:
+    """
     if not uid in callMap:
         callMap[uid] = Call(pbxCallObj)
         return callMap[uid]
     else:
         return False
         
+
 def runTests():
+    """
+
+
+    """
     pass
