@@ -91,9 +91,11 @@ def startCall(request):
             prompt = Prompt.getByName(name=Prompt.userNameRecording)
         else:
             prompt = Prompt.getByName(name=Prompt.userLeaveMessage)
+
+        log.debug("Here returing this prompt %s", prompt.name) 
         return dict(
             action="record",
-            prompt=prompt.getFullPrompt(user=user),
+            prompt=prompt.getFullPrompt(user=user, param=user.extension),
             nextaction=request.route_url(
                 'savemessage',
                 _query={'user':extension, 'uid':callid,
@@ -121,14 +123,19 @@ def startCall(request):
         retPrompt = combinePrompts(
             user, None, None, Prompt.loginLoggedIn,
             Prompt.vmSummary, Prompt.activityMenu)
-        return dict(
-            action="play",
-            prompt=retprompt,
-            nextaction=request.route_url(
+        state = user_session.getCurrentState()
+        state.menu = "main"
+        state.nextaction=request.route_url(
                 'handlekey',
                 _query={'user':extension, 'menu':'main', 'uid':callid}),
+        state.dtmf=['1', '2', '3', '5', '7', '*4']
+        user_session.saveState(state)
+        return dict(
+            action="play",
+            prompt=retPrompt,
             invalidaction=request.route_url('invalidmessage'),
-            dtmf=['1', '2', '3', '5', '7', '*4']
+            nextaction=state.nextaction,
+            dtmf=state.dtmf
             )
 
     log.debug("Invalid Request")
@@ -210,8 +217,8 @@ def handleLogin(request):
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
-                    'handlekey',
-                    _query={'menu': 'vmaccess', 'uid':callid, 'callerid':callerid, 'user':extension}),
+                    'startcall',
+                    _query={'tree': 'accessMenu', 'uid':callid, 'callerid':callerid, 'user':extension}),
                 invalidaction=request.route_url('invalidmessage'),
             )
         
@@ -273,8 +280,8 @@ def handleKey(request):
     if extension is None or menu is None \
             or callid is None:
         log.debug(
-            "Invalid parameters extension %s key %s menu %s",
-            extension, key, menu)
+            "Invalid parameters callid %s extension %s key %s menu %s",
+            callid, extension, key, menu)
         return returnPrompt(name=Prompt.invalidRequest)
 
     user = DBSession.query(User).filter_by(extension=extension).first()
@@ -1402,7 +1409,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
     else:
         return returnPrompt(name=Prompt.goodbye)
 
-    retPrompt = combinePrompt(user, None, None, Prompt.stillThere)
+    retPrompt = combinePrompts(user, None, None, Prompt.stillThere)
 
     return dict(
         action="play",
