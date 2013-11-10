@@ -303,7 +303,6 @@ class Prompt(Base):
                 listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
             elif i.prompt_type == 2:
                 if i.path == "tts":
-                    extension = user.extension
                     listprompt.append({'tts':list(param), 'delayafter':i.delay_after})
                 elif i.path == "Unread-Count":
                     listprompt.extend(self._getSubPrompt(count=user.getUnreadCount(), new=1))
