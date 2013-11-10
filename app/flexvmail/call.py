@@ -84,6 +84,7 @@ class Call:
 
     def getDtmfResults(self):
         result, self.dtmfResult = self.dtmfResult, None
+        log.debug('returning dtmf result %s' % result)
         return result
 
     def parseCallerId(self, callerId):
