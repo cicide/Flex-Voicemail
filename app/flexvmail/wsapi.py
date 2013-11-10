@@ -27,6 +27,7 @@ class mwiApi(resource.Resource):
 
     def render_POST(self, request):
         log.debug(request)
+        log.debug(request.content)
         request.setResponseCode(200)
         return "<html> Sorry, not here. </html>"
 
