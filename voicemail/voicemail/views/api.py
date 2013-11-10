@@ -127,7 +127,7 @@ def startCall(request):
         state.menu = "main"
         state.nextaction=request.route_url(
                 'handlekey',
-                _query={'user':extension, 'menu':'main', 'uid':callid}),
+                _query={'user':extension, 'menu':'main', 'uid':callid})
         state.dtmf=['1', '2', '3', '5', '7', '*4']
         user_session.saveState(state)
         return dict(
@@ -410,34 +410,29 @@ def handleKey(request):
             return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp", state=state, user_session=user_session) 
     elif menu == "record":
         if step == 'record':
-            #TODO Check this duration condition.
-            #seems like this should be if vmfile is not there
-            #also it shouldn't play the still there loop here should be 
-            #something different
-            if not duration:
-                # do still there loop
-                return stillThereLoop( request=request, user=user, user_session=user_session)
-            else:
-                # we have a recorded message, play instruction for handling the recording
-                prompt = Prompt.getByName(name=Prompt.rsfMenuRecord)
-                _query = None
-                if vmid:
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'approve', 'msgtype': msgtype, 'vmid':vmid}
-                else:
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'approve', 'msgtype': msgtype}
+            #TODO  Check for the vmfile and pass it forward. Chris?
+            # we have a recorded message, play instruction for handling the recording
 
-                state.nextaction=request.route_url( 'handlekey', _query=_query)
-                state.dtmf=['1', '23', '*3', '#']                
-                state.menu='record'
-                state.step='approve'
-                user_session.saveState(state)
-                return dict(
-                    action="play",
-                    prompt=prompt.getFullPrompt(user=user),
-                    invalidaction=request.route_url('invalidmessage'),
-                    nextaction=state.nextaction,
-                    dtmf=state.dtmf
-                )
+            prompt = Prompt.getByName(name=Prompt.rsfMenuRecord)
+            _query = None
+            if vmid:
+                _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'approve', 'msgtype': msgtype, 'vmid':vmid}
+            else:
+                _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'approve', 'msgtype': msgtype}
+
+            state.nextaction=request.route_url( 'handlekey', _query=_query)
+            state.dtmf=['1', '23', '*3', '#']                
+            state.menu='record'
+            state.step='approve'
+            user_session.saveState(state)
+            return dict(
+                action="play",
+                prompt=prompt.getFullPrompt(user=user),
+                invalidaction=request.route_url('invalidmessage'),
+                nextaction=state.nextaction,
+                dtmf=state.dtmf
+            )
+
         elif step == 'approve':
             if key == "1":
                 prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
@@ -1231,10 +1226,8 @@ def handleKey(request):
             "HandleKey called with extension %s key %s vmid %s menu %s",
             extension, key, vmid, menu)
         if key == "0":
-            # listen to the message
-            # TODO what to do here?
-            # I have no idea when this happens and what to do
-            return returnPrompt(name=Prompt.invalidRequest)
+            return getMessage(
+                request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
         if key == "1":
             # forward / reply to the message
             prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
@@ -1315,7 +1308,7 @@ def scanmessages(request):
     
     
     
-def getMessage(request, menu, user, state=None, vmid=None,user_session=None):
+def getMessage(request, menu, user, state=None, vmid=None,user_session=None, repeat=0):
     # Lets check if unread vms are there
     # if not then old messages
     # else no message
@@ -1327,32 +1320,27 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None):
 
     msgToGet = None
     if state.curmessage == 1:
-        prompt = Prompt.getByName(name=Prompt.firstMessage)
+        prompt = Prompt.firstMessage
     elif state.curmessage == len(state.unread):
-        prompt = Prompt.getByName(name=Prompt.lastMessage)
+        prompt = Prompt.lastMessage
     else:
-        prompt = Prompt.getByName(name=Prompt.nextMessage)
+        prompt = Prompt.nextMessage
 
     if state.message_type == "Unread" and state.curmessage <= len(state.unread): #unread messages
         msgToGet = state.unread[state.curmessage - 1]
     elif state.curmessage <= len(state.read):
         msgToGet = state.read[state.curmessage - 1]
     else:
-        prompt = Prompt.getByName(name=Prompt.noMoreMessage)
+        prompt = Prompt.noMoreMessage
+
+    if repeat:
+        prompt = None
 
     if msgToGet:
         v = DBSession.query(Voicemail).filter_by(id=msgToGet).first()
 
-    retPrompt = []
-    retPrompt.extend(prompt.getFullPrompt(user=user, param=state.curmessage))
-    prompt = Prompt.getByName(name=Prompt.vmMessage)
-    p = prompt.getFullPrompt(user=user, vm=v, param=user.extension)
-    for i in p:
-        retPrompt.append(i)
-    prompt = Prompt.getByName(name=Prompt.postMessage)
-    p = prompt.getFullPrompt(user=user)
-    for i in p:
-        retPrompt.append(i)
+    retPrompt = combinePrompts(user, v, user.extension, prompt, Prompt.vmMessage, Prompt.postMessage)
+
     state.nextaction = request.route_url(
             'handlekey',
             _query={
@@ -1425,8 +1413,8 @@ def combinePrompts(user, vm, number, *p):
         if i:
             prompt = Prompt.getByName(name=i)
             j = prompt.getFullPrompt(user=user, vm=vm, param=number)
-        for k in j:
-            retPrompt.append(k)
+            for k in j:
+                retPrompt.append(k)
     return retPrompt
 
 
