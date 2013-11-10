@@ -246,12 +246,18 @@ class DtmfRegistration(object):
         self.checkForMatch()
 
     def checkForMatch(self):
+        log.debug('Checking DTMF buffer to see if we have a match')
+        log.debug(self.dtmfbuffer)
         dbuff = ''.join(self.dtmfbuffer)
-        if dbuff in keylist:
+        if dbuff in self.keylist:
+            log.debug('found a dtmf match between buffer and keylist')
             self.onSuccess()
-        elif len(self.dtmfbuffer) >= maxkeylen:
+        elif len(self.dtmfbuffer) >= self.maxkeylen:
             self.onFail()
         else:
+            log.debug('no valid match for buffer in keylist, max length not reached')
+            log.debug('buffer: %s' % dbuff)
+            log.debug(self.keylist)
             # we don't yet have a valid match or have collected all the keys yet
             pass
 
