@@ -69,6 +69,7 @@ class Call:
             # fix broken reference to agi in nextaction
             log.debug('fixing broken references')
             log.debug(result)
+            # TODO - Why is next action a list?  what should we do if it has more than one item?
             if result['nextaction'][0].split(':')[0] == 'agi':
                 log.debug('splitting nextaction')
                 nextaction = result['nextaction'][0].split(':')[1]

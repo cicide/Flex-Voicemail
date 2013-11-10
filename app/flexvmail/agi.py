@@ -336,6 +336,10 @@ class astCall:
                                       'x','y','z','#',"*"]:
                         log.debug('found a letter: %s' % ttsValue)
                         ttsLoc = '/var/lib/asterisk/sounds/en/letters/%s' % str(ttsValue)
+                    elif str(int(ttsValue)) == ttsValue:
+                        log.debug('Found a number: %s' % ttsValue)
+                        # sayNumber returns a list, so just fill it directly with the response.
+                        ttsLocSeq = self.sayNumber(ttsValue)
                     else:
                         ttsLoc = None
                         log.error('Unknown tts string %s' % ttsValue)
@@ -373,9 +377,9 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='Q')
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at')
-                sequence.append(self.agi.sayDateTime,dtVal,escapeDigits='',format='IMp')
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
@@ -402,7 +406,7 @@ class astCall:
                 intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
-                sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                sequence.append(self.agi.streamFile,str(promptLoc), escapeDigits=intKeys, offset=0)
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
@@ -421,12 +425,12 @@ class astCall:
             if delaybefore:
                 delay = float(delaybefore)/1000
                 log.debug('adding delay before of %s' % delay)
-                sequence.append(self.agi.wait,delay)
+                sequence.append(self.agi.wait, delay)
             intKeys = str("".join(interrupKeys))                
             while numPromptList:
                 prompt = numPromptList.pop(0)
                 log.debug(prompt)
-                sequence.append(self.agi.streamFile,str(prompt),escapeDigits=intKeys,offset=0)
+                sequence.append(self.agi.streamFile, str(prompt), escapeDigits=intKeys, offset=0)
             if delayafter:
                 delay = float(delayafter)/1000
                 log.debug('adding delay after of %s' % delay)
