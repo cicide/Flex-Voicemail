@@ -321,6 +321,7 @@ def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True,
     dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys,
                                     purgeonfail=purgeonfail,
                                     purgeonsuccess=purgeonsuccess)
+    log.debug("Completed DTMF registration for %s" % uid)
 
 def getService():
     from twisted.application import service

@@ -44,13 +44,16 @@ class Call:
         @param keyList: a list of valid dtmf responses
         @param requestObject: a method to call with the result (optional)
         """
+        log.debug('Entering Call.registerForDtmf')
         self.dtmfResult = None
         if not keyList:
+            log.debug('missing keylist, is this a de-registration?')
             self.dmtfKeyList = []
             self.dtmfSubscriber = None
             self.pbxCall.cancelDtmfRegistration()
             #cancel registration
         else:
+            log.debug('got valid keylist, starting registration')
             self.dmtfSubscriber = requestObject
             self.maxKeyLen = 0
             self.dtmfKeyList = keyList
@@ -59,6 +62,7 @@ class Call:
                     self.maxKeyLen = len(key)
             self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf,
                                                purgeonfail=True, purgeonsuccess=True)
+            log.debug('completed dtmf registration')
 
     def handleDtmf(self, result):
         log.debug('got a registered dtmf value: %s' % result)

@@ -660,6 +660,7 @@ class astCall:
         tmp = self.ami.purgeDtmfBuffer(self.uid)
         log.debug(tmp)
         self.call.registerForDtmf(dtmf)
+        log.debug("completed dtmf registration")
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
@@ -672,9 +673,11 @@ class astCall:
         self.ami.cancelDtmfRegistration(self.uid)
 
     def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, purgeonfail=True, purgeonsuccess=True):
+        log.debug('requesting dtmf registration.')
         self.ami.startDtmfRegistrations(self.uid, keylist, maxkeylen, handleKeys,
                                         purgeonfail=purgeonfail,
                                         purgeonsuccess=purgeonsuccess)
+        log.debug('dtmf registration request completed')
 
     def actionHangup(self):
         """
