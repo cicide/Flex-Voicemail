@@ -292,7 +292,7 @@ def handleKey(request):
         return retdict
     user_session = getUserSession(callid, user)
     state = user_session.getCurrentState()
-    if not key:
+    if not key or key == "False":
         return stillThereLoop(request, user, user_session)
     else:
         state.dtmf = None
@@ -439,9 +439,9 @@ def handleKey(request):
                 prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
                 _query = None
                 if vmid:
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'msgtype': msgtype, 'vmid':vmid}
+                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'type': msgtype, 'vmid':vmid}
                 else:
-                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'msgtype': msgtype}
+                    _query={'user': extension, 'menu': 'record', 'uid': callid, 'step': 'record', 'type': msgtype}
                 state.nextaction=request.route_url( 'handlekey', _query=_query)
                 state.dtmf=['#']
                 state.menu='record'
@@ -456,7 +456,6 @@ def handleKey(request):
                     dtmf=state.dtmf
                     )
             elif key == "23":
-                vmfile = request.get('vmfile', None)
                 promptMsg = {'uri':vmfile, 'delayafter' : 10}
                 prompt = combinePrompts(user, None, None, promptMsg, Prompt.rsfRecordStillThere)
                 _query = None
@@ -1162,7 +1161,7 @@ def handleKey(request):
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
                 state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'namefile': namefile, 'step': 'recordoptions'})
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'vmfile': vmfile, 'step': 'recordoptions'})
                 state.dtmf=['1', '23', '*3', '#', '7', '*4']
                 state.menu = 'nameadmin'
                 state.step = 'recordoptions'
@@ -1340,7 +1339,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
     if msgToGet:
         v = DBSession.query(Voicemail).filter_by(id=msgToGet).first()
 
-    retPrompt = combinePrompts(user, v, user.extension, prompt, Prompt.vmMessage, Prompt.postMessage)
+    retPrompt = combinePrompts(user, v, state.curmessage, prompt, Prompt.vmMessage, Prompt.postMessage)
 
     state.nextaction = request.route_url(
             'handlekey',
@@ -1500,24 +1499,22 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
             state.menu='personal'
             state.step='2'
         elif key == '23':
-            file = request.get('file', None)
-            retPrompt =  {'uri':file, 'delayafter':10}
+            retPrompt =  {'uri':vmfile, 'delayafter':10}
             action="play"
             state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user':extension, 'uid':callid,'file':file,
+                    _query={'user':extension, 'uid':callid,'vmfile':vmfile,
                             'type':type, 'menu':'personal', 'step':'2'})
             state.dtmf=['1', '23', '#' ]
             state.menu='personal'
             state.step='2'
         elif key == '#':
-            file = request.get('file', None)
             if type == "unavail":
-                user.vm_prefs.unavail_greeting = file
+                user.vm_prefs.unavail_greeting = vmfile
             elif type == "busy":
-                user.vm_prefs.busy_greeting = file
+                user.vm_prefs.busy_greeting = vmfile
             elif type == "tmp":
-                user.vm_prefs.tmp_greeting = file
+                user.vm_prefs.tmp_greeting = vmfile
             DBSession.add(user.vm_prefs)
             retPrompt = combinePrompts(user, None, None, Prompt.greetingsApproved, Prompt.activityMenu)
             action="play"
