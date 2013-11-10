@@ -158,7 +158,7 @@ for svr in wsApiServers:
     wsApiList.append(wsApiServer(svr[0],svr[1]))
 
 def getService():
-    root = Resource()
+    root = resource.Resource()
     root.putChild("mwi", mwiResponse())
     site = server.Site(root)
     service = internet.TCPServer(8012, site)
