@@ -10,7 +10,7 @@ import time
 import os
 
 setDebugging(True)
-testMode = True
+testMode = False
 
 log = utils.get_logger("AGIService")
 
