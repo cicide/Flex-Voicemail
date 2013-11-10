@@ -264,12 +264,15 @@ class DtmfRegistration(object):
     def onSuccess(self):
         dtmfresult = ''.join(self.dtmfbuffer)
         if self.purgeonsuccess:
+            log.debug('dtmf buffer purged!')
             self.purgeBuffer()
-        self.handlekeys(dtmfresult)
-        pass
+        log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
+        self.handler(dtmfresult)
 
     def onFail(self):
+        log.debug('failed to get valid dtmf')
         if self.purgeonfail:
+            log.debug('purging dtmf buffer')
             self.purgeBuffer()
 
 
