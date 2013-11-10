@@ -322,6 +322,9 @@ class astCall:
             log.debug('found a tts prompt')
             ttsString = currPrompt['tts']
             log.debug(ttsString)
+            # TODO - handle this in the web service level - always contain tts values with a list, even for just one.
+            if type(ttsString) != list:
+                ttsString = [ttsString]
             if len(ttsString) < 1:
                 log.warning('got zero length tts prompt')
                 return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
