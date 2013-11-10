@@ -4,6 +4,7 @@ from twisted.internet.protocol import Protocol
 from twisted.web import server, resource
 from twisted.web.client import Agent, HTTPConnectionPool
 from twisted.web.http_headers import Headers
+from twisted.application import internet
 from urlparse import urlparse
 from random import choice
 import urllib
