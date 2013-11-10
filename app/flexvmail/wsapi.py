@@ -17,31 +17,16 @@ wsApiList = [] #TODO - build this list from the list of wsApiServer in the confi
 log = utils.get_logger("WSAPI")
 
 
-class mwiResponse(resource.Resource):
-    isLeaf = True
-    def render_GET(self, request):
-        url = urlparse('http://localhost:8011/mwi?user=<user id>&new=<int>&old=<int>')
-        if request.path == url.path:
-            request.setResponseCode(200)
-            return "<html><body>Success.</body></html>" 
-        request.setResponseCode(404)
-        return ("<html>Page Not Found</html>" )
-
-site = server.Site(mwiResponse())
-log.debug('Listening on TCP 8011')
-reactor.listenTCP(8011, site)
-
-
 class mwiApi(resource.Resource):
     isLeaf = True
 
     def render_GET(self, request):
-        log.debug(request.args)
+        log.debug(request)
         request.setResponseCode(200)
         return "<html> Sorry, not here. </html>"
 
     def render_POST(self, request):
-        log.debug(request.args)
+        log.debug(request)
         request.setResponseCode(200)
         return "<html> Sorry, not here. </html>"
 
