@@ -64,7 +64,7 @@ class Call:
             log.debug(self.maxKeyLen)
             log.debug(self.dtmfSubscriber)
             #self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, self,handleDtmf,
-                                               purgeonfail=True, purgeonsuccess=True)
+            #                                   purgeonfail=True, purgeonsuccess=True)
             self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, None,
                                                purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
