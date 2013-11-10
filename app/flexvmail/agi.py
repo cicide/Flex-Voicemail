@@ -1,13 +1,12 @@
 #!/usr/local/bin/python
 
 from twisted.application import internet
-from twisted.internet import reactor, defer, task
+from twisted.internet import reactor, task
 from starpy import fastagi
 import utils, call, ami
 from twisted.internet.defer import setDebugging
 from twisted.internet.threads import deferToThread 
 import time
-import datetime
 import os
 
 setDebugging(True)
@@ -29,6 +28,11 @@ system_sounds_exist_cache_time = 3600 # cache system sound file checks for 1 hou
 class astCall:
 
     def __init__(self, agi, testMode=False):
+        """
+
+        @param agi:
+        @param testMode:
+        """
         self.agi = agi
         self.intType = 'asterisk'
         self.mediaType = 'wav'
@@ -36,6 +40,10 @@ class astCall:
             result = self.runTest()
         
     def runTest(self):
+        """
+
+
+        """
         test = [3,14,22,41,74,89,90,107,666,12872,123675,2636849,871934999,21734653461]
         log.debug('Testing sayNumber')
         for x in test:
@@ -44,6 +52,11 @@ class astCall:
             log.debug(testSay)
         
     def onError(self, reason):
+        """
+
+        @param reason:
+        @return:
+        """
         log.debug('entering agi:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
@@ -53,6 +66,11 @@ class astCall:
         return sequence()
 
     def start(self):
+        """
+
+
+        @return:
+        """
         args = self.agi.variables.keys()
         self.script = self.agi.variables['agi_network_script']
         log.debug('agi variables: %s' % self.agi.variables)
@@ -112,6 +130,11 @@ class astCall:
                 return self.onError('nothing')
 
     def runTests(self):
+        """
+
+
+        @return:
+        """
         sequence = fastagi.InSequence()
         dtNow = int(time.time())
         dtEarlier = dtNow-3600
@@ -130,11 +153,21 @@ class astCall:
         return sequence()  #.addCallback(self.playPromptList)
     
     def hangup(self):
+        """
+
+
+        @return:
+        """
         d = self.agi.hangup()
         d.addCallbacks(self.onHangup,self.onError)
         return d
     
     def onHangup(self, result=None):
+        """
+
+        @param result:
+        @return:
+        """
         d = self.agi.finish()
         if d:
             d.addCallbacks(self.onFinish,self.onError)
@@ -143,15 +176,35 @@ class astCall:
             return False
     
     def onFinish(self, result=None):
+        """
+
+        @param result:
+        @return:
+        """
         return result
         
     def getUid(self):
+        """
+
+
+        @return:
+        """
         return self.uid
     
     def getCidNum(self):
+        """
+
+
+        @return:
+        """
         return self.cidNum
     
     def sayNumber(self, number):
+        """
+
+        @param number:
+        @return:
+        """
         speakNum = int(number)
         speakList = []
         while speakNum > 0:
@@ -233,6 +286,13 @@ class astCall:
         return speakList
     
     def playPromptList(self, result=None, promptList=[], interrupKeys=[]):
+        """
+
+        @param result:
+        @param promptList:
+        @param interrupKeys:
+        @return:
+        """
         log.debug(result)
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
@@ -376,9 +436,17 @@ class astCall:
         else:
             log.error('Unknown prompt type: %s' % promptType)
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
-        
-    
+
     def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
+        """
+
+        @param prompt:
+        @param folder:
+        @param dtmf:
+        @param retries:
+        @param beep:
+        @return:
+        """
         log.debug('agi:actionRecord called')
         log.debug(prompt)
         def onError(reason):
@@ -451,6 +519,14 @@ class astCall:
         return True
 
     def actionPlay(self, prompt, dtmf, retries):
+        """
+
+        @param prompt:
+        @param dtmf:
+        @param retries:
+        @return:
+        """
+
         def onKeyBuffCheck():
             log.debug('checking keyBuffer')
             keyBuff = ami.fetchDtmfBuffer(self.uid)
@@ -567,6 +643,11 @@ class astCall:
             return {'type': 'response', 'value': False}
         
     def actionHangup(self):
+        """
+
+
+        @return:
+        """
         log.debug('agi:actionHangup called')
         return self.hangup()
     

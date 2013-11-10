@@ -1,9 +1,10 @@
 import uuid
 from twisted.application import internet
 from twisted.protocols import sip
-from twisted.internet import reactor, defer
+from twisted.internet import defer
+from twisted.cred._digest import calcHA1, calcHA2, calcResponse
 from UserDict import UserDict
-import utils, call
+import utils
 
 testMode = True
 
@@ -12,12 +13,13 @@ log = utils.get_logger("SIPService")
 sipport = 5065
 
 states = {'idle': 0,
-          'waiting':1,
-          'incall':2,
-          'scheduled':3,
+          'waiting': 1,
+          'incall': 2,
+          'scheduled': 3,
           'finished': 4,
           'failed': 5
           }
+
 
 class SIPAccount(sip.URL):
     def __init__(self, host, username=None, password=None, proxy=None, port=None, ip=None, tag=None, display=''):
@@ -29,38 +31,11 @@ class SIPAccount(sip.URL):
             self.proxy = proxy
         else:
             self.proxy = host
-            
-    #def toString(self, includeTag=True):
-        #l = []; w = l.append
-        #w("{0} <sip:".format(self.display if includeTag else ''))
-        #if self.username is not None:
-            #w(self.username)
-            #w("@")
-        #w(self.host)
-        #if self.port is not None:
-            #w(":%d" % self.port)
-        #w(">")
-        #if self.usertype is not None:
-            #w(";user=%s" % self.usertype)
-        #for n in ("transport", "ttl", "maddr", "method", "tag"):
-            #v = getattr(self, n)
-            #if v is not None:
-                #if n == 'tag' and includeTag == False:
-                    #pass
-                #else:
-                    #w(";%s=%s" % (n, v))
-        #for v in self.other:
-            #w(";%s" % v)
-        #if self.headers:
-            #w("?")
-            #w("&".join([("%s=%s" % (specialCases.get(h) or dashCapitalize(h), v)) for (h, v) in self.headers.items()]))
-        
-        #return "".join(l)
-        
-        
+
     def __str__(self):
         return self.toString()
     
+
 class SIPClient(sip.Base):
     
     sessions = {}
@@ -107,7 +82,7 @@ class SIPSession():
         
     def authResponse(self, wwwauth):
         if wwwauth.startswith('Digest '):
-            wwwauth = wwwauth.replace('Digest ','',1)
+            wwwauth = wwwauth.replace('Digest ', '', 1)
             
         fields = {}
         for field in wwwauth.split(','):
@@ -120,7 +95,8 @@ class SIPSession():
         auth['nonce'] = fields['nonce']
         auth['uri'] = 'sip:{0}'.format(self.account.host)
         auth['algorithm'] = fields['algorithm']
-        ha1 = calcHA1(fields['algorithm'].lower(), self.account.username, fields['realm'], self.account.password, fields['nonce'], None)
+        ha1 = calcHA1(fields['algorithm'].lower(), self.account.username, fields['realm'], self.account.password,
+                      fields['nonce'], None)
         ha2 = calcHA2(fields['algorithm'].lower(), 'REGISTER', 'sip:{0}'.format(self.account.host), None, None)
         r = calcResponse(ha1, ha2, fields['algorithm'].lower(), fields['nonce'], None, None, None)
         auth['response'] = r
@@ -137,7 +113,8 @@ class SIPSession():
             msgWait = "yes"
         else:
             msgWait = "no"
-        n = Mwi(self.account, self.protocol, msgWait, user, host, port, newCount, oldCount, newUrgent, oldUrgent, newFax, oldFax)
+        n = Mwi(self.account, self.protocol, msgWait, user, host, port, newCount, oldCount, newUrgent, oldUrgent,
+                newFax, oldFax)
         return n.deferred
     
 class SIPVia(sip.Via):
@@ -179,7 +156,8 @@ class Mwi(SIPSession):
     
     method = 'NOTIFY'
     
-    def __init__(self, account, protocol, msgWait, user, host, port, newCount=0, oldCount=0, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
+    def __init__(self, account, protocol, msgWait, user, host, port, newCount=0, oldCount=0, newUrgent=0, oldUrgent=0,
+                 newFax=0, oldFax=0):
         SIPSession.__init__(self, account, protocol)
         self.msgWaiting = msgWait
         self.newCount = newCount
@@ -199,7 +177,8 @@ class Mwi(SIPSession):
         notify = self.requestMessage()
         log.debug('Sending %s' % str(notify))
         self.protocol.sessions[self.callid] = self.handle_response
-        destAccount = SIPAccount(self.notifyHost, username=self.notifyUser,ip=self.notifyHost,port=self.notifyPort,tag=uuid.uuid4().hex, display='Flex Voicemail')
+        destAccount = SIPAccount(self.notifyHost, username=self.notifyUser, ip=self.notifyHost, port=self.notifyPort,
+                                 tag=uuid.uuid4().hex, display='Flex Voicemail')
         self.protocol.sendMessage(destAccount, notify)
         self.state = states['waiting']
         
@@ -258,7 +237,8 @@ class Mwi(SIPSession):
         
     
 protocol = SIPClient()
-account = SIPAccount('192.168.10.175', 'asterisk', None, None, ip='192.168.10.175', port=5060, tag=uuid.uuid4().hex, display='Flex Voicemail')
+account = SIPAccount('192.168.10.175', 'asterisk', None, None, ip='192.168.10.175', port=5060, tag=uuid.uuid4().hex,
+                     display='Flex Voicemail')
 session = SIPSession(account, protocol)
 
 def notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax, oldFax):
@@ -267,7 +247,8 @@ def notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax,
     def onErr(reason):
         log.error(reason)
         
-    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), str(newUrgent), str(oldUrgent), str(newFax), str(oldFax))
+    dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), str(newUrgent), str(oldUrgent),
+                             str(newFax), str(oldFax))
     dmwi.addCallback(onNotify).addErrback(onErr)
         
         

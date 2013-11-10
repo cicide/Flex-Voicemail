@@ -51,6 +51,7 @@ class Call:
             log.error('missing action paramter in wsapi response')
             action = 'hangup'
         else:
+            log.debug('handling action key')
             respKeys.remove('action')
             # fix broken reference to agi in action
             if result['action'].split(':')[0] == 'agi':
@@ -62,6 +63,7 @@ class Call:
             action = 'hangup'
             nextaction = 'hangup'
         else:
+            log.debug('handling nextaction')
             respKeys.remove('nextaction')
             # fix broken reference to agi in nextaction
             if result['nextaction'].split(':')[0] == 'agi':
@@ -72,8 +74,10 @@ class Call:
             log.warning('missing invalid action in wsapi, setting invalid action as hangup')
             invalidaction = 'hangup'
         else:
+            log.debug ('handling invalidaction')
             respKeys.remove('invalidaction')
             invalidaction = result['invalidaction']
+        log.debug('leaving onActionResponse')
         return self.executeAction(action, nextaction, invalidaction, result, respKeys)
             
     
