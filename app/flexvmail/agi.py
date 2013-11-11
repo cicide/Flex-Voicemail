@@ -311,7 +311,20 @@ class astCall:
         dtmfResult = self.call.getDtmfResults(interKeyDelay=interkeydelay)
         if dtmfResult:
             log.debug('Got DTMF response: %s' % dtmfResult)
-            return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
+            res = dtmfResult[0]
+            val = dtmfResult[1]
+            if not res:
+                if val:
+                    #we need to wait a little longer for the dtmf to finish
+                    log.debug("waiting %s for the the dtmf wait period" % self.call.pauseLen)
+                    d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+                    d.addCallback(self.playPromptList, promptList, interrupKeys).addErrback(self.onError)
+                    return d
+                else:
+                    # we got no dtmf, continue on
+                    pass
+            else:
+                return {'type': 'response', 'value': val}
         if self.call.isPaused():
             log.debug("pausing for %s in astCall.playPromptList" % self.call.pauseLen)
             d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
