@@ -359,7 +359,7 @@ def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True,
                                     purgeonsuccess=purgeonsuccess)
     log.debug("Completed DTMF registration for %s" % uid)
 
-def getPeerData(self, peer):
+def getPeerData(peer):
     if peer in peerList:
         return peerList[peer]
     else:
