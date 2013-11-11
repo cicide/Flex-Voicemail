@@ -68,20 +68,20 @@ class DialerProtocol(AMIProtocol):
     
     def onPeerList(self, result):
         peer = result['peer']
-        address = result['address']
         timestamp = result['timestamp']
         status = result['peerstatus']
         ct = result['channeltype']
         if ct == 'SIP':
             peername = peer.split('/')[1]
             if status == "Registered":
+                address = result['address']
                 if peername not in peerList:
                     # notify peer of any queue message waiting
                     sipsend.newRegistration(peername)
                 peerList[peername] = {'peer': peer,
-                                  'address': address,
-                                  'time': timestamp,
-                                  'status': status}
+                                      'address': address,
+                                      'time': timestamp,
+                                      'status': status}
             elif status == 'Unregistered':
                 tmp = peerList.pop(peername, None)
             else:
