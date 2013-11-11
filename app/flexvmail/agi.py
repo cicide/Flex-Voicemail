@@ -419,7 +419,8 @@ class astCall:
             log.debug('found uri in prompt list')
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
-            # TODO - check for null prompt, and skip
+            if not promptUri:
+                return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
             promptType, promptLoc = promptUri.split(':')
             # format the file location for asterisk by removing the extra / at the beginning 
             # and any file type from the end
