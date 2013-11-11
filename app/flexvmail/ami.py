@@ -405,7 +405,7 @@ def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True,
 
 def requestDtmfResult(uid, interKeyDelay):
     if uid in dtmfReg:
-        return dmtfReg[uid].getDtmfResult(interKeyDelay)
+        return dtmfReg[uid].getDtmfResult(interKeyDelay)
     else:
         return False
 
