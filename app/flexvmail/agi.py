@@ -294,6 +294,11 @@ class astCall:
         @param interrupKeys:
         @return:
         """
+        if self.call.isPaused():
+            log.debug("pausing for %s in astCall.playPromptList" % self.call.pauseLen)
+            d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+            d.addCallback(self.playPromptList, result, promptList, interrupKeys).addErrback(self.onError)
+            return d
         log.debug(result)
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
@@ -453,7 +458,7 @@ class astCall:
             log.error('Unknown prompt type')
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
 
-    def actionRecord(self, prompt, folder, dtmf, retries, maxlen, beep=True):
+    def actionRecord(self, result = None, prompt = prompt, folder = folder, dtmf = dtmf, retries = retries, maxlen = maxlen, beep=True):
         """
 
         @param prompt:
@@ -463,6 +468,11 @@ class astCall:
         @param beep:
         @return:
         """
+        if self.call.isPaused():
+            log.debug("pausing for %s in astCall.actionRecord" % self.call.pauseLen)
+            d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+            d.addCallback(self.actionRecord, prompt, folder, dtmf, retries, maxlen, beep).addErrback(self.onError)
+            return d
         log.debug('agi:actionRecord called')
         log.debug(prompt)
 
@@ -548,7 +558,7 @@ class astCall:
             return result
         return True
 
-    def actionPlay(self, prompt, dtmf, retries, maxlen):
+    def actionPlay(self, result=None, prompt = prompt, dtmf = dtmf, retries = retries, maxlen = maxlen):
         """
 
         @param prompt:
@@ -556,6 +566,11 @@ class astCall:
         @param retries:
         @return:
         """
+        if self.call.isPaused():
+            log.debug("pausing for %s in astCall.actionPlay" % self.call.pauseLen)
+            d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+            d.addCallback(self.actionPlay, prompt, dtmf, retries, maxlen).addErrback(self.onError)
+            return d
 
     # TODO - Catch invalid uri's
 
@@ -626,7 +641,7 @@ class astCall:
         log.debug(maxkeylen)
         log.debug(handleKeys)
         log.debug(self.ami)
-        self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys,
+        self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys, pauser
                                         purgeonfail=purgeonfail,
                                         purgeonsuccess=purgeonsuccess)
         log.debug('dtmf registration request completed')

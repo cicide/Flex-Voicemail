@@ -7,6 +7,8 @@ implements call methods and keeps state for call
 """
 
 import time
+from twisted.internet import task
+from twisted.internet import reactor
 import utils
 import wsapi
 import sipsend
@@ -36,7 +38,18 @@ class Call:
         self.dtmfSubscriber = None
         self.maxKeyLen = 0
         self.dtmfResult = None
+        self.paused = False
+        self.pauseLen = 0.5
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
+
+    def isPaused(self):
+        return self.paused
+
+    def pauseCall(self, value):
+        self.paused = True
+
+    def pauser(self, result):
+        return result
 
     def registerForDtmf(self, keyList=[], maxlen=0, requestObject=None):
         """
@@ -69,7 +82,7 @@ class Call:
             log.debug(self.dtmfKeyList)
             log.debug(self.maxKeyLen)
             log.debug(self.dtmfSubscriber)
-            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult,
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult, self.pauseCall
                                                purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
 
@@ -121,6 +134,11 @@ class Call:
         @param result:
         @return:
         """
+        if self.paused:
+            log.debug("pausing for %s in call.onActionResponse" % self.pauseLen)
+            d = task.deferLater(reactor, self.pauseLen, self.pauser, result)
+            d.addCallback(onActionResponse, result).addErrback(self.onError)
+            return d
         log.debug('call object handling wsapi response')
         log.debug(result)
         if not result:
@@ -187,6 +205,11 @@ class Call:
         @param respKeys:
         @return:
         """
+        if self.paused:
+            log.debug("pausing for %s in call.executeAction" % self.pauseLen)
+            d = task.deferLater(reactor, self.pauseLen, self.pauser, result)
+            d.addCallback(self.executeAction, action, nextAction, invalidAction, wsapiResponse, respKeys).addErrback(self.onError)
+            return d
         log.debug('got a valid action!')
         log.debug('nextaction: %s' % nextAction)
         if 'maxlength' in wsapiResponse:
@@ -224,7 +247,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action play: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionPlay(prompt, dtmf, retries, maxlen)
+            d = self.pbxCall.actionPlay(None, prompt, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction) #.addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         elif action == 'hangup':
@@ -265,7 +288,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action record: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries, maxlen)
+            d = self.pbxCall.actionRecord(None, prompt, folder, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         else:
@@ -278,6 +301,11 @@ class Call:
         @param nextAction:
         @return:
         """
+        if self.paused:
+            log.debug("pausing for %s in call.onExecuteActionSuccess" % self.pauseLen)
+            d = task.deferLater(reactor, self.pauseLen, self.pauser, result)
+            d.addCallback(self.onExecuteActionSuccess, result, nextAction).addErrback(self.onError)
+            return d
         log.debug('entered: call:onExecuteActionSuccess')
         log.debug(result)
         log.debug(nextAction)

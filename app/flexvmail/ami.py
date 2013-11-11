@@ -249,11 +249,12 @@ class DialerFactory(AMIFactory):
 
 class DtmfRegistration(object):
 
-    def __init__(self, uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+    def __init__(self, uid, keylist, maxkeylen, handlekeys, pauser, purgeonfail=True, purgeonsuccess=True):
         self.uid = uid
         self.keylist = keylist
         self.maxkeylen = maxkeylen
         self.handler = handlekeys
+        self.pauser = pauser
         self.dtmfbuffer = []
         self.purgeonfail = purgeonfail
         self.purgeonsuccess = purgeonsuccess
@@ -270,6 +271,8 @@ class DtmfRegistration(object):
 
     def receiveDtmf(self, dtmfVal=None):
         log.debug('dtmf registration for %s received value %s' % (self.uid, dtmfVal))
+        self.pauser(True)
+        log.debug('call flow paused.')
         if dtmfVal:
             self.dtmfbuffer.append(str(dtmfVal))
             self.lasttime = time.time()
@@ -306,11 +309,17 @@ class DtmfRegistration(object):
         if callHandler:
             log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
             self.handler(dtmfresult)
+            self.pauser(False)
+            log.debug('release call flow pause')
         else:
+            self.pauser(False)
+            log.debug('releasing call flow pause')
             return dtmfresult
 
     def onFail(self):
         log.debug('failed to get valid dtmf')
+        self.pauser(False)
+        log.debug('releasing call flow pause')
         if self.purgeonfail:
             log.debug('NEW dtmf buffer purged on fail')
             self.purgeBuffer()
@@ -404,9 +413,9 @@ def cancelDtmfRegistration(uid):
     log.debug("Cancelleing DTMF registration for %s" % uid)
     tmp = dtmfReg.pop(uid, None)
 
-def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, pauser, purgeonfail=True, purgeonsuccess=True):
     log.debug("Starting DTMF registration for %s" % uid)
-    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys,
+    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys, pauser
                                     purgeonfail=purgeonfail,
                                     purgeonsuccess=purgeonsuccess)
     log.debug("Completed DTMF registration for %s" % uid)
