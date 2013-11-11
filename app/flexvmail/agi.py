@@ -294,7 +294,6 @@ class astCall:
         @param interrupKeys:
         @return:
         """
-        log.debug(result)
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
             log.debug('entering: agi:playPromptList:onError')
