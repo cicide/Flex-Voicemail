@@ -271,7 +271,9 @@ def sendMwi(user, new, old, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
 
     # find the requested user in the sip registry.
     # TODO - make this call through the call object
+    log.debug('getting peer data for user %s' % user)
     peerdata = ami.getPeerData(user)
+    log.debug(peerdata)
     if not peerdata:
         log.debug("queueing mwi request for next device login")
         # place the mwi notification in the queue
