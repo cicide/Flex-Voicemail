@@ -304,7 +304,7 @@ class astCall:
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
-        dtmfResult = self.call.getDtmfResults(interKeyDelay=False)
+        dtmfResult = self.call.getDtmfResults(interKeyDelay=2)
         if dtmfResult:
             log.debug('Got DTMF response: %s' % dtmfResult)
             return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
