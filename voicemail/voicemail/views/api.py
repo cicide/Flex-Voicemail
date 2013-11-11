@@ -1400,14 +1400,14 @@ def stillThereLoop(request=None, user=None, user_session=None ):
     extraPrompt = None
     if state.menu is not None:
         if state.menu == "main":
-            extraPrompt = Prompt.Login_Still_There_Message
+            extraPrompt = Prompt.loginStillThere
         elif state.menu == "record":
             if state.step == "record":
-                extraPrompt = Prompt.RSF_Record_Still_There_Message
+                extraPrompt = Prompt.rsfRecordStillThere
             elif state.step == "approve":
-                extraPrompt = Prompt.RSF_Forward_Still_There_Message
+                extraPrompt = Prompt.rsfForwardStillThere
             elif state.step == "reply":
-                extraPrompt = Prompt.RSF_Forward_Still_There_Message
+                extraPrompt = Prompt.rsfForwardStillThere
             else:
                 extraPrompt = None
         elif state.menu == "vmaccess":
@@ -1420,29 +1420,29 @@ def stillThereLoop(request=None, user=None, user_session=None ):
             elif state.step == "2":
                 extraPrompt = None
             else:
-                extraPrompt = Prompt.Personal_Options_Still_There_Message
+                extraPrompt = Prompt.personalStillThere
         elif state.menu == "send":
             if state.step == "input":
-                extraPrompt = Prompt.Send_Still_There_Message
+                extraPrompt = Prompt.sendStillThere
             elif state.step == "approve":
-                extraPrompt = Prompt.RSF_Forward_Still_There_Message
+                extraPrompt = Prompt.rsfForwardStillThere
             else:
-                extraPrompt = Prompt.Send_Still_There_Message
+                extraPrompt = Prompt.sendStillThere
         elif state.menu == "listadmin":
             if state.step == "start":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             elif state.step == "firstpass":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             elif state.step == "recordname":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             elif state.step == "approve":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             elif state.step == "keycode":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             elif state.step == "codeapprove":
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
             else:
-                extraPrompt = Prompt.AML_ListStillThere
+                extraPrompt = Prompt.mailListMenuStillThere
         elif state.menu == "nameadmin":
             if state.step == "recordoptions":
                 extraPrompt = None
@@ -1455,7 +1455,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
             else:
                 extraPrompt = None
         elif state.menu == "options":
-            extraPrompt = Prompt.Personal_Greeting_Still_There_Message
+            extraPrompt = Prompt.personalGreetingStillThere
         elif state.menu == "password":
             if state.step == "firstpass":
                 extraPrompt = None
@@ -1464,7 +1464,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
             else:
                 extraPrompt = None
         elif state.menu == "scan":
-            extraPrompt = Prompt.Scan_Still_There_Message
+            extraPrompt = Prompt.scanStillThere
 
     retPrompt = combinePrompts(user, None, None, Prompt.stillThere, extraPrompt)
 
