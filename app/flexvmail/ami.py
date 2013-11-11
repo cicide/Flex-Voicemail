@@ -258,7 +258,11 @@ class DtmfRegistration(object):
         self.purgeonfail = purgeonfail
         self.purgeonsuccess = purgeonsuccess
         self.lasttime = time.time()
-        log.debug('completed dtmf registration for %s' % uid)
+        if '!' in keylist:
+            self.maxLenReturnVal = True
+        else:
+            self.maxLenReturnVal = False
+        log.debug('completed dtmf registration for %s with max length of %s' % (uid, maxkeylen))
 
     def purgeBuffer(self):
         self.dtmfbuffer = []
@@ -281,7 +285,10 @@ class DtmfRegistration(object):
             log.debug('found a dtmf match between buffer and keylist')
             self.onSuccess()
         elif len(self.dtmfbuffer) >= self.maxkeylen:
-            self.onFail()
+            if self.maxLenReturnVal:
+                self.onSuccess()
+            else:
+                self.onFail()
         else:
             log.debug('no valid match for buffer in keylist, max length not reached')
             log.debug('buffer: %s' % dbuff)
