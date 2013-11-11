@@ -77,11 +77,15 @@ class DialerProtocol(AMIProtocol):
                 address = result['address']
                 if peername not in peerList:
                     # notify peer of any queue message waiting
-                    sipsend.newRegistration(peername)
+                    sendNotify = True
+                else:
+                    sendNotify = False
                 peerList[peername] = {'peer': peer,
                                       'address': address,
                                       'time': timestamp,
                                       'status': status}
+                if sendNotify:
+                    sipsend.newRegistration(peername)
             elif status == 'Unregistered':
                 tmp = peerList.pop(peername, None)
             else:
