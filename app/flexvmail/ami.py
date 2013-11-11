@@ -357,8 +357,10 @@ class DtmfRegistration(object):
                 log.debug('Sending back what we have, time has run out: %s' % res)
                 return [True, res]
             else:
-                log.debug('How did we get here?  Everything should have been caught already')
-                return [False, None]
+                # We have nothing that is an exact match, and we haven't met the max length, but time is up
+                log.debug('We have no valid dtmf at all, and time is up')
+                res = self.onFail()
+                return [False, res]
         else:
             log.debug('Need to wait a little longer for keys to be entered.')
             # we need to wait a little longer to see if we will get a valid response, as the interkey delay isn't up
