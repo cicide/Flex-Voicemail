@@ -73,13 +73,12 @@ def createReturnDict(request,
     retdict = {}
     if pkey:
         retdict['pkey'] = pkey
-    frame = inspect.currentframe()
-    args, _, _, values = inspect.getargvalues(frame)
-    for i in args:
+    vars = locals()
+    for i,j in vars.items():
         if i == "request":
             continue
-        if values[i]:
-            retdict[i] = values[i]
+        if j:
+            retdict[i] = j
     log.debug("Returing %s", retdict)
     return retdict
 
