@@ -472,7 +472,7 @@ class astCall:
             log.error('Unknown prompt type')
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
 
-    def actionRecord(self, result = None, prompt = None, folder = None, dtmf = None, retries = None, maxlen = None, beep=True):
+    def actionRecord(self, result=None, prompt=None, folder=None, dtmf=None, retries=None, maxlen=None, beep=True):
         """
 
         @param prompt:
@@ -556,9 +556,9 @@ class astCall:
             #figure out the actual location for the record folder
             tmpFolder = folder.split(':/')[1]
             log.debug('Entering in deferToThread with method "getMsgNum"')
-            beep = True # Because it was giving me this error : 
+            beep = True
             log.debug(tmpFolder)
-            result = deferToThread(getMsgNum,tmpFolder) #this needs to be done in a defer to thread
+            result = deferToThread(getMsgNum,tmpFolder)
             result.addCallback(onSuccess,tmpFolder).addErrback(onError)
             return result
         
@@ -586,8 +586,6 @@ class astCall:
             d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
             d.addCallback(self.actionPlay, prompt, dtmf, retries, maxlen).addErrback(self.onError)
             return d
-
-    # TODO - Catch invalid uri's
 
         def onKeyBuffCheck(result=None, interKeyDelay=1):
             """
@@ -633,10 +631,6 @@ class astCall:
             return {'type': 'response', 'value': False}
         
         log.debug('agi:actionPlay called')
-        log.debug(prompt)
-        log.debug(dtmf)
-        tmp = self.ami.purgeDtmfBuffer(self.uid)
-        log.debug(tmp)
         self.call.registerForDtmf(dtmf, maxlen)
         log.debug("completed dtmf registration")
         if len(prompt):
@@ -652,10 +646,6 @@ class astCall:
 
     def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, pauser, purgeonfail=True, purgeonsuccess=True):
         log.debug('requesting dtmf registration.')
-        log.debug(keylist)
-        log.debug(maxkeylen)
-        log.debug(handleKeys)
-        log.debug(self.ami)
         self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys, pauser,
                                         purgeonfail=purgeonfail,
                                         purgeonsuccess=purgeonsuccess)
