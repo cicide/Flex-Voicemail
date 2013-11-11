@@ -458,7 +458,7 @@ class astCall:
             log.error('Unknown prompt type')
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
 
-    def actionRecord(self, result = None, prompt = prompt, folder = folder, dtmf = dtmf, retries = retries, maxlen = maxlen, beep=True):
+    def actionRecord(self, result = None, prompt = None, folder = None, dtmf = None, retries = None, maxlen = None, beep=True):
         """
 
         @param prompt:
@@ -558,7 +558,7 @@ class astCall:
             return result
         return True
 
-    def actionPlay(self, result=None, prompt = prompt, dtmf = dtmf, retries = retries, maxlen = maxlen):
+    def actionPlay(self, result=None, prompt = None, dtmf = None, retries = None, maxlen = None):
         """
 
         @param prompt:
@@ -635,7 +635,7 @@ class astCall:
     def cancelDtmfRegistration(self):
         self.ami.cancelDtmfRegistration(self.uid)
 
-    def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, purgeonfail=True, purgeonsuccess=True):
+    def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, pauser, purgeonfail=True, purgeonsuccess=True):
         log.debug('requesting dtmf registration.')
         log.debug(keylist)
         log.debug(maxkeylen)

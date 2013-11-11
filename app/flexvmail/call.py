@@ -62,6 +62,8 @@ class Call:
         self.dtmfResult = None
         def _returnDtmfResult(result):
             self.handleDtmf(result)
+        def _pauseCall(value):
+            self.pauseCall(value)
         if not keyList:
             log.debug('missing keylist, is this a de-registration?')
             self.dmtfKeyList = []
@@ -82,7 +84,7 @@ class Call:
             log.debug(self.dtmfKeyList)
             log.debug(self.maxKeyLen)
             log.debug(self.dtmfSubscriber)
-            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult, self.pauseCall,
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult, _pauseCall,
                                                purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
 
