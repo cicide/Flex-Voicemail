@@ -364,9 +364,6 @@ def handleMwi(request):
     return sipsend.sendMwi(user, newmsg, oldmsg)
 
 
-
-
-
 def newCall(pbxCallObj, uid):
     """
 

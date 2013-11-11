@@ -90,12 +90,6 @@ class DialerProtocol(AMIProtocol):
             log.debug('We can only register SIP devices')
         log.debug(peerList)
 
-    def getPeerData(self, peer):
-        if peer in peerList:
-            return peerList[peer]
-        else:
-            return {}
-
     def onPeerStatus(self, ami, event):
         self.onPeerList(event)
         log.debug(event)
@@ -364,6 +358,12 @@ def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True,
                                     purgeonfail=purgeonfail,
                                     purgeonsuccess=purgeonsuccess)
     log.debug("Completed DTMF registration for %s" % uid)
+
+def getPeerData(self, peer):
+    if peer in peerList:
+        return peerList[peer]
+    else:
+        return {}
 
 def getService():
     from twisted.application import service
