@@ -310,7 +310,8 @@ class astCall:
             interkeydelay = False
         dtmfResult = self.call.getDtmfResults(interKeyDelay=interkeydelay)
         if dtmfResult:
-            log.debug('Got DTMF response: %s' % dtmfResult)
+            log.debug('Got DTMF response:')
+            log.debug(dtmfResult)
             res = dtmfResult[0]
             val = dtmfResult[1]
             if not res:
