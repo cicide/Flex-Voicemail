@@ -125,8 +125,9 @@ class Voicemail(Base):
     read_on = Column(DateTime)
     cid_name = Column(String(80))
     cid_number = Column(String(20))
+    reply_id = Column(Integer, ForeignKey('reply_to.id'))
 
-    reply_to = relationship("ReplyTo", backref='voicemail')
+    reply_to = relationship("ReplyTo", foreign_keys=reply_id, uselist=False)
 
     def __init__(self, path = None, cid_name = None, cid_number = None, duration = 0, user = None, create_date = None, is_read = False, status = 0):
         self.path = path
@@ -250,7 +251,7 @@ class Prompt(Base):
     greetingsNotSet = "Greetings_Not_Set_Message"                     # 46
     greetingsRecordMenu = "Greetings_Record_Menu"                     # 47
     greetingsRecordBusy = "Greetings_Busy_Record_Message"             # 48
-    greetignsRecordUnavail = "Greetings_Unavail_Record_Message"       # 49
+    greetingsRecordUnavail = "Greetings_Unavail_Record_Message"       # 49
     greetingsRecordTmp = "Greetings_Tmp_Record_Message"               # 50
     greetingsApproved = "Greetings_Approved_Message"                  # 51
     greetingsBusyNotSet = "Greetings_Busy_Not_Set"                    # 52
@@ -384,9 +385,11 @@ class Group(Base):
         self.name = name
 
 class ReplyTo(Base):
-    __tablename__ = 'ReplyTo'
+    __tablename__ = 'reply_to'
     id = Column(Integer, primary_key=True, autoincrement=True)
     vm_id = Column(Integer,  ForeignKey('voicemails.id'))
+
+    parentVoicemail = relationship("Voicemail", uselist=False, foreign_keys=vm_id)
 
 class UserSession(Base):
     __tablename__ = 'user_session'

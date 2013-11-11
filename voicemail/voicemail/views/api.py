@@ -21,6 +21,7 @@ from ..models.models import (
     Voicemail,
     UserSession,
     State,
+    ReplyTo,
     )
 
 from pyramid.httpexceptions import (
@@ -365,6 +366,8 @@ def handleKey(request):
                 folder=user.vm_prefs.getVmFolder(),
                 )
         elif key == "2":
+            state.curmessage = 1
+            user_session.saveState(state)
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "3":
@@ -589,7 +592,9 @@ def handleKey(request):
                     v.status = 0
                     v.duration = duration
                     v.user = tuser
-                    v.reply_to = curvm
+                    reply_to = ReplyTo()
+                    reply_to.parentVoicemail = curvm
+                    v.reply_to = reply_to
 
                     DBSession.add(v)
                     # TODO call the asterisk stuff here fo indicator change
@@ -1524,6 +1529,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     promptName = Prompt.greetingsNotSet
     secondPrompt = Prompt.greetingsRecordMenu
 
+    extension = user.extension
     if type == "unavail":
         firstPrompt = Prompt.greetingsUnavailIs
         if user.vm_prefs.unavail_greeting:
