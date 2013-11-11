@@ -479,7 +479,11 @@ class astCall:
                 keyval = result[0]
                 reason = result[1]
             else:
+                keyval = False
+                reason = 'timeout'
                 duration = 0
+            log.debug(keyval)
+            log.debug(reason)
             response = {}
             response['result'] = result
             response['vmfile'] = """file:/%s.%s""" % (file_loc, self.mediaType)

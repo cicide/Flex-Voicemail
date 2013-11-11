@@ -300,8 +300,8 @@ class DtmfRegistration(object):
         if self.purgeonsuccess:
             log.debug('NEW dtmf buffer purged on success!')
             self.purgeBuffer()
-        log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
         if callHandler:
+            log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
             self.handler(dtmfresult)
         else:
             return dtmfresult
@@ -314,6 +314,7 @@ class DtmfRegistration(object):
         return None
 
     def getDtmfResult(self, delay):
+        log.debug('manual dtmf result requested with maxlength of %s' % self.maxkeylen)
         if (time.time() - self.lasttime) > delay:
             # inter key delay met, send what we have if it is valid
             dbuff = ''.join(self.dtmfbuffer)
@@ -327,20 +328,24 @@ class DtmfRegistration(object):
                 if self.maxLenReturnVal:
                     # we accept entries of any length via the '!' option in dtmf keys, send what we have
                     res = self.onSuccess(callHandler=False)
+                    log.debug('sending back max length dtmf result %s' % res)
                     return (True, res)
                 else:
                     # no exact match, out of time and length, fail this entry
+                    log.debug("no valid dtmf result available")
                     res = self.onFail()
                     return (False, res)
             elif self.maxLenReturnVal:
-                # we have something, that isn't a match, and isn't the maxt length, but time has run out for more
+                # we have something, that isn't a match, and isn't the max length, but time has run out for more
                 #   entries, so send what we have
                 res = self.onSuccess(callHandler=False)
+                log.debug('Sending back what we have, time has run out: %s' % res)
                 return (True, res)
         else:
             # we need to wait a little longer to see if we will get a valid response, as the interkey delay isn't up
             elapsed = time.time() - self.lasttime
             remain = delay - elapsed
+            log.debug('Waiting a little (%s) longer...' % remain)
             return [False, remain]
 
 
