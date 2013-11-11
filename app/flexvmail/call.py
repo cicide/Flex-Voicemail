@@ -84,10 +84,16 @@ class Call:
         self.dtmfSubscriber = None
         self.maxKeyLen = 0
 
-    def getDtmfResults(self):
-        result, self.dtmfResult = self.dtmfResult, None
-        log.debug('returning dtmf result %s' % result)
-        return result
+    def getDtmfResults(self, interKeyDelay=1):
+        if self.dtmfResult:
+            result, self.dtmfResult = self.dtmfResult, None
+            log.debug('returning dtmf result %s' % result)
+            return result
+        elif interKeyDelay == False:
+            return None
+        else:
+            dtmfBuff = self.pbxCall.requestDtmf(interKeyDelay)
+            return dtmfBuff
 
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
@@ -186,10 +192,11 @@ class Call:
             maxlen = wsapiResponse['maxlength']
         else:
             maxlen = 0
-            dtmf =wsapiResponse['dtmf']
-            for item in dtmf:
-                if len(item) > maxlen:
-                    maxlen = len(item)
+            if 'dtmf' in wsapiResponse:
+                dtmf =wsapiResponse['dtmf']
+                for item in dtmf:
+                    if len(item) > maxlen:
+                        maxlen = len(item)
         if action == 'play':
             if not 'prompt' in wsapiResponse:
                 log.warning('missing play prompt.  What should I do, play silence?')
