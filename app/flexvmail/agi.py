@@ -309,6 +309,7 @@ class astCall:
         else:
             interkeydelay = False
         dtmfResult = self.call.getDtmfResults(interKeyDelay=interkeydelay)
+        # TODO - Refactor this to skip the intermediate var dtmfResult
         if dtmfResult:
             log.debug('Got DTMF response:')
             log.debug(dtmfResult)
