@@ -297,7 +297,7 @@ class astCall:
         if self.call.isPaused():
             log.debug("pausing for %s in astCall.playPromptList" % self.call.pauseLen)
             d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
-            d.addCallback(self.playPromptList, result, promptList, interrupKeys).addErrback(self.onError)
+            d.addCallback(self.playPromptList, promptList, interrupKeys).addErrback(self.onError)
             return d
         log.debug(result)
         log.debug('agi:playPromptList called')

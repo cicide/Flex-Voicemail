@@ -43,6 +43,10 @@ class Call:
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
 
     def isPaused(self):
+        if self.paused is True:
+            log.debug('Caller %s is paused for dtmf collection' % self.user)
+        else:
+            log.debug('Caller %s is not paused' % self.user)
         return self.paused
 
     def pauseCall(self, value):
