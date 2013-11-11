@@ -555,7 +555,7 @@ class astCall:
 
     # TODO - Catch invalid uri's
 
-        def onKeyBuffCheck(interKeyDelay=1):
+        def onKeyBuffCheck(result=None, interKeyDelay=1):
             """
 
             @param interKeyDelay:
@@ -591,7 +591,7 @@ class astCall:
             if 'type' in result:
                 return result
             else:
-                return onKeyBuffCheck(interKeyDelay=2)
+                return onKeyBuffCheck(result=None, interKeyDelay=2)
 
 
         def onError(reason):
