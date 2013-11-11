@@ -349,6 +349,7 @@ class Call:
 
 
 def handleMwi(request):
+    log.debug(request)
     if 'user' not in request:
         return False
     if 'new' not in request:
