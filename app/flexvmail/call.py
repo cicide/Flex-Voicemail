@@ -9,6 +9,7 @@ implements call methods and keeps state for call
 import time
 import utils
 import wsapi
+import sipsend
 from datetime import datetime
 import os, sys, smtplib, mimetypes, stat
 
@@ -31,8 +32,63 @@ class Call:
         self.wsApiHost = wsapi.getHost()
         self.tree = None
         self.user = None
+        self.dtmfKeyList = []
+        self.dtmfSubscriber = None
+        self.maxKeyLen = 0
+        self.dtmfResult = None
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
-    
+
+    def registerForDtmf(self, keyList=[], maxlen=0, requestObject=None):
+        """
+        Register for dtmf results, passing a list of valid dtmf responses to the registration object
+
+        @param keyList: a list of valid dtmf responses
+        @param requestObject: a method to call with the result (optional)
+        """
+        log.debug('Entering Call.registerForDtmf')
+        self.dtmfResult = None
+        def _returnDtmfResult(result):
+            self.handleDtmf(result)
+        if not keyList:
+            log.debug('missing keylist, is this a de-registration?')
+            self.dmtfKeyList = []
+            self.dtmfSubscriber = None
+            self.pbxCall.cancelDtmfRegistration()
+            #cancel registration
+        else:
+            log.debug('got valid keylist, starting registration')
+            self.dmtfSubscriber = requestObject
+            self.maxKeyLen = 0
+            self.dtmfKeyList = keyList
+            if not maxlen:
+                for key in self.dtmfKeyList:
+                    if len(key) > self.maxKeyLen:
+                        self.maxKeyLen = len(key)
+            else:
+                self.maxKeyLen = maxlen
+            log.debug(self.dtmfKeyList)
+            log.debug(self.maxKeyLen)
+            log.debug(self.dtmfSubscriber)
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult,
+                                               purgeonfail=True, purgeonsuccess=True)
+            log.debug('completed dtmf registration')
+
+    def handleDtmf(self, result):
+        log.debug('got a registered dtmf value: %s' % result)
+        if self.dtmfSubscriber:
+            self.dtmfSubscriber(result)
+        else:
+            log.debug('What do I do with this dtmf?')
+            self.dtmfResult = result
+        self.dtmfKeyList = []
+        self.dtmfSubscriber = None
+        self.maxKeyLen = 0
+
+    def getDtmfResults(self):
+        result, self.dtmfResult = self.dtmfResult, None
+        log.debug('returning dtmf result %s' % result)
+        return result
+
     def parseCallerId(self, callerId):
         #TODO - handle parsing of callerid
         """
@@ -125,6 +181,15 @@ class Call:
         """
         log.debug('got a valid action!')
         log.debug('nextaction: %s' % nextAction)
+        if 'maxlength' in wsapiResponse:
+            respKeys.remove('maxlength')
+            maxlen = wsapiResponse['maxlength']
+        else:
+            maxlen = 0
+            dtmf =wsapiResponse['dtmf']
+            for item in dtmf:
+                if len(item) > maxlen:
+                    maxlen = len(item)
         if action == 'play':
             if not 'prompt' in wsapiResponse:
                 log.warning('missing play prompt.  What should I do, play silence?')
@@ -150,7 +215,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action play: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionPlay(prompt, dtmf, retries)
+            d = self.pbxCall.actionPlay(prompt, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction) #.addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         elif action == 'hangup':
@@ -191,7 +256,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action record: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries)
+            d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         else:
@@ -291,6 +356,22 @@ class Call:
         actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         #return self.onActionResponse(actionRequest)
+
+
+def handleMwi(request):
+    log.debug(request)
+    if 'user' not in request:
+        return False
+    if 'new' not in request:
+        newmsg = '0'
+    else:
+        newmsg = request['new']
+    if 'old' not in request:
+        oldmsg = '0'
+    else:
+        oldmsg = request['old']
+    user = request['user']
+    return sipsend.sendMwi(user, newmsg, oldmsg)
 
 
 def newCall(pbxCallObj, uid):

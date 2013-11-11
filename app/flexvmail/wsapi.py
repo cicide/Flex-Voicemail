@@ -4,7 +4,8 @@ from twisted.internet.protocol import Protocol
 from twisted.web import server, resource
 from twisted.web.client import Agent, HTTPConnectionPool
 from twisted.web.http_headers import Headers
-from urlparse import urlparse
+from twisted.application import internet
+import call
 from random import choice
 import urllib
 import utils
@@ -16,19 +17,19 @@ wsApiList = [] #TODO - build this list from the list of wsApiServer in the confi
 log = utils.get_logger("WSAPI")
 
 
-class mwiResponse(resource.Resource):
+class mwiApi(resource.Resource):
     isLeaf = True
-    def render_GET(self, request):
-        url = urlparse('http://localhost:8011/mwi?user=<user id>&new=<int>&old=<int>')
-        if request.path == url.path:
-            request.setResponseCode(200)
-            return "<html><body>Success.</body></html>" 
-        request.setResponseCode(404)
-        return ("<html>Page Not Found</html>" )
 
-site = server.Site(mwiResponse())
-log.debug('Listening on TCP 8011')
-reactor.listenTCP(8011, site)
+    def render_GET(self, request):
+        log.debug(request)
+        request.setResponseCode(200)
+        return "<html> Sorry, not here. </html>"
+
+    def render_POST(self, request):
+        mwiRequest = json.loads(request.content.read())
+        call.handleMwi(mwiRequest)
+        request.setResponseCode(200)
+        return ""
 
 
 class wsapiResponse(Protocol):
@@ -138,6 +139,18 @@ def getHost():
 def runTests():
     pass
 
-for server in wsApiServers:
-    log.debug(server)
-    wsApiList.append(wsApiServer(server[0],server[1]))
+for svr in wsApiServers:
+    log.debug(svr)
+    wsApiList.append(wsApiServer(svr[0],svr[1]))
+
+def getService():
+    root = resource.Resource()
+    mwi = mwiApi()
+    root.putChild("", mwi)
+    root.putChild("mwi", mwi)
+    site = server.Site(root)
+    service = internet.TCPServer(8012, site)
+    service.setName("mwiAPI")
+    return service
+
+

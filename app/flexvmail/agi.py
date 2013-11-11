@@ -10,7 +10,7 @@ import time
 import os
 
 setDebugging(True)
-testMode = True
+testMode = False
 
 log = utils.get_logger("AGIService")
 
@@ -34,6 +34,7 @@ class astCall:
         @param testMode:
         """
         self.agi = agi
+        self.ami = ami
         self.intType = 'asterisk'
         self.mediaType = 'wav'
         if testMode:
@@ -301,6 +302,12 @@ class astCall:
             if not result:
                 result = False
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        # Check for valid dtmf during prompt sequences
+        log.debug('Checking for DTMF responses')
+        dtmfResult = self.call.getDtmfResults()
+        if dtmfResult:
+            log.debug('Got DTMF response: %s' % dtmfResult)
+            return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
         if not len(promptList):
             log.debug('prompt list is empty, returning')
             return result
@@ -355,9 +362,10 @@ class astCall:
                         log.debug('adding delay before of %s' % delay)
                         sequence.append(self.agi.wait,delay)
                     intKeys = str("".join(interrupKeys))
+                    log.debug('escape Digits: %s ' % intKeys)
                     while len(ttsLocSeq):
                         promptLoc = ttsLocSeq.pop(0)
-                        sequence.append(self.agi.streamFile,str(promptLoc),escapeDigits=intKeys,offset=0)
+                        sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
                         if delayafter:
                             delay = float(delayafter)/1000
                             log.debug('adding delay after of %s' % delay)
@@ -380,19 +388,20 @@ class astCall:
                     sequence.append(self.agi.wait,delay)
                 intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
-                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='Q')
-                sequence.append(self.agi.streamFile, 'digits/at')
-                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits='', format='IMp')
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='Q')
+                sequence.append(self.agi.streamFile, 'digits/at', escapeDigits=intKeys)
+                sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='IMp')
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                log.debug('playing tts prompt.')
+                log.debug('playing date time prompt.')
                 return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         elif 'uri' in currPrompt:
             log.debug('found uri in prompt list')
             promptKeys.remove('uri')
             promptUri = currPrompt['uri']
+            # TODO - check for null prompt, and skip
             promptType, promptLoc = promptUri.split(':')
             # format the file location for asterisk by removing the extra / at the beginning 
             # and any file type from the end
@@ -409,7 +418,7 @@ class astCall:
                 intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
-                sequence.append(self.agi.streamFile,str(promptLoc), escapeDigits=intKeys, offset=0)
+                sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
                 if delayafter:
                     delay = float(delayafter)/1000
                     log.debug('adding delay after of %s' % delay)
@@ -437,14 +446,14 @@ class astCall:
             if delayafter:
                 delay = float(delayafter)/1000
                 log.debug('adding delay after of %s' % delay)
-                sequence.append(self.agi.wait,delay) 
+                sequence.append(self.agi.wait, delay)
             log.debug('playing number')
             return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         else:
-            log.error('Unknown prompt type: %s' % promptType)
+            log.error('Unknown prompt type')
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
 
-    def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
+    def actionRecord(self, prompt, folder, dtmf, retries, maxlen, beep=True):
         """
 
         @param prompt:
@@ -535,7 +544,7 @@ class astCall:
             return result
         return True
 
-    def actionPlay(self, prompt, dtmf, retries):
+    def actionPlay(self, prompt, dtmf, retries, maxlen):
         """
 
         @param prompt:
@@ -544,9 +553,11 @@ class astCall:
         @return:
         """
 
+    # TODO - Catch invalid uri's
+
         def onKeyBuffCheck():
             log.debug('checking keyBuffer')
-            keyBuff = ami.fetchDtmfBuffer(self.uid)
+            keyBuff = self.ami.fetchDtmfBuffer(self.uid)
             log.debug(keyBuff)
             last = keyBuff['last']
             buff = keyBuff['buffer']
@@ -589,27 +600,18 @@ class astCall:
                     d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
                     return d                    
 
-        def onPlayed(result, prompt, dtmf, retries):
+        def onPlayed(result, prompt, dtmf, retries, maxlen):
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
-            dtmfList = dtmf
-            asciCode = result[0][0]
-            if not asciCode:
-                log.debug('no key pressed')
-                if retries:
-                    log.debug('retrying')
-                    retries -= 1
-                    # TODO: We need to add some delays in here before retrying
-                    d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
-                    d.addCallback(onPlayed, prompt, dtmf, retries).addErrback(onError)
-                    return d
-                else:
-                    return {'type': 'response', 'value': False}
+            if 'type' in result:
+                return result
             else:
+                dtmfList = dtmf
+                asciCode = result[0][0]
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
-                maxKeyLen = max(len(dtmfKeys) for dtmfKeys in dtmfList)
+                maxKeyLen = maxlen
                 log.debug('Got Result: %s' % keyVal)
                 if keyVal in dtmfList:
                     log.debug('Result is Valid')
@@ -617,7 +619,7 @@ class astCall:
                     return {'type': 'response', 'value': keyVal}
                 elif maxKeyLen > 1:
                     log.debug('result not YET valid')
-                    keyBuff = ami.fetchDtmfBuffer(self.uid)
+                    keyBuff = self.ami.fetchDtmfBuffer(self.uid)
                     last = keyBuff['last']
                     buff = keyBuff['buffer']
                     keyBuffLen = len(buff)
@@ -649,16 +651,32 @@ class astCall:
         log.debug('agi:actionPlay called')
         log.debug(prompt)
         log.debug(dtmf)
-        tmp = ami.purgeDtmfBuffer(self.uid)
+        tmp = self.ami.purgeDtmfBuffer(self.uid)
         log.debug(tmp)
+        self.call.registerForDtmf(dtmf, maxlen)
+        log.debug("completed dtmf registration")
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
-            d.addCallback(onPlayed, prompt[:], dtmf, retries).addErrback(onError)
+            d.addCallback(onPlayed, prompt[:], dtmf, retries, maxlen).addErrback(onError)
             return d
         else:
             return {'type': 'response', 'value': False}
-        
+
+    def cancelDtmfRegistration(self):
+        self.ami.cancelDtmfRegistration(self.uid)
+
+    def startDtmfRegistration(self, keylist, maxkeylen, handleKeys, purgeonfail=True, purgeonsuccess=True):
+        log.debug('requesting dtmf registration.')
+        log.debug(keylist)
+        log.debug(maxkeylen)
+        log.debug(handleKeys)
+        log.debug(self.ami)
+        self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys,
+                                        purgeonfail=purgeonfail,
+                                        purgeonsuccess=purgeonsuccess)
+        log.debug('dtmf registration request completed')
+
     def actionHangup(self):
         """
 

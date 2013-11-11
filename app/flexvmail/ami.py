@@ -3,8 +3,9 @@
 from twisted.application import internet, service
 from twisted.internet import reactor, defer
 from starpy.manager import AMIFactory, AMIProtocol
-import os, time
-import utils, call
+import time
+import utils
+import sipsend
 
 log = utils.get_logger("AMIService")
 
@@ -18,7 +19,9 @@ amidomain = utils.config.get("general", "amidomain")
 serverList=[]
 chan_map = {} # cuid: {chan: channel, ami: ami_obj}
 
-dtmfBuffer = {} # uid: {last: timestamp, buffer: [list of dtmf events]}
+dtmfBuffer = {}  # uid: {last: timestamp, buffer: [list of dtmf events]}
+dtmfReg = {}  # { uid: dtmf registration object }
+peerList = {}  # {1234: {'peer': 'SIP/1234', 'address': '1.2.3.4:1223', 'time': '128379872.1232', 'status': 'Registered'}}
 
 
 class DialerProtocol(AMIProtocol):
@@ -64,9 +67,35 @@ class DialerProtocol(AMIProtocol):
         return d
     
     def onPeerList(self, result):
-        log.debug(result)
-        
+        peer = result['peer']
+        timestamp = result['timestamp']
+        status = result['peerstatus']
+        ct = result['channeltype']
+        if ct == 'SIP':
+            peername = peer.split('/')[1]
+            if status == "Registered":
+                address = result['address']
+                if peername not in peerList:
+                    # notify peer of any queue message waiting
+                    sendNotify = True
+                else:
+                    sendNotify = False
+                peerList[peername] = {'peer': peer,
+                                      'address': address,
+                                      'time': timestamp,
+                                      'status': status}
+                if sendNotify:
+                    sipsend.newRegistration(peername)
+            elif status == 'Unregistered':
+                tmp = peerList.pop(peername, None)
+            else:
+                log.debug('got unknown peer status: %s' % status)
+        else:
+            log.debug('We can only register SIP devices')
+        log.debug(peerList)
+
     def onPeerStatus(self, ami, event):
+        self.onPeerList(event)
         log.debug(event)
         
     def onDtmf(self, ami, event):
@@ -85,6 +114,8 @@ class DialerProtocol(AMIProtocol):
                 dtmfBuffer[str(uid)]['buffer'].append(str(digit))
             else:
                 dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': [str(digit)]}
+            if str(uid) in dtmfReg:
+                dtmfReg[str(uid)].receiveDtmf(str(digit))
             log.debug(dtmfBuffer[str(uid)])
                 
     def onUserEvent(self, ami, event):
@@ -216,6 +247,70 @@ class DialerFactory(AMIFactory):
         self.loginDefer = defer.Deferred()
         reactor.callLater(10,connector.connect)
 
+class DtmfRegistration(object):
+
+    def __init__(self, uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+        self.uid = uid
+        self.keylist = keylist
+        self.maxkeylen = maxkeylen
+        self.handler = handlekeys
+        self.dtmfbuffer = []
+        self.purgeonfail = purgeonfail
+        self.purgeonsuccess = purgeonsuccess
+        self.lasttime = time.time()
+        if '!' in keylist:
+            self.maxLenReturnVal = True
+        else:
+            self.maxLenReturnVal = False
+        log.debug('completed dtmf registration for %s with max length of %s' % (uid, maxkeylen))
+
+    def purgeBuffer(self):
+        self.dtmfbuffer = []
+        log.debug('NEW dtmf buffer purged')
+
+    def receiveDtmf(self, dtmfVal=None):
+        log.debug('dtmf registration for %s received value %s' % (self.uid, dtmfVal))
+        if dtmfVal:
+            self.dtmfbuffer.append(str(dtmfVal))
+            self.lasttime = time.time()
+        else:
+            pass
+        self.checkForMatch()
+
+    def checkForMatch(self):
+        log.debug('Checking DTMF buffer to see if we have a match')
+        log.debug(self.dtmfbuffer)
+        dbuff = ''.join(self.dtmfbuffer)
+        if dbuff in self.keylist:
+            log.debug('found a dtmf match between buffer and keylist')
+            self.onSuccess()
+        elif len(self.dtmfbuffer) >= self.maxkeylen:
+            if self.maxLenReturnVal:
+                self.onSuccess()
+            else:
+                self.onFail()
+        else:
+            log.debug('no valid match for buffer in keylist, max length not reached')
+            log.debug('buffer: %s' % dbuff)
+            log.debug(self.keylist)
+            # we don't yet have a valid match or have collected all the keys yet
+            pass
+
+    def onSuccess(self):
+        dtmfresult = ''.join(self.dtmfbuffer)
+        if self.purgeonsuccess:
+            log.debug('dtmf buffer purged!')
+            self.purgeBuffer()
+        log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
+        self.handler(dtmfresult)
+
+    def onFail(self):
+        log.debug('failed to get valid dtmf')
+        if self.purgeonfail:
+            log.debug('purging dtmf buffer')
+            self.purgeBuffer()
+
+
 def placeOutCall(number, account, cid, context, target, group, variable={}):
     #find an available server
     pbx_sys = None
@@ -250,7 +345,7 @@ def getAMI(cuid):
 def purgeDtmfBuffer(uid):
     if str(uid) in dtmfBuffer:
         dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
-        log.debug('dtmf buffer for %s purged' % uid)
+        log.debug('OLD dtmf buffer for %s purged' % uid)
         return True
     else:
         log.debug('requested purge on unknown dtmf buffer for %s' % uid)
@@ -263,6 +358,25 @@ def fetchDtmfBuffer(uid):
     else:
         log.debug('no dtmf buffer available for %s' % uid)
         return None
+
+def cancelDtmfRegistration(uid):
+    log.debug("Cancelleing DTMF registration for %s" % uid)
+    tmp = dtmfReg.pop(uid, None)
+
+def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True, purgeonsuccess=True):
+    log.debug("Starting DTMF registration for %s" % uid)
+    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys,
+                                    purgeonfail=purgeonfail,
+                                    purgeonsuccess=purgeonsuccess)
+    log.debug("Completed DTMF registration for %s" % uid)
+
+def getPeerData(peer):
+    log.debug("peer: %s" % peer)
+    log.debug(peerList)
+    if peer in peerList:
+        return peerList[peer]
+    else:
+        return {}
 
 def getService():
     from twisted.application import service
