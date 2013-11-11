@@ -50,7 +50,8 @@ class Call:
         return self.paused
 
     def pauseCall(self, value):
-        self.paused = True
+        log.debug('Setting call pause to %s' % value)
+        self.paused = value
 
     def pauser(self, result):
         return result

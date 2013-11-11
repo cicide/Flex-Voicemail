@@ -310,7 +310,7 @@ class DtmfRegistration(object):
             log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
             self.handler(dtmfresult)
             self.pauser(False)
-            log.debug('release call flow pause')
+            log.debug('releasing call flow pause')
         else:
             self.pauser(False)
             log.debug('releasing call flow pause')
