@@ -294,11 +294,6 @@ class astCall:
         @param interrupKeys:
         @return:
         """
-        if self.call.isPaused():
-            log.debug("pausing for %s in astCall.playPromptList" % self.call.pauseLen)
-            d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
-            d.addCallback(self.playPromptList, promptList, interrupKeys).addErrback(self.onError)
-            return d
         log.debug(result)
         log.debug('agi:playPromptList called')
         def onError(reason, promptList, interruptKeys):
@@ -309,10 +304,34 @@ class astCall:
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
-        dtmfResult = self.call.getDtmfResults(interKeyDelay=False)
+        if self.call.isPaused():
+            interkeydelay = 2
+        else:
+            interkeydelay = False
+        dtmfResult = self.call.getDtmfResults(interKeyDelay=interkeydelay)
+        # TODO - Refactor this to skip the intermediate var dtmfResult
         if dtmfResult:
-            log.debug('Got DTMF response: %s' % dtmfResult)
-            return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
+            log.debug('Got DTMF response:')
+            log.debug(dtmfResult)
+            res = dtmfResult[0]
+            val = dtmfResult[1]
+            if not res:
+                if val:
+                    #we need to wait a little longer for the dtmf to finish
+                    log.debug("waiting %s for the the dtmf wait period" % self.call.pauseLen)
+                    d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+                    d.addCallback(self.playPromptList, promptList, interrupKeys).addErrback(self.onError)
+                    return d
+                else:
+                    # we got no dtmf, continue on
+                    pass
+            else:
+                return {'type': 'response', 'value': val}
+        if self.call.isPaused():
+            log.debug("pausing for %s in astCall.playPromptList" % self.call.pauseLen)
+            d = task.deferLater(reactor, self.call.pauseLen, self.call.pauser, result)
+            d.addCallback(self.playPromptList, promptList, interrupKeys).addErrback(self.onError)
+            return d
         if not len(promptList):
             log.debug('prompt list is empty, returning')
             return result
@@ -484,6 +503,7 @@ class astCall:
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
+            self.ami.purgeDtmfBuffer(self.uid)
             if len(result) == 3:
                 duration = (int(result[2])/10000)+1
                 keyval = result[0]
