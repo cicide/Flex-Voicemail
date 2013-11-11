@@ -273,11 +273,13 @@ def sendMwi(user, new, old, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
     # TODO - make this call through the call object
     peerdata = ami.getPeerData(user)
     if not peerdata:
+        log.debug("queueing mwi request for next device login")
         # place the mwi notification in the queue
         mwiQueue[user] = {'new': new, 'old': old, 'newUrgent': newUrgent, 'oldUrgent': oldUrgent, 'newFax': newFax,
                           'oldFax': oldFax}
     else:
-        host,port = peerdata['address'].split(':')
+        host, port = peerdata['address'].split(':')
+        log.debug("sending mwi notification to %s" % user)
         notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax, oldFax)
     return True
 
@@ -288,7 +290,12 @@ def newRegistration(peer):
 
     @param peer: peer name
     """
-    pass
+    log.debug("got a newly registered device, checking for queued up mwi indicators")
+    log.debug(mwiQueue)
+    qd = mwiQueue.pop(peer, None)
+    if qd:
+        tmp = sendMwi(peer, qd['new'], qd['old'], qd['newUrgent'], qd['oldUrgent'], qd['newFax'], qd['oldFax'])
+
 
 
 def runTests():

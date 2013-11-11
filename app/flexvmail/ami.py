@@ -69,7 +69,7 @@ class DialerProtocol(AMIProtocol):
     def onPeerList(self, result):
         peer = result['peer']
         address = result['address']
-        timestamp = int(result['timestamp'])
+        timestamp = result['timestamp']
         status = result['peerstatus']
         ct = result['channeltype']
         if ct == 'SIP':
