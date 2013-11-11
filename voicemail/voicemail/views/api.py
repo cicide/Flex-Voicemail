@@ -21,6 +21,7 @@ from ..models.models import (
     Voicemail,
     UserSession,
     State,
+    ReplyTo,
     )
 
 from pyramid.httpexceptions import (
@@ -72,13 +73,14 @@ def createReturnDict(request,
     pkey = request.GET.get('pkey')
     retdict = {}
     if pkey:
-        retdict['pkey'] = pkey
-    vars = locals()
-    for i,j in vars.items():
+       retdict['pkey'] = pkey
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    for i in args:
         if i == "request":
             continue
-        if j:
-            retdict[i] = j
+        if values[i]:
+            retdict[i] = values[i]
     log.debug("Returing %s", retdict)
     return retdict
 
@@ -364,6 +366,8 @@ def handleKey(request):
                 folder=user.vm_prefs.getVmFolder(),
                 )
         elif key == "2":
+            state.curmessage = 1
+            user_session.saveState(state)
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "3":
@@ -588,7 +592,9 @@ def handleKey(request):
                     v.status = 0
                     v.duration = duration
                     v.user = tuser
-                    v.reply_to = curvm
+                    reply_to = ReplyTo()
+                    reply_to.parentVoicemail = curvm
+                    v.reply_to = reply_to
 
                     DBSession.add(v)
                     # TODO call the asterisk stuff here fo indicator change
@@ -1523,6 +1529,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     promptName = Prompt.greetingsNotSet
     secondPrompt = Prompt.greetingsRecordMenu
 
+    extension = user.extension
     if type == "unavail":
         firstPrompt = Prompt.greetingsUnavailIs
         if user.vm_prefs.unavail_greeting:

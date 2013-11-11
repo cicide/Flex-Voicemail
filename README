@@ -1,0 +1,5 @@
+A flexible voicemail system for Asterisk PBX.
+
+Flex Voicemail is a flexible voicemail system to allow easy configuration of voicemail flows.
+
+Currently support for asterisk is built in
