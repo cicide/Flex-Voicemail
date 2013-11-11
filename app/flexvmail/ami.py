@@ -5,6 +5,7 @@ from twisted.internet import reactor, defer
 from starpy.manager import AMIFactory, AMIProtocol
 import time
 import utils
+import sipsend
 
 log = utils.get_logger("AMIService")
 
@@ -18,8 +19,9 @@ amidomain = utils.config.get("general", "amidomain")
 serverList=[]
 chan_map = {} # cuid: {chan: channel, ami: ami_obj}
 
-dtmfBuffer = {} # uid: {last: timestamp, buffer: [list of dtmf events]}
-dtmfReg = {} # { uid: dtmf registration object }
+dtmfBuffer = {}  # uid: {last: timestamp, buffer: [list of dtmf events]}
+dtmfReg = {}  # { uid: dtmf registration object }
+peerList = {}  # {1234: {'peer': 'SIP/1234', 'address': '1.2.3.4:1223', 'time': '128379872.1232', 'status': 'Registered'}}
 
 
 class DialerProtocol(AMIProtocol):
@@ -65,9 +67,37 @@ class DialerProtocol(AMIProtocol):
         return d
     
     def onPeerList(self, result):
-        log.debug(result)
-        
+        peer = result['peer']
+        address = result['address']
+        timestamp = int(result['timestamp'])
+        status = result['peerstatus']
+        ct = result['channeltype']
+        if ct == 'SIP':
+            peername = peer.split('/')[1]
+            if status == "Registered":
+                if peername not in peerList:
+                    # notify peer of any queue message waiting
+                    sipsend.newRegistration(peername)
+                peerList[peername] = {'peer': peer,
+                                  'address': address,
+                                  'time': timestamp,
+                                  'status': status}
+            elif status == 'Unregistered':
+                tmp = peerList.pop(peername, None)
+            else:
+                log.debug('got unknown peer status: %s' % status)
+        else:
+            log.debug('We can only register SIP devices')
+        log.debug(peerList)
+
+    def getPeerData(self, peer):
+        if peer in peerList:
+            return peerList[peer]
+        else:
+            return {}
+
     def onPeerStatus(self, ami, event):
+        self.onPeerList(event)
         log.debug(event)
         
     def onDtmf(self, ami, event):

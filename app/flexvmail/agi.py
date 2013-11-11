@@ -715,6 +715,9 @@ def getMsgNum(directory):
     log.debug(result)
     return result
 
+def handleMwi(mwiRequest):
+
+
 def genMsgFile(filepath,
                acct, 
                context, 

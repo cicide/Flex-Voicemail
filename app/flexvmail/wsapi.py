@@ -5,7 +5,7 @@ from twisted.web import server, resource
 from twisted.web.client import Agent, HTTPConnectionPool
 from twisted.web.http_headers import Headers
 from twisted.application import internet
-from urlparse import urlparse
+import call
 from random import choice
 import urllib
 import utils
@@ -26,10 +26,10 @@ class mwiApi(resource.Resource):
         return "<html> Sorry, not here. </html>"
 
     def render_POST(self, request):
-        log.debug(request)
-        log.debug(request.content.read())
+        mwiRequest = request.content.read()
+        call.handleMwi(mwiRequest)
         request.setResponseCode(200)
-        return "<html> Sorry, not here. </html>"
+        return ""
 
 
 class wsapiResponse(Protocol):

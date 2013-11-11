@@ -9,6 +9,7 @@ implements call methods and keeps state for call
 import time
 import utils
 import wsapi
+import sipsend
 from datetime import datetime
 import os, sys, smtplib, mimetypes, stat
 
@@ -345,6 +346,24 @@ class Call:
         actionRequest.addCallbacks(self.onActionResponse,self.onError)
         return actionRequest
         #return self.onActionResponse(actionRequest)
+
+
+def handleMwi(request):
+    if 'user' not in request:
+        return False
+    if 'new' not in request:
+        newmsg = '0'
+    else:
+        newmsg = request['new']
+    if 'old' not in request:
+        oldmsg = '0'
+    else:
+        oldmsg = request['old']
+    user = request['user']
+    return sipsend.sendMwi(user, newmsg, oldmsg)
+
+
+
 
 
 def newCall(pbxCallObj, uid):

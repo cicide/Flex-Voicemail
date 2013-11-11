@@ -5,12 +5,16 @@ from twisted.internet import defer
 from twisted.cred._digest import calcHA1, calcHA2, calcResponse
 from UserDict import UserDict
 import utils
+import ami
 
 testMode = True
 
 log = utils.get_logger("SIPService")
 
 sipport = 5065
+
+
+mwiQueue = {}
 
 states = {'idle': 0,
           'waiting': 1,
@@ -250,8 +254,43 @@ def notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax,
     dmwi = session.notifyMWI(str(user), str(host), str(port), str(new), str(old), str(newUrgent), str(oldUrgent),
                              str(newFax), str(oldFax))
     dmwi.addCallback(onNotify).addErrback(onErr)
-        
-        
+
+def sendMwi(user, new, old, newUrgent=0, oldUrgent=0, newFax=0, oldFax=0):
+    """
+    Send a mwi message to a deivce
+
+    @param user:
+    @param new:
+    @param old:
+    @param newUrgent:
+    @param oldUrgent:
+    @param newFax:
+    @param oldFax:
+    @return:
+    """
+
+    # find the requested user in the sip registry.
+    # TODO - make this call through the call object
+    peerdata = ami.getPeerData(user)
+    if not peerdata:
+        # place the mwi notification in the queue
+        mwiQueue[user] = {'new': new, 'old': old, 'newUrgent': newUrgent, 'oldUrgent': oldUrgent, 'newFax': newFax,
+                          'oldFax': oldFax}
+    else:
+        host,port = peerdata['address'].split(':')
+        notifyMWI(session, user, host, port, new, old, newUrgent, oldUrgent, newFax, oldFax)
+    return True
+
+
+def newRegistration(peer):
+    """
+    For any newly registered sip endpoints we check for any queued up mwi message and send them
+
+    @param peer: peer name
+    """
+    pass
+
+
 def runTests():
     log.debug('Running SIP test.')
     notifyMWI(session, '2609', '192.168.10.95', '5060', '5', '3', '0', '0', '0', '0')
