@@ -108,7 +108,7 @@ class Call:
         if self.dtmfResult:
             result, self.dtmfResult = self.dtmfResult, None
             log.debug('returning dtmf result %s' % result)
-            return result
+            return [True, result]
         elif not interKeyDelay:
             log.debug("DTMF Check called with no interKeyDelay")
             return None
