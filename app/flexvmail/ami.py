@@ -118,10 +118,6 @@ class DialerProtocol(AMIProtocol):
                 dtmfReg[str(uid)].receiveDtmf(str(digit))
             log.debug(dtmfBuffer[str(uid)])
 
-    def purgeDtmfBuffer(self, uid):
-        if str(uid) in dtmfReg:
-            dtmfReg[str(uid)].purgeBuffer()
-
     def onUserEvent(self, ami, event):
         log.info("Got user event of type: %s" % event['userevent'])
         hostid = event['hostid']
@@ -399,6 +395,8 @@ def getAMI(cuid):
         return chan_map[cuid]
 
 def purgeDtmfBuffer(uid):
+    if str(uid) in dtmfReg:
+        dtmfReg[str(uid)].purgeBuffer()
     if str(uid) in dtmfBuffer:
         dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
         log.debug('OLD dtmf buffer for %s purged' % uid)
