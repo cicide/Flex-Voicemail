@@ -8,7 +8,7 @@ All development should continue to use asterisk 1.8.
 
 Install asterisk from source: http://downloads.asterisk.org/pub/telephony/certified-asterisk/certified-asterisk-1.8.15-current.tar.gz
 
-Install twisted using either the OS package manager (i.e. yum, apt-get, etc.) or via easy_install or pip.
+Install twisted (version 13 or later) using either the OS package manager (i.e. yum, apt-get, etc.) or via easy_install or pip.
 
 Install starpy using easy_install or pip
 
