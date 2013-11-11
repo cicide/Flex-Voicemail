@@ -604,11 +604,11 @@ class astCall:
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
-            dtmfList = dtmf
-            asciCode = result[0][0]
             if 'type' in result:
                 return result
             else:
+                dtmfList = dtmf
+                asciCode = result[0][0]
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
                 maxKeyLen = max(len(dtmfKeys) for dtmfKeys in dtmfList)
