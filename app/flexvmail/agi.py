@@ -641,7 +641,7 @@ class astCall:
         log.debug(maxkeylen)
         log.debug(handleKeys)
         log.debug(self.ami)
-        self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys, pauser
+        self.ami.startDtmfRegistration(self.uid, keylist, maxkeylen, handleKeys, pauser,
                                         purgeonfail=purgeonfail,
                                         purgeonsuccess=purgeonsuccess)
         log.debug('dtmf registration request completed')

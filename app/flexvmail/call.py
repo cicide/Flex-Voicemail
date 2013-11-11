@@ -82,7 +82,7 @@ class Call:
             log.debug(self.dtmfKeyList)
             log.debug(self.maxKeyLen)
             log.debug(self.dtmfSubscriber)
-            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult, self.pauseCall
+            self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult, self.pauseCall,
                                                purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
 
@@ -193,9 +193,9 @@ class Call:
             respKeys.remove('invalidaction')
             invalidaction = result['invalidaction']
         log.debug('leaving onActionResponse')
-        return self.executeAction(action, nextaction, invalidaction, result, respKeys)
+        return self.executeAction(None, action, nextaction, invalidaction, result, respKeys)
 
-    def executeAction(self, action, nextAction, invalidAction, wsapiResponse, respKeys):
+    def executeAction(self, result, action, nextAction, invalidAction, wsapiResponse, respKeys):
         """
 
         @param action:
@@ -270,7 +270,7 @@ class Call:
             if not 'folder' in wsapiResponse:
                 log.error('record action missing folder argument, where do I save the recording?')
                 action = 'hangup'
-                return self.executeAction(action, nextAction, invalidAction, wsapiResponse)
+                return self.executeAction(None, action, nextAction, invalidAction, wsapiResponse)
             else:
                 respKeys.remove('folder')
                 folder = wsapiResponse['folder']

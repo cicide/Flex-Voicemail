@@ -415,7 +415,7 @@ def cancelDtmfRegistration(uid):
 
 def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, pauser, purgeonfail=True, purgeonsuccess=True):
     log.debug("Starting DTMF registration for %s" % uid)
-    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys, pauser
+    dtmfReg[uid] = DtmfRegistration(uid, keylist, maxkeylen, handlekeys, pauser,
                                     purgeonfail=purgeonfail,
                                     purgeonsuccess=purgeonsuccess)
     log.debug("Completed DTMF registration for %s" % uid)
