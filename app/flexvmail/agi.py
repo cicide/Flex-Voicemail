@@ -604,6 +604,8 @@ class astCall:
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
+            dtmfList = dtmf
+            asciCode = result[0][0]
             if 'type' in result:
                 return result
             else:
