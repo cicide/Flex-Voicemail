@@ -307,7 +307,10 @@ class astCall:
             interkeydelay = 2
         else:
             interkeydelay = False
-        res, val = self.call.getDtmfResults(interKeyDelay=interkeydelay)
+        x = self.call.getDtmfResults(interKeyDelay=interkeydelay)
+        res, val = x
+        log.debug(res)
+        log.debug(val)
         if not res:
             if val:
                  #we need to wait a little longer for the dtmf to finish
