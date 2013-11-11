@@ -450,10 +450,10 @@ class astCall:
             log.debug('playing number')
             return sequence().addCallback(self.playPromptList, promptList=promptList, interrupKeys=interrupKeys)
         else:
-            log.error('Unknown prompt type: %s' % promptType)
+            log.error('Unknown prompt type')
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
 
-    def actionRecord(self, prompt, folder, dtmf, retries, beep=True):
+    def actionRecord(self, prompt, folder, dtmf, retries, maxlen, beep=True):
         """
 
         @param prompt:
@@ -544,7 +544,7 @@ class astCall:
             return result
         return True
 
-    def actionPlay(self, prompt, dtmf, retries):
+    def actionPlay(self, prompt, dtmf, retries, maxlen):
         """
 
         @param prompt:
@@ -600,7 +600,7 @@ class astCall:
                     d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
                     return d                    
 
-        def onPlayed(result, prompt, dtmf, retries):
+        def onPlayed(result, prompt, dtmf, retries, maxlen):
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
@@ -611,7 +611,7 @@ class astCall:
                 asciCode = result[0][0]
                 # check to see if we match any valid single keys
                 keyVal = chr(asciCode)
-                maxKeyLen = max(len(dtmfKeys) for dtmfKeys in dtmfList)
+                maxKeyLen = maxlen
                 log.debug('Got Result: %s' % keyVal)
                 if keyVal in dtmfList:
                     log.debug('Result is Valid')
@@ -653,12 +653,12 @@ class astCall:
         log.debug(dtmf)
         tmp = self.ami.purgeDtmfBuffer(self.uid)
         log.debug(tmp)
-        self.call.registerForDtmf(dtmf)
+        self.call.registerForDtmf(dtmf, maxlen)
         log.debug("completed dtmf registration")
         if len(prompt):
             log.debug('calling play prompt')
             d = self.playPromptList(result=None, promptList=prompt[:], interrupKeys=dtmf)
-            d.addCallback(onPlayed, prompt[:], dtmf, retries).addErrback(onError)
+            d.addCallback(onPlayed, prompt[:], dtmf, retries, maxlen).addErrback(onError)
             return d
         else:
             return {'type': 'response', 'value': False}

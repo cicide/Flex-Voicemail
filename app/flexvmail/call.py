@@ -38,7 +38,7 @@ class Call:
         self.dtmfResult = None
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
 
-    def registerForDtmf(self, keyList=[], requestObject=None):
+    def registerForDtmf(self, keyList=[], maxlen=0, requestObject=None):
         """
         Register for dtmf results, passing a list of valid dtmf responses to the registration object
 
@@ -60,16 +60,17 @@ class Call:
             self.dmtfSubscriber = requestObject
             self.maxKeyLen = 0
             self.dtmfKeyList = keyList
-            for key in self.dtmfKeyList:
-                if len(key) > self.maxKeyLen:
-                    self.maxKeyLen = len(key)
+            if not maxlen:
+                for key in self.dtmfKeyList:
+                    if len(key) > self.maxKeyLen:
+                        self.maxKeyLen = len(key)
+            else:
+                self.maxKeyLen = maxlen
             log.debug(self.dtmfKeyList)
             log.debug(self.maxKeyLen)
             log.debug(self.dtmfSubscriber)
             self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, _returnDtmfResult,
                                                purgeonfail=True, purgeonsuccess=True)
-            #self.pbxCall.startDtmfRegistration(self.dtmfKeyList, self.maxKeyLen, None,
-            #                                   purgeonfail=True, purgeonsuccess=True)
             log.debug('completed dtmf registration')
 
     def handleDtmf(self, result):
@@ -180,6 +181,15 @@ class Call:
         """
         log.debug('got a valid action!')
         log.debug('nextaction: %s' % nextAction)
+        if 'maxlength' in wsapiResponse:
+            respKeys.remove('maxlength')
+            maxlen = wsapiResponse['maxlength']
+        else:
+            maxlen = 0
+            dtmf =wsapiResponse['dtmf']
+            for item in dtmf:
+                if len(item) > maxlen:
+                    maxlen = len(item)
         if action == 'play':
             if not 'prompt' in wsapiResponse:
                 log.warning('missing play prompt.  What should I do, play silence?')
@@ -205,7 +215,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action play: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionPlay(prompt, dtmf, retries)
+            d = self.pbxCall.actionPlay(prompt, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction) #.addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         elif action == 'hangup':
@@ -246,7 +256,7 @@ class Call:
                 retries = wsapiResponse['retries']
             if len(respKeys):
                 log.warning('Action record: extra arguments ignored: %s' % ",".join(respKeys))
-            d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries)
+            d = self.pbxCall.actionRecord(prompt, folder, dtmf, retries, maxlen)
             d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onExecuteActionFailure, invalidAction)
             return d
         else:
