@@ -78,7 +78,7 @@ class wsApiServer:
         log.debug('json decoding response')
         log.debug(result)
         jsonResponse = json.loads(result)
-        log.info(jsonResponse)
+        log.debug(jsonResponse)
         return jsonResponse
     
     def genParameters(self, formedUri, apiMethod, callUniqueId, **kwargs):
@@ -125,7 +125,7 @@ class wsApiServer:
         if uri:
             agent = Agent(reactor, pool=self.pool)
             log.debug(agent)
-            log.info('requesting: %s' % uri)
+            log.debug('requesting: %s' % uri)
             headers = {'User-Agent': ['Flex Voicemail PBX Client']}
             d = agent.request("GET", uri, Headers(headers), None)
             log.debug('request sent')
