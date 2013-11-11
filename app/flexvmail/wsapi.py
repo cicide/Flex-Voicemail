@@ -66,7 +66,7 @@ class wsApiServer:
         
     def onResponse(self, resp):
         log.debug('entered wsapi:wsApiServer: onResponse')
-        log.debug(resp)
+        log.error(resp)
         headers = list(resp.headers.getAllRawHeaders())
         log.debug(headers)
         finished = Deferred()
@@ -76,7 +76,7 @@ class wsApiServer:
     
     def getJsonResult(self, result):
         log.debug('json decoding response')
-        log.info(result)
+        log.error(result)
         jsonResponse = json.loads(result)
         log.debug(jsonResponse)
         return jsonResponse
@@ -125,7 +125,7 @@ class wsApiServer:
         if uri:
             agent = Agent(reactor, pool=self.pool)
             log.debug(agent)
-            log.info('requesting: %s' % uri)
+            log.error('requesting: %s' % uri)
             headers = {'User-Agent': ['Flex Voicemail PBX Client']}
             d = agent.request("GET", uri, Headers(headers), None)
             log.debug('request sent')
