@@ -484,6 +484,7 @@ class astCall:
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
             log.debug(result)
+            self.ami.purgeDtmfBuffer(self.uid)
             if len(result) == 3:
                 duration = (int(result[2])/10000)+1
                 keyval = result[0]
