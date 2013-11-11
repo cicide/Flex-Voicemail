@@ -592,7 +592,9 @@ class astCall:
             @param interKeyDelay:
             @return:
             """
-            res, val = self.call.getDtmfResults(interKeyDelay=2)
+            x = self.call.getDtmfResults(interKeyDelay=2)
+            log.debug(x)
+            res, val = x
             if res:
                 # We got a valid dtmf response, handle it
                 return {'type': 'response', 'value': val}
