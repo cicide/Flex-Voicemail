@@ -295,12 +295,12 @@ class astCall:
         @return:
         """
         log.debug('agi:playPromptList called')
-        def onError(reason, promptList, interruptKeys):
-            log.debug('entering: agi:playPromptList:onError')
-            log.error(reason)
-            if not result:
-                result = False
-            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        #def onError(reason, promptList, interruptKeys):
+        #    log.debug('entering: agi:playPromptList:onError')
+        #    log.error(reason)
+        #    if not result:
+        #        result = False
+        #    return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
         if self.call.isPaused():
