@@ -89,9 +89,11 @@ class Call:
             result, self.dtmfResult = self.dtmfResult, None
             log.debug('returning dtmf result %s' % result)
             return result
-        elif interKeyDelay == False:
+        elif not interKeyDelay:
+            log.debug("DTMF Check called with no interKeyDelay")
             return None
         else:
+            log.debug('Checking dtmf request with delay of: %s' % interKeyDelay)
             dtmfBuff = self.pbxCall.requestDtmf(interKeyDelay)
             return dtmfBuff
 

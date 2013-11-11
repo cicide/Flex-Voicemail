@@ -296,6 +296,9 @@ class DtmfRegistration(object):
             # we don't yet have a valid match or have collected all the keys yet
 
     def onSuccess(self, callHandler=True):
+        if not self.dtmfbuffer:
+            log.debug('buffer is EMPTY - WTF, how did I get here?')
+            return self.onFail()
         dtmfresult = ''.join(self.dtmfbuffer)
         if self.purgeonsuccess:
             log.debug('NEW dtmf buffer purged on success!')
