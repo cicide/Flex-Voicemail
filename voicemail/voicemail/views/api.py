@@ -33,6 +33,7 @@ import deform
 import colander
 import deform
 import six
+import inspect
 from bag.web.pyramid.flash_msg import FlashMessage
 
 import logging
@@ -59,6 +60,29 @@ def userCheck(user):
     return True, None
 
 
+def createReturnDict(request, 
+        action=None,
+        prompt=None,
+        nextaction=None,
+        invalidaction=None,
+        dtmf=None,
+        maxlength=None,
+        folder=None
+        ):
+    pkey = request.GET.get('pkey')
+    retdict = {}
+    if pkey:
+        retdict['pkey'] = pkey
+    frame = inspect.currentframe()
+    args, _, _, values = inspect.getargvalues(frame)
+    for i in args:
+        if i == "request":
+            continue
+        if values[i]:
+            retdict[i] = values[i]
+    log.debug("Returing %s", retdict)
+    return retdict
+
 @view_config(route_name='startcall', renderer='json')
 def startCall(request):
     ''' This is the start of any call. Entry point'''
@@ -67,6 +91,7 @@ def startCall(request):
     callid = request.GET.get('uid', None)
     callerid = request.GET.get('callerid', None)
     tree = request.GET.get('tree', None)
+    pkey = request.GET.get('pkey', None)
 
 
     if (extension is None and (tree == "leaveMessage" or tree == "accessMenu")) \
@@ -92,8 +117,7 @@ def startCall(request):
         else:
             prompt = Prompt.getByName(name=Prompt.userLeaveMessage)
 
-        log.debug("Here returing this prompt %s", prompt.name) 
-        return dict(
+        return createReturnDict(request,
             action="record",
             prompt=prompt.getFullPrompt(user=user, param=user.extension),
             nextaction=request.route_url(
@@ -106,7 +130,7 @@ def startCall(request):
         )
     elif tree == "loginMenu":
         prompt = Prompt.getByName(name=Prompt.loginWelcomeMessage)
-        return dict(
+        return createReturnDict(request,
             action="play",
             prompt=prompt.getFullPrompt(),
             nextaction=request.route_url(
@@ -130,7 +154,7 @@ def startCall(request):
                 _query={'user':extension, 'menu':'main', 'uid':callid})
         state.dtmf=['1', '2', '3', '5', '7', '*4']
         user_session.saveState(state)
-        return dict(
+        return createReturnDict(request,
             action="play",
             prompt=retPrompt,
             invalidaction=request.route_url('invalidmessage'),
@@ -165,7 +189,7 @@ def handleLogin(request):
         prompt = Prompt.getByName(name=Prompt.loginInvalidMailbox)
         count = int(count) + 1
         if count < 3:
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 nextaction=request.route_url(
@@ -174,14 +198,14 @@ def handleLogin(request):
                 invalidaction=request.route_url('invalidmessage'),
             )
         else:
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction="agi:hangup",
             )
     elif extension is None: 
         prompt = Prompt.getByName(Prompt.loginInputPassword)
-        return dict(
+        return createReturnDict(request,
              action="play",
              prompt=prompt.getFullPrompt(),
              nextaction=request.route_url(
@@ -196,7 +220,7 @@ def handleLogin(request):
             count = int(count) + 1
             if count < 3:
                 prompt = Prompt.getByName(Prompt.loginInvalidPassword)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     nextaction=request.route_url(
@@ -206,14 +230,14 @@ def handleLogin(request):
                 )
             else:
                 prompt = Prompt.getByName(Prompt.loginInvalidPassword)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     nextaction="agi:hangup",
                 )
         else:
             prompt = Prompt.getByName(Prompt.loginLoggedIn)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=request.route_url(
@@ -312,7 +336,7 @@ def handleKey(request):
         state.dtmf = ['1', '2', '3', '5', '7', '*4']
         state.menu = 'main'
         user_session.saveState(state)
-        return dict(
+        return createReturnDict(request,
             action="play",
             prompt=prompt.getFullPrompt(),
             nextaction=state.nextaction,
@@ -332,7 +356,7 @@ def handleKey(request):
             state.menu = 'record'
             state.step = 'record'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="record",
                 prompt=prompt.getFullPrompt(user=user),
                 nextaction=state.nextaction,
@@ -352,7 +376,7 @@ def handleKey(request):
             state.menu = 'personal'
             state.step=None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -368,7 +392,7 @@ def handleKey(request):
             state.menu = 'options'
             state.step = None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -396,7 +420,7 @@ def handleKey(request):
             state.menu ='main'
             state.step = None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -426,7 +450,7 @@ def handleKey(request):
             state.menu='record'
             state.step='approve'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
                 invalidaction=request.route_url('invalidmessage'),
@@ -447,7 +471,7 @@ def handleKey(request):
                 state.menu='record'
                 state.step='record'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
                     invalidaction=request.route_url('invalidmessage'),
@@ -468,7 +492,7 @@ def handleKey(request):
                 state.menu='record'
                 state.step='approve'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -486,7 +510,7 @@ def handleKey(request):
                 state.menu='record'
                 state.step='approve'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(user=user),
                     invalidaction=request.route_url('invalidmessage'),
@@ -507,7 +531,7 @@ def handleKey(request):
                     state.menu = 'send'
                     state.step = 'input'
                     user_session.saveState(state)
-                    return dict(
+                    return createReturnDict(request,
                         action="play",
                         prompt=prompt,
                         invalidaction=request.route_url('invalidmessage'),
@@ -526,7 +550,7 @@ def handleKey(request):
                     state.menu = 'record'
                     state.step = 'reply'
                     user_session.saveState(state)
-                    return dict(
+                    return createReturnDict(request,
                         action="play",
                         prompt=prompt,
                         invalidaction=request.route_url('invalidmessage'),
@@ -545,7 +569,7 @@ def handleKey(request):
                 state.menu='main'
                 state.step=None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -579,7 +603,7 @@ def handleKey(request):
                 state.menu='main'
                 state.step = None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -629,7 +653,7 @@ def handleKey(request):
                 state.menu='main'
                 state.step = None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(param=listcount),
                     invalidaction=request.route_url('invalidmessage'),
@@ -649,7 +673,7 @@ def handleKey(request):
                 state.maxlength = 6
                 state.menu='send'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -670,7 +694,7 @@ def handleKey(request):
             state.menu='main'
             state.step=None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt,
                 invalidaction=request.route_url('invalidmessage'),
@@ -695,7 +719,7 @@ def handleKey(request):
                 state.menu='send'
                 state.step=None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -726,7 +750,7 @@ def handleKey(request):
                 promptFirst = Prompt.TTS  
                 promptThird = Prompt.sendStillThere
                 prompt = combinePrompts(user, None, key, promptFirst, promptSecond, promptThird)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -752,7 +776,7 @@ def handleKey(request):
             state.menu='main'
             state.step=None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(user=user),
                 invalidaction=request.route_url('invalidmessage'),
@@ -773,7 +797,7 @@ def handleKey(request):
             state.menu = 'listadmin'
             state.step = 'start'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -791,7 +815,7 @@ def handleKey(request):
             state.menu='password'
             state.step='firstpass'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -820,7 +844,7 @@ def handleKey(request):
             state.menu = 'nameadmin'
             state.step = 'recordoptions'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt,
                 invalidaction=request.route_url('invalidmessage'),
@@ -839,7 +863,7 @@ def handleKey(request):
             state.menu='main'
             state.step=None
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -861,7 +885,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step='recordname'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
                     invalidaction=request.route_url('invalidmessage'),
@@ -882,7 +906,7 @@ def handleKey(request):
             state.menu = 'listadmin'
             state.step='approve'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="play",
                 prompt=prompt.getFullPrompt(),
                 invalidaction=request.route_url('invalidmessage'),
@@ -901,7 +925,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step='recordname'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
                     invalidaction=request.route_url('invalidmessage'),
@@ -921,7 +945,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'approve'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -938,7 +962,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'start'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -956,7 +980,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'keycode'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -977,7 +1001,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'keycode'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -997,7 +1021,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'keycode'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -1015,7 +1039,7 @@ def handleKey(request):
                 state.menu = 'listadmin'
                 state.step = 'start'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1037,7 +1061,7 @@ def handleKey(request):
                 state.menu = 'options'
                 state.step = None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -1057,7 +1081,7 @@ def handleKey(request):
                 state.menu = 'password'
                 state.step = 'firstpass'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1076,7 +1100,7 @@ def handleKey(request):
                 state.menu = 'password'
                 state.step = 'secondpass'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1102,7 +1126,7 @@ def handleKey(request):
                 state.menu = 'main'
                 state.step = None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -1119,7 +1143,7 @@ def handleKey(request):
                 state.menu = 'password'
                 state.step = 'secondpass'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1141,7 +1165,7 @@ def handleKey(request):
                 state.menu = 'nameadmin'
                 state.step = 'recordname'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="record",
                     prompt=prompt.getFullPrompt(user=user),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1166,7 +1190,7 @@ def handleKey(request):
                 state.menu = 'nameadmin'
                 state.step = 'recordoptions'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -1188,7 +1212,7 @@ def handleKey(request):
                 state.menu = 'nameadmin'
                 state.step = 'start'
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
@@ -1208,7 +1232,7 @@ def handleKey(request):
                 state.menu = 'main'
                 state.step = None
                 user_session.saveState(state)
-                return dict(
+                return createReturnDict(request,
                     action="play",
                     prompt=prompt.getFullPrompt(),
                     invalidaction=request.route_url('invalidmessage'),
@@ -1239,7 +1263,7 @@ def handleKey(request):
             state.menu = 'record'
             state.step = 'record'
             user_session.saveState(state)
-            return dict(
+            return createReturnDict(request,
                 action="record",
                 prompt=prompt.getFullPrompt(user=user),
                 invalidaction=request.route_url('invalidmessage'),
@@ -1349,7 +1373,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
     state.menu='vmaccess'
     state.step = None
     user_session.saveState(state)
-    return dict(
+    return createReturnDict(request,
         action="play",
         prompt=retPrompt,
         invalidaction=request.route_url('invalidmessage'),
@@ -1360,7 +1384,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
 
 def returnHelpMenu(request=None, user=None):
     prompt = Prompt.getByName(name=Prompt.helpMenu)
-    return dict(
+    return createReturnDict(request,
         action="play",
         prompt=prompt.getFullPrompt(user=user),
         nextaction=request.route_url(
@@ -1468,7 +1492,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
 
     retPrompt = combinePrompts(user, None, None, Prompt.stillThere, extraPrompt)
 
-    return dict(
+    return createReturnDict(request,
         action="play",
         prompt=retPrompt,
         nextaction=state.nextaction,
@@ -1594,7 +1618,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
             state.menu='main'
             state.step=None
     user_session.saveState(state)
-    return dict(
+    return createReturnDict(request,
         action=action,
         prompt=retPrompt,
         nextaction=state.nextaction,
