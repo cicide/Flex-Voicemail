@@ -266,7 +266,7 @@ class DtmfRegistration(object):
 
     def purgeBuffer(self):
         self.dtmfbuffer = []
-        log.debug('dtmf buffer purged')
+        log.debug('NEW dtmf buffer purged')
 
     def receiveDtmf(self, dtmfVal=None):
         log.debug('dtmf registration for %s received value %s' % (self.uid, dtmfVal))
@@ -345,7 +345,7 @@ def getAMI(cuid):
 def purgeDtmfBuffer(uid):
     if str(uid) in dtmfBuffer:
         dtmfBuffer[str(uid)] = {'last': time.time(), 'buffer': []}
-        log.debug('dtmf buffer for %s purged' % uid)
+        log.debug('OLD dtmf buffer for %s purged' % uid)
         return True
     else:
         log.debug('requested purge on unknown dtmf buffer for %s' % uid)
