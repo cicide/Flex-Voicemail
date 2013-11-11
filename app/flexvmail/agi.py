@@ -591,7 +591,7 @@ class astCall:
             if 'type' in result:
                 return result
             else:
-                return self.onKeyBuffCheck(interKeyDelay=2)
+                return onKeyBuffCheck(interKeyDelay=2)
 
 
         def onError(reason):
