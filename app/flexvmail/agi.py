@@ -304,7 +304,7 @@ class astCall:
             return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
-        dtmfResult = self.call.getDtmfResults()
+        dtmfResult = self.call.getDtmfResults(interKeyDelay=False)
         if dtmfResult:
             log.debug('Got DTMF response: %s' % dtmfResult)
             return {'type': 'response', 'value': dtmfResult}  # TODO - this should include the dtmf values we got
@@ -555,94 +555,44 @@ class astCall:
 
     # TODO - Catch invalid uri's
 
-        def onKeyBuffCheck():
-            log.debug('checking keyBuffer')
-            keyBuff = self.ami.fetchDtmfBuffer(self.uid)
-            log.debug(keyBuff)
-            last = keyBuff['last']
-            buff = keyBuff['buffer']
-            if (time.time() - last) > interKeyDelay:
-                return (True, buff)
-            else:
-                return (False, keyBuff)
+        def onKeyBuffCheck(interKeyDelay=1):
+            """
 
-        def onKeyBuffWait(result, dtmfList, maxKeyLen):
-            log.debug('keyBuff check completed')
-            if result[0]:
-                log.debug('we have a result')
-                buff = result[1]
-                keyVal = ''.join(buff)
-                if keyVal in dtmfList:
-                    log.debug('and it is valid')
-                    return {'type': 'response', 'value': keyVal}
-                else:
-                    log.debug('but it is not valid')
-                    return {'type': 'response', 'value': False}
+            @param interKeyDelay:
+            @return:
+            """
+            res, val = self.call.getDtmfResults(interKeyDelay=2)
+            if res:
+                # We got a valid dtmf response, handle it
+                return {'type': 'response', 'value': val}
+            elif val:
+                # if res is false, but val has something other that None, we have to wait for the delay
+                #  which is stored in val
+                d = task.deferLater(reactor, val, onKeyBuffCheck, interKeyDelay)
+                d.addCallback(onKeyBuffCheck, interKeyDelay).addErrback(self.onError)
+                return d
             else:
-                log.debug('it looks like we did not wait long enough, or another key has been entered')
-                keyBuff = result[1]
-                last = keyBuff['last']
-                buff = keyBuff['buffer']
-                keyVal = ''.join(buff)
-                if keyVal in dtmfList:
-                    log.debug('however, we have a valid match, return it')
-                    # we have an exact match, return it!
-                    return {'type': 'response', 'value': keyVal}
-                elif len(buff) >= maxKeyLen:
-                    log.debug('we have reached the max possible response length and do not have a match')
-                    # we have reached max length and don't have a match 
-                    return {'type': 'response', 'value': False}
-                else:
-                    log.debug('we have to wait some more')
-                    # we don't match, but we haven't reached max length
-                    waitDelay = interKeyDelay - (time.time() - last) + 0.1
-                    d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
-                    d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
-                    return d                    
+                # we have a failed dtmf entry
+                 return {'type': 'response', 'value': False}
 
         def onPlayed(result, prompt, dtmf, retries, maxlen):
+            """
+
+            @param result:
+            @param prompt:
+            @param dtmf:
+            @param retries:
+            @param maxlen:
+            @return:
+            """
             log.debug('got play prompt result')
             log.debug(result)
             log.debug(dtmf)
             if 'type' in result:
                 return result
             else:
-                dtmfList = dtmf
-                asciCode = result[0][0]
-                # check to see if we match any valid single keys
-                keyVal = chr(asciCode)
-                maxKeyLen = maxlen
-                log.debug('Got Result: %s' % keyVal)
-                if keyVal in dtmfList:
-                    log.debug('Result is Valid')
-                    # we have a valid single dtmf entry, run with it
-                    return {'type': 'response', 'value': keyVal}
-                elif maxKeyLen > 1:
-                    log.debug('result not YET valid')
-                    keyBuff = self.ami.fetchDtmfBuffer(self.uid)
-                    last = keyBuff['last']
-                    buff = keyBuff['buffer']
-                    keyBuffLen = len(buff)
-                    if keyBuffLen >= maxKeyLen:
-                        log.debug('No more keys available, returning what we have')
-                        # do we already have the max number of allowed characters?
-                        # TODO: Confirm validity before returning 
-                        return {'type': 'response', 'value': ''.join(buff)}
-                    elif (time.time() - last) > interKeyDelay:
-                        log.debug('We have waited long enough, no more keys are coming')
-                        # TODO: verify validity of current keys before returning
-                        # have we waited long enough to return what we have?
-                        return {'type': 'response', 'value': ''.join(buff)}
-                    else:
-                        log.debug('We need to wait a little longer to see if any more keys are entered')
-                        # we need to wait to see if the user is going to enter more keys
-                        waitDelay = interKeyDelay - (time.time() - last) + 0.1
-                        d = task.deferLater(reactor, waitDelay, onKeyBuffCheck)
-                        d.addCallback(onKeyBuffWait, dtmfList, maxKeyLen).addErrback(self.onError)
-                        return d
-                else:
-                    # We have an invalid key combination
-                    return {'type': 'response', 'value': False}
+                return self.onKeyBuffCheck(interKeyDelay=2)
+
 
         def onError(reason):
             log.error(reason)
@@ -676,6 +626,9 @@ class astCall:
                                         purgeonfail=purgeonfail,
                                         purgeonsuccess=purgeonsuccess)
         log.debug('dtmf registration request completed')
+
+    def requestDtmf(self, interKeyDelay):
+        return self.ami.requestDtmfResult(self.uid, interKeyDelay)
 
     def actionHangup(self):
         """

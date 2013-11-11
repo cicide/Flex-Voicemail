@@ -294,21 +294,54 @@ class DtmfRegistration(object):
             log.debug('buffer: %s' % dbuff)
             log.debug(self.keylist)
             # we don't yet have a valid match or have collected all the keys yet
-            pass
 
-    def onSuccess(self):
+    def onSuccess(self, callHandler=True):
         dtmfresult = ''.join(self.dtmfbuffer)
         if self.purgeonsuccess:
-            log.debug('dtmf buffer purged!')
+            log.debug('NEW dtmf buffer purged on success!')
             self.purgeBuffer()
         log.debug('calling success method %s with dtmf result %s' % (self.handler, dtmfresult))
-        self.handler(dtmfresult)
+        if callHandler:
+            self.handler(dtmfresult)
+        else:
+            return dtmfresult
 
     def onFail(self):
         log.debug('failed to get valid dtmf')
         if self.purgeonfail:
-            log.debug('purging dtmf buffer')
+            log.debug('NEW dtmf buffer purged on fail')
             self.purgeBuffer()
+        return None
+
+    def getDtmfResult(self, delay):
+        if (time.time() - self.lasttime) > delay:
+            # inter key delay met, send what we have if it is valid
+            dbuff = ''.join(self.dtmfbuffer)
+            if dbuff in self.keylist:
+                # we have an exact match, run with it!
+                log.debug('found a dtmf match between buffer and keylist')
+                res = self.onSuccess(callHandler=False)
+                return (True, res)
+            elif len(self.dtmfbuffer) >= self.maxkeylen:
+                # we have reached the max length, if we are accepting any entry, send it
+                if self.maxLenReturnVal:
+                    # we accept entries of any length via the '!' option in dtmf keys, send what we have
+                    res = self.onSuccess(callHandler=False)
+                    return (True, res)
+                else:
+                    # no exact match, out of time and length, fail this entry
+                    res = self.onFail()
+                    return (False, res)
+            elif self.maxLenReturnVal:
+                # we have something, that isn't a match, and isn't the maxt length, but time has run out for more
+                #   entries, so send what we have
+                res = self.onSuccess(callHandler=False)
+                return (True, res)
+        else:
+            # we need to wait a little longer to see if we will get a valid response, as the interkey delay isn't up
+            elapsed = time.time() - self.lasttime
+            remain = delay - elapsed
+            return [False, remain]
 
 
 def placeOutCall(number, account, cid, context, target, group, variable={}):
@@ -369,6 +402,12 @@ def startDtmfRegistration(uid, keylist, maxkeylen, handlekeys, purgeonfail=True,
                                     purgeonfail=purgeonfail,
                                     purgeonsuccess=purgeonsuccess)
     log.debug("Completed DTMF registration for %s" % uid)
+
+def requestDtmfResult(uid, interKeyDelay):
+    if uid in dtmfReg:
+        return dmtfReg[uid].getDtmfResult(interKeyDelay)
+    else:
+        return False
 
 def getPeerData(peer):
     log.debug("peer: %s" % peer)
