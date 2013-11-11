@@ -144,7 +144,7 @@ class Call:
         if self.paused:
             log.debug("pausing for %s in call.onActionResponse" % self.pauseLen)
             d = task.deferLater(reactor, self.pauseLen, self.pauser, result)
-            d.addCallback(onActionResponse, result).addErrback(self.onError)
+            d.addCallback(onActionResponse).addErrback(self.onError)
             return d
         log.debug('call object handling wsapi response')
         log.debug(result)
@@ -311,7 +311,7 @@ class Call:
         if self.paused:
             log.debug("pausing for %s in call.onExecuteActionSuccess" % self.pauseLen)
             d = task.deferLater(reactor, self.pauseLen, self.pauser, result)
-            d.addCallback(self.onExecuteActionSuccess, result, nextAction).addErrback(self.onError)
+            d.addCallback(self.onExecuteActionSuccess, nextAction).addErrback(self.onError)
             return d
         log.debug('entered: call:onExecuteActionSuccess')
         log.debug(result)
