@@ -294,6 +294,7 @@ class astCall:
         @param interrupKeys:
         @return:
         """
+        log.debug(interrupKeys)
         log.debug('agi:playPromptList called')
         #def onError(reason, promptList, interruptKeys):
         #    log.debug('entering: agi:playPromptList:onError')
@@ -544,7 +545,8 @@ class astCall:
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
-                result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
+                intKeys = ''.join(dtmf)
+                result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
                 return result            
