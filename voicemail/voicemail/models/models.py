@@ -290,6 +290,9 @@ class Prompt(Base):
 
     sayNumber = "Say_Number"                                          #78
     TTS  = "TTS"                                                      #79
+    tmpGreetingStatus = "Temp_Greeting_Status"                        #80
+    onPrompt = "on_prompt"                                            #81
+    offPrompt = "off_prompt"                                          #82
     
 
     @staticmethod
@@ -328,12 +331,6 @@ class Prompt(Base):
                 listprompt.append({'uri':user.vm_prefs.busy_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 8:
                 listprompt.append({'uri':user.vm_prefs.tmp_greeting, 'delayafter':i.delay_after})
-            elif i.prompt_type == 99:
-                listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
-                if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
-                    listprompt.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-on.wav', 'delayafter':i.delay_after})
-                else:
-                    listprompt.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-off.wav', 'delayafter':i.delay_after})
         return listprompt
     
     def _getVmTime(self, vm):

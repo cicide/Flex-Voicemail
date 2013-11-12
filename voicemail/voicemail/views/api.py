@@ -143,10 +143,15 @@ def startCall(request):
     elif tree == "accessMenu":
         user_session = getUserSession(callid, user)
         log.debug("UserSession created for a user Session %s" % user_session)
+        onOffPrompt = None
+        if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
+            onOffPrompt = Prompt.onPrompt
+        else:
+            onOffPrompt = Prompt.offPrompt
             
         retPrompt = combinePrompts(
             user, None, None, Prompt.loginLoggedIn,
-            Prompt.vmSummary, Prompt.activityMenu)
+            onOffPrompt, Prompt.vmSummary, Prompt.activityMenu)
         state = user_session.getCurrentState()
         state.menu = "main"
         state.nextaction=request.route_url(
@@ -406,16 +411,17 @@ def handleKey(request):
     elif menu == "personal":
         if step == "0":
             if key == "1":
+                onOffPrompt = None
                 if user.vm_prefs.is_tmp_greeting_on:
                     user.vm_prefs.is_tmp_greeting_on = 0
+                    onOffPrompt = Prompt.offPrompt
                 else:
                     user.vm_prefs.is_tmp_greeting_on = 1
+                    onOffPrompt = Prompt.onPrompt
                 DBSession.add(user)
-                ### TODO 
-                # toggled personal greeting
-                # figure out the prompt to return for confirmation
-                # returning them to the previous menu
-                prompt = Prompt.getByName(name=Prompt.activityMenu)
+                
+                tmpGreetingStatus = Prompt.tmpGreetingStatus
+                prompt = combinePrompts(user, None, None, tmpGreetingStatus, onOffPrompt, Prompt.activityMenu)
                 state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user': extension, 'menu': 'main', 'uid':callid})
@@ -425,7 +431,7 @@ def handleKey(request):
                 user_session.saveState(state)
                 return createReturnDict(request,
                     action="play",
-                    prompt=prompt.getFullPrompt(),
+                    prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
                     nextaction=state.nextaction,
                     dtmf=state.dtmf
