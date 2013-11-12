@@ -294,14 +294,14 @@ class astCall:
         @param interrupKeys:
         @return:
         """
-        log.debug(result)
+        log.debug(interrupKeys)
         log.debug('agi:playPromptList called')
-        def onError(reason, promptList, interruptKeys):
-            log.debug('entering: agi:playPromptList:onError')
-            log.error(reason)
-            if not result:
-                result = False
-            return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
+        #def onError(reason, promptList, interruptKeys):
+        #    log.debug('entering: agi:playPromptList:onError')
+        #    log.error(reason)
+        #    if not result:
+        #        result = False
+        #    return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
         if self.call.isPaused():
@@ -545,7 +545,8 @@ class astCall:
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
-                result = self.agi.recordFile(tmp_file_loc, self.mediaType, dtmf, 300, beep=beep)
+                intKeys = ''.join(dtmf)
+                result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
                 return result            
@@ -593,7 +594,9 @@ class astCall:
             @param interKeyDelay:
             @return:
             """
-            res, val = self.call.getDtmfResults(interKeyDelay=2)
+            x = self.call.getDtmfResults(interKeyDelay=2)
+            log.debug(x)
+            res, val = x
             if res:
                 # We got a valid dtmf response, handle it
                 return {'type': 'response', 'value': val}

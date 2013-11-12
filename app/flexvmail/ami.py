@@ -330,32 +330,39 @@ class DtmfRegistration(object):
     def getDtmfResult(self, delay):
         log.debug('manual dtmf result requested with maxlength of %s' % self.maxkeylen)
         if (time.time() - self.lasttime) > delay:
+            log.debug('interkey delay has been met')
             # inter key delay met, send what we have if it is valid
             dbuff = ''.join(self.dtmfbuffer)
             if dbuff in self.keylist:
                 # we have an exact match, run with it!
                 log.debug('found a dtmf match between buffer and keylist')
                 res = self.onSuccess(callHandler=False)
-                return (True, res)
+                return [True, res]
             elif len(self.dtmfbuffer) >= self.maxkeylen:
                 # we have reached the max length, if we are accepting any entry, send it
                 if self.maxLenReturnVal:
                     # we accept entries of any length via the '!' option in dtmf keys, send what we have
                     res = self.onSuccess(callHandler=False)
                     log.debug('sending back max length dtmf result %s' % res)
-                    return (True, res)
+                    return [True, res]
                 else:
                     # no exact match, out of time and length, fail this entry
                     log.debug("no valid dtmf result available")
                     res = self.onFail()
-                    return (False, res)
+                    return [False, res]
             elif self.maxLenReturnVal:
                 # we have something, that isn't a match, and isn't the max length, but time has run out for more
                 #   entries, so send what we have
                 res = self.onSuccess(callHandler=False)
                 log.debug('Sending back what we have, time has run out: %s' % res)
-                return (True, res)
+                return [True, res]
+            else:
+                # We have nothing that is an exact match, and we haven't met the max length, but time is up
+                log.debug('We have no valid dtmf at all, and time is up')
+                res = self.onFail()
+                return [False, res]
         else:
+            log.debug('Need to wait a little longer for keys to be entered.')
             # we need to wait a little longer to see if we will get a valid response, as the interkey delay isn't up
             elapsed = time.time() - self.lasttime
             remain = delay - elapsed
