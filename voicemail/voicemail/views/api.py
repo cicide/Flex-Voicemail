@@ -404,37 +404,40 @@ def handleKey(request):
         elif key == "7":
             return returnPrompt(name=Prompt.invalidRequest)
     elif menu == "personal":
-        if key == "1":
-            if user.vm_prefs.is_tmp_greeting_on:
-                user.vm_prefs.is_tmp_greeting_on = 0
-            else:
-                user.vm_prefs.is_tmp_greeting_on = 1
-            DBSession.add(user)
-            ### TODO 
-            # toggled personal greeting
-            # figure out the prompt to return for confirmation
-            # returning them to the previous menu
-            prompt = Prompt.getByName(name=Prompt.activityMenu)
-            state.nextaction=request.route_url(
-                'handlekey',
-                _query={'user': extension, 'menu': 'main', 'uid':callid})
-            state.dtmf=['1', '2', '3', '5', '7', '*4']
-            state.menu ='main'
-            state.step = None
-            user_session.saveState(state)
-            return createReturnDict(request,
-                action="play",
-                prompt=prompt.getFullPrompt(),
-                invalidaction=request.route_url('invalidmessage'),
-                nextaction=state.nextaction,
-                dtmf=state.dtmf
-            )
-        elif key == "2":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="unavail", state=state, user_session=user_session) 
-        elif key == "3":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="busy", state=state, user_session=user_session) 
-        elif key == "4":
-            return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp", state=state, user_session=user_session) 
+        if step == "0":
+            if key == "1":
+                if user.vm_prefs.is_tmp_greeting_on:
+                    user.vm_prefs.is_tmp_greeting_on = 0
+                else:
+                    user.vm_prefs.is_tmp_greeting_on = 1
+                DBSession.add(user)
+                ### TODO 
+                # toggled personal greeting
+                # figure out the prompt to return for confirmation
+                # returning them to the previous menu
+                prompt = Prompt.getByName(name=Prompt.activityMenu)
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': 'main', 'uid':callid})
+                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                state.menu ='main'
+                state.step = None
+                user_session.saveState(state)
+                return createReturnDict(request,
+                    action="play",
+                    prompt=prompt.getFullPrompt(),
+                    invalidaction=request.route_url('invalidmessage'),
+                    nextaction=state.nextaction,
+                    dtmf=state.dtmf
+                )
+            elif key == "2":
+                return doPersonalGreeting(request, callid, user, menu, key, step=step, type="unavail", state=state, user_session=user_session) 
+            elif key == "3":
+                return doPersonalGreeting(request, callid, user, menu, key, step=step, type="busy", state=state, user_session=user_session) 
+            elif key == "4":
+                return doPersonalGreeting(request, callid, user, menu, key, step=step, type="tmp", state=state, user_session=user_session) 
+        else:
+            return doPersonalGreeting(request, callid, user, menu, key, step=step, type=msgtype, state=state, user_session=user_session) 
     elif menu == "record":
         if step == 'record':
             #TODO  Check for the vmfile and pass it forward. Chris?
@@ -1437,11 +1440,9 @@ def stillThereLoop(request=None, user=None, user_session=None ):
             extraPrompt = Prompt.stillThereGetMessage
         elif state.menu == "personal":
             if state.step == "0":
-                extraPrompt = None
+                extraPrompt = Prompt.rsfForwardStillThere
             elif state.step == "1":
-                extraPrompt = None
-            elif state.step == "2":
-                extraPrompt = None
+                extraPrompt = Prompt.rsfRecordStillThere
             else:
                 extraPrompt = Prompt.personalStillThere
         elif state.menu == "send":
@@ -1515,6 +1516,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     secondPrompt = Prompt.greetingsRecordMenu
 
     extension = user.extension
+    vmfile = request.GET.get('vmfile', None)
     if type == "unavail":
         firstPrompt = Prompt.greetingsUnavailIs
         if user.vm_prefs.unavail_greeting:
@@ -1551,48 +1553,25 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     elif step == '1':
         if key == '1':
             retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
-            action="record"
-            folder=user.vm_prefs.getGreetingFolder()
-            state.nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'2'})
-            state.dtmf=['1', '23', '#', ]
-            state.menu='personal'
-            state.step='2'
-        elif key == '23':
-            retPrompt = combinePrompts(user, None, None, firstPrompt, promptName, secondPrompt)
-            action="play"
-            state.nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'1'})
-            state.dtmf=['1', '23', '#' ]
-            state.menu='personal'
-            state.step='1'
-            folder=user.vm_prefs.getGreetingFolder()
-    elif step == '2':
-        if key == '1':
-            retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
             action="record",
             state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,
-                            'type':type, 'menu':'personal', 'step':'2'})
+                            'type':type, 'menu':'personal', 'step':'1'})
             state.dtmf=['1', '23', '#', ]
             folder=user.vm_prefs.getGreetingFolder()
             state.menu='personal'
-            state.step='2'
+            state.step='1'
         elif key == '23':
             retPrompt =  {'uri':vmfile, 'delayafter':10}
             action="play"
             state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user':extension, 'uid':callid,'vmfile':vmfile,
-                            'type':type, 'menu':'personal', 'step':'2'})
+                            'type':type, 'menu':'personal', 'step':'1'})
             state.dtmf=['1', '23', '#' ]
             state.menu='personal'
-            state.step='2'
+            state.step='1'
         elif key == '#':
             if type == "unavail":
                 user.vm_prefs.unavail_greeting = vmfile
