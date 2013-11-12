@@ -329,8 +329,11 @@ class Prompt(Base):
             elif i.prompt_type == 8:
                 listprompt.append({'uri':user.vm_prefs.tmp_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 99:
+                listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
                 if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
-                    listprompt.append({'uri':i.path, 'delayafter':i.delay_after})
+                    listprompt.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-on.wav', 'delayafter':i.delay_after})
+                else:
+                    listprompt.append({'uri':'file://var/lib/asterisk/sounds/en/macp/mc-message-off.wav', 'delayafter':i.delay_after})
         return listprompt
     
     def _getVmTime(self, vm):
@@ -402,7 +405,6 @@ class UserSession(Base):
     
     def loadState(self, user, callid):
         self.uid = callid
-        self.create_date = datetime.datetime.utcnow()
         state = State()
         state.unread = []
         state.read = []
@@ -415,23 +417,10 @@ class UserSession(Base):
                 state.read.append(i.id)
             else:
                 state.unread.append(i.id)
+        if len(state.unread) == 0:
+            state.message_type = "read"
         self.saveState(state=state)
 
-
-    def reloadState(self, user):
-        state = State()
-        state.unread = []
-        state.read = []
-        state.curmessage = 1
-        state.uid = callid
-        for i in user.voicemails:
-            if i.status == 1:
-                continue
-            if i.is_read:
-                state.read.append(i.id)
-            else:
-                state.unread.append(i.id)
-        self.saveState(state=state)
 
     def getCurrentState(self):
         s = State()
