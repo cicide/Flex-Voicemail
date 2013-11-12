@@ -144,7 +144,6 @@ def startCall(request):
         user_session = getUserSession(callid, user)
         log.debug("UserSession created for a user Session %s" % user_session)
             
-        # TODO add temporary greeting stuff
         retPrompt = combinePrompts(
             user, None, None, Prompt.loginLoggedIn,
             Prompt.vmSummary, Prompt.activityMenu)
@@ -1164,11 +1163,11 @@ def handleKey(request):
                 prompt = Prompt.getByName(name=Prompt.recordName)
                 state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'nameadmin', 'uid': callid, 'step': 'recordname'}
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid': callid, 'step': 'recordoptions'}
                 )
                 state.dtmf=['#']
                 state.menu = 'nameadmin'
-                state.step = 'recordname'
+                state.step = 'recordoptions'
                 user_session.saveState(state)
                 return createReturnDict(request,
                     action="record",
@@ -1212,10 +1211,10 @@ def handleKey(request):
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
                 state.nextaction=request.route_url(
                     'handlekey',
-                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'start'})
+                    _query={'user': extension, 'menu': 'nameadmin', 'uid':callid, 'step': 'recordoptions'})
                 state.dtmf=['*7', '*4']
                 state.menu = 'nameadmin'
-                state.step = 'start'
+                state.step = 'recordoptions'
                 user_session.saveState(state)
                 return createReturnDict(request,
                     action="play",
@@ -1228,8 +1227,8 @@ def handleKey(request):
                 if vmfile:
                     user.vm_prefs.vm_name_recording = vmfile
                     DBSession.add(user.vm_prefs)
-                promptFirst = Prompt.getByName(name=Prompt.messageSaved)
-                promptSecond = Prompt.getByName(name=Prompt.activityMenu)
+                promptFirst = Prompt.messageSaved
+                promptSecond = Prompt.activityMenu
                 state.nextaction=request.route_url(
                     'handlekey',
                     _query={'user': extension, 'menu': 'main', 'uid':callid})
@@ -1237,23 +1236,18 @@ def handleKey(request):
                 state.menu = 'main'
                 state.step = None
                 user_session.saveState(state)
+                prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
                 return createReturnDict(request,
                     action="play",
-                    prompt=prompt.getFullPrompt(),
+                    prompt=prompt,
                     invalidaction=request.route_url('invalidmessage'),
                     nextaction=state.nextaction,
                     dtmf=state.dtmf,
                 )
-        elif step == 'recordname':
-            # TODO - handle post-recording 
-            pass
     elif menu == 'scan':
         #TODO - Scan Messages
         pass
     elif menu == "vmaccess":
-        log.debug(
-            "HandleKey called with extension %s key %s vmid %s menu %s",
-            extension, key, vmid, menu)
         if key == "0":
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
@@ -1473,16 +1467,7 @@ def stillThereLoop(request=None, user=None, user_session=None ):
             else:
                 extraPrompt = Prompt.mailListMenuStillThere
         elif state.menu == "nameadmin":
-            if state.step == "recordoptions":
-                extraPrompt = None
-            elif state.step == "firstpass":
-                extraPrompt = None
-            elif state.step == "recordname":
-                extraPrompt = None
-            elif state.step == "start":
-                extraPrompt = None
-            else:
-                extraPrompt = None
+            extraPrompt = Prompt.rsfRecordStillThere
         elif state.menu == "options":
             extraPrompt = Prompt.personalGreetingStillThere
         elif state.menu == "password":
@@ -1561,7 +1546,8 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
         state.dtmf=['1', '23', '#']
         state.menu='personal'
         state.step ='1'
-        action="play"
+        action="record"
+        folder=user.vm_prefs.getGreetingFolder()
     elif step == '1':
         if key == '1':
             retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
