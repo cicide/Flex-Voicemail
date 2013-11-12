@@ -545,7 +545,11 @@ class astCall:
                 log.debug('recording to location %s' % tmp_file_loc)
                 log.debug(self.mediaType)
                 log.debug(tmp_file_loc)
-                intKeys = ''.join(dtmf)
+                interruptKeys = []
+                # TODO - only allow the first digit of each key value in the interrupt list
+                for intkey in dtmf:
+                    interruptKeys.append(str(intkey))
+                intKeys = ''.join(interruptKeys)
                 result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
