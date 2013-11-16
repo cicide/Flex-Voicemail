@@ -210,7 +210,7 @@ class Prompt(Base):
     firstMessage = "First_Message"                                    # 12
     nextMessage = "Next_Message"                                      # 14
     lastMessage = "Last_Message"                                      # 13
-    vmMessage = "VM_Message"                                          # 11
+    vmMessageHeader = "VM_Message_Header"                             # 11
     noMoreMessage = "No_More_Message"                                 # 15
     postMessage = "Post_Message"                                      # 16
     stillThere = "Still_There"                                        # 17
@@ -288,11 +288,12 @@ class Prompt(Base):
     userTmpGreeting = "User_Tmp_Greeting"                             # 73
     userName = "User_Name"                                            # 74
 
-    sayNumber = "Say_Number"                                          #78
-    TTS  = "TTS"                                                      #79
-    tmpGreetingStatus = "Temp_Greeting_Status"                        #80
-    onPrompt = "on_prompt"                                            #81
-    offPrompt = "off_prompt"                                          #82
+    sayNumber = "Say_Number"                                          # 78
+    TTS  = "TTS"                                                      # 79
+    tmpGreetingStatus = "Temp_Greeting_Status"                        # 80
+    onPrompt = "on_prompt"                                            # 81
+    offPrompt = "off_prompt"                                          # 82
+    vmMessage = "VM_Message"                                          # 83
     
 
     @staticmethod
@@ -457,15 +458,27 @@ class State():
         self.maxlength = None
         self.menu = None
         self.step = None
+        self.invalidaction = None
+        self.action = None
+        self.folder = None
+        self.mode = "Full"
+
+    def previousMessage(self):
+        self.curmessage = self.curmessage - 1
+        if self.message_type == "read":
+            if self.curmessage < 1:
+                if len(self.unread):
+                    self.curmessage = len(self.unread)
+                    self.message_type = "unread"
+        if state.curmessage < 1:
+            state.curmessage = 1
+
 
     def nextMessage(self):
+        self.curmessage = self.curmessage + 1
         if self.message_type == "Unread":
-            if self.curmessage < len(self.unread):
-                self.curmessage = self.curmessage + 1
-            else:
+            if self.curmessage > len(self.unread):
                 self.message_type = "read"
                 self.curmessage = 1
-        else:
-            self.curmessage = self.curmessage + 1
 
 

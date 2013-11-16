@@ -990,6 +990,7 @@ def handleKey(request):
                 request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
         elif key == "23":
             # play header
+            state.mode = "Header"
             return getMessage(
                 request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1, msgType="Header")
         elif key == "4":
