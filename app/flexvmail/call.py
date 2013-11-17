@@ -332,7 +332,7 @@ class Call:
                 log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
                 log.debug('act set to: %s' % act)
-                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile, key=returnKey, reason=reason, dur=duration)
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile, key=returnKey, reason=reason, duration=duration)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             elif resType == 'play':
