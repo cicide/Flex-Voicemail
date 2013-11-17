@@ -411,7 +411,7 @@ class Call:
             else:
                 msgType = 'unavailable'
             actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid=self.callerId,
-                                                     user=self.user, tree=tree)
+                                                     user=self.user, tree=tree, type=msgType)
         else:
             actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId,
                                                      user=self.user, tree=tree)
