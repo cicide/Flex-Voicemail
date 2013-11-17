@@ -507,8 +507,7 @@ class astCall:
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            error = reason.trap(starpyError.AGICommandFailure)
-            if error.value == (511, 'Command Not Permitted on a dead channel'):
+            if error.value[0] == 511:
                 log.debug('caller hung up the call - finish agi')
                 self.agi.finish()
                 self.hangup()
