@@ -62,14 +62,16 @@ class astCall:
         error = reason.trap(tierror.ConnectionDone)
         if error:
             log.debug('trapped an error: %s' % error)
-        log.debug('entering agi:astCall:onError')
-        log.error(reason)
-        log.debug('terminating call due to error.')
-        sequence = fastagi.InSequence()
-        log.debug('------------- Finishing agi call --------------')
-        sequence.append(self.agi.hangup)
-        sequence.append(self.agi.finish)
-        return sequence()
+            return False
+        else:
+            log.debug('entering agi:astCall:onError')
+            log.error(reason)
+            log.debug('terminating call due to error.')
+            sequence = fastagi.InSequence()
+            log.debug('------------- Finishing agi call --------------')
+            sequence.append(self.agi.hangup)
+            sequence.append(self.agi.finish)
+            return sequence()
 
     def start(self):
         """
