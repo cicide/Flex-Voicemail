@@ -404,7 +404,7 @@ class Call:
         if self.tree == 'leaveMessage':
             if not treeArgs[1]:
                 msgType = 'unavailable'
-            elif treeArgs[1].loswer() in ('b', 'busy'):
+            elif treeArgs[1].lower() in ('b', 'busy'):
                 msgType = 'busy'
             elif treeArgs[1].lower() in ('u', 'unavail', 'unavailable'):
                 msgType = 'unavailable'
