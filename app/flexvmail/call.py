@@ -327,6 +327,7 @@ class Call:
                 log.debug('found a record result type')
                 duration = str(result['duration'])
                 keyVal = result['keyval']
+                log.debug('keyval: %s' % keyVal)
                 if keyVal:
                     returnKey = chr(keyVal)
                 else:
