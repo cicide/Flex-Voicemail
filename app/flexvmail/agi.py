@@ -3,6 +3,7 @@
 from twisted.application import internet
 from twisted.internet import reactor, task
 from starpy import fastagi
+from starpy import error as starpyError
 import utils, call, ami
 from twisted.internet.defer import setDebugging
 from twisted.internet.threads import deferToThread 
@@ -648,6 +649,8 @@ class astCall:
             log.error(reason.value)
             log.error(reason.type)
             log.error(reason.getErrorMessage())
+            error = reason.trap(starpyError.AGICommandFailure)
+            log.debug(error)
             return {'type': 'response', 'value': False}
         
         log.debug('agi:actionPlay called')
