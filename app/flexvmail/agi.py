@@ -645,6 +645,9 @@ class astCall:
         def onError(reason):
             log.debug('entering: actionPlay:onError')
             log.error(reason)
+            log.error(reason.value)
+            log.error(reason.type)
+            log.error(reason.getErrorMessage())
             return {'type': 'response', 'value': False}
         
         log.debug('agi:actionPlay called')
