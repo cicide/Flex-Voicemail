@@ -62,6 +62,7 @@ class astCall:
         log.error(reason)
         log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
+        log.debug('------------- Finishing agi call --------------')
         sequence.append(self.agi.hangup)
         sequence.append(self.agi.finish)
         return sequence()
@@ -169,6 +170,7 @@ class astCall:
         @param result:
         @return:
         """
+        log.debug('------------- Finishing agi call --------------')
         d = self.agi.finish()
         if d:
             d.addCallbacks(self.onFinish,self.onError)
