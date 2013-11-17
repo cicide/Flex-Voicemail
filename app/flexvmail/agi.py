@@ -102,22 +102,23 @@ class astCall:
         self.origtime = str(time.time())
         self.msg_id = '%s-%s' % (self.uid,self.threadid)
         self.args = {}
-        if 'agi_arg1' in self.agi.variables:
+        if 'agi_arg_1' in self.agi.variables:
             self.args[1] = self.agi.variables['agi_arg1']
-        if 'agi_arg2' in self.agi.variables:
+        if 'agi_arg_2' in self.agi.variables:
             self.args[2] = self.agi.variables['agi_arg2']
-        if 'agi_arg3' in self.agi.variables:
+        if 'agi_arg_3' in self.agi.variables:
             self.args[3] = self.agi.variables['agi_arg3']
-        if 'agi_arg4' in self.agi.variables:
+        if 'agi_arg_4' in self.agi.variables:
             self.args[4] = self.agi.variables['agi_arg4']
-        if 'agi_arg5' in self.agi.variables:
+        if 'agi_arg_5' in self.agi.variables:
             self.args[5] = self.agi.variables['agi_arg5']
-        if 'agi_arg6' in self.agi.variables:
+        if 'agi_arg_6' in self.agi.variables:
             self.args[6] = self.agi.variables['agi_arg6']
-        if 'agi_arg7' in self.agi.variables:
+        if 'agi_arg_7' in self.agi.variables:
             self.args[7] = self.agi.variables['agi_arg7']
-        if 'agi_arg8' in self.agi.variables:
+        if 'agi_arg_8' in self.agi.variables:
             self.args[8] = self.agi.variables['agi_arg8']
+        log.debug('args: %s' % self.args)
         newCall = call.newCall(self, self.uid)
         if newCall:
             self.call = newCall
