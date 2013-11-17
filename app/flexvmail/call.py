@@ -385,7 +385,7 @@ class Call:
         log.error(reason)
         return False
 
-    def startCall(self, tree):
+    def startCall(self, tree, treeArgs):
         """
 
         @param tree:
@@ -400,10 +400,22 @@ class Call:
             self.cuid = self.pbxCall.getUid()
             self.user = self.callerId = self.pbxCall.getCidNum()
         method = 'startcall'
-        actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId, user=self.user, tree=tree)
-        actionRequest.addCallbacks(self.onActionResponse,self.onError)
+        if self.tree == 'leaveMessage':
+            if not treeArgs[1]:
+                msgType = 'unavailable'
+            elif treeArgs[1].loswer() in ('b', 'busy'):
+                msgType = 'busy'
+            elif treeArgs[1].lower() in ('u', 'unavail', 'unavailable'):
+                msgType = 'unavailable'
+            else:
+                msgType = 'unavailable'
+            actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid=self.callerId,
+                                                     user=self.user, tree=tree)
+        else:
+            actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId,
+                                                     user=self.user, tree=tree)
+        actionRequest.addCallbacks(self.onActionResponse, self.onError)
         return actionRequest
-        #return self.onActionResponse(actionRequest)
 
 
 def handleMwi(request):

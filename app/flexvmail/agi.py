@@ -125,14 +125,10 @@ class astCall:
                 #add any tests here
                 #log.debug('running TESTS, normal calls will fail')
                 #return self.runTests()
-                result = self.call.startCall(self.script)
+                result = self.call.startCall(self.script, self.args)
             else:
-                result = self.call.startCall(self.script)
+                result = self.call.startCall(self.script, self.args)
             if result:
-                log.debug('stopping call........................ not really')
-                #self.agi.finish()
-                #log.debug('Terminating call.')
-                #result.addCallbacks(self.onError,self.onError)
                 return result
             else:
                 return self.onError('nothing')
@@ -186,7 +182,6 @@ class astCall:
         self.call = None
         return d
 
-    
     def onFinish(self, result=None):
         """
 
