@@ -328,12 +328,16 @@ class Call:
                 duration = str(result['duration'])
                 keyVal = result['keyval']
                 log.debug('keyval: %s' % keyVal)
+                reason = result['reason']
+                log.debug('reason: %s' % reason)
+                vmFile = str(result['vmfile'])
                 if keyVal:
-                    returnKey = chr(keyVal)
+                    if keyVal > 0:
+                        returnKey = chr(keyVal)
+                    else:
+                        returnKey = False
                 else:
                     returnKey = False
-                reason = result['reason']
-                vmFile = str(result['vmfile'])
                 log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
                 log.debug('act set to: %s' % act)
