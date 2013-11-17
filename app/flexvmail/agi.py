@@ -499,8 +499,8 @@ class astCall:
         log.debug(prompt)
 
         firstIntKeys =[]
-        if interrupKeys:
-            for ikey in interrupKeys:
+        if dtmf:
+            for ikey in dtmf:
                 firstIntKeys.append(ikey[0])
         intKeys = str("".join(firstIntKeys))
         log.debug('escape Digits: %s ' % intKeys)
@@ -570,7 +570,7 @@ class astCall:
                 # TODO - only allow the first digit of each key value in the interrupt list
                 for intkey in dtmf:
                     interruptKeys.append(str(intkey))
-                result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
+                result = self.agi.recordFile(tmp_file_loc, self.mediaType, firstIntKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
                 return result            
