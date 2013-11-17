@@ -392,6 +392,7 @@ class Call:
         @return:
         """
         log.debug('call started')
+        log.debug(treeArgs)
         if not tree:
             log.error("no valid tree supplied")
             return False
