@@ -655,11 +655,13 @@ class astCall:
         def onError(reason):
             log.debug('entering: actionPlay:onError')
             error = reason.trap(starpyError.AGICommandFailure)
-            if error.value == (511, 'Command Not Permitted on a dead channel'):
+            log.debug(error.value)
+            if error.value[0] == 511:
                 log.debug('caller hung up the call - finish agi')
                 self.agi.finish()
                 self.hangup()
             else:
+                log.debug('Unknown error type: %s' % reason.value)
                 log.debug(reason)
             return {'type': 'response', 'value': False}
         
