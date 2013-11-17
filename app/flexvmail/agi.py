@@ -58,7 +58,7 @@ class astCall:
         @param reason:
         @return:
         """
-        log.debug('entering agi:onError')
+        log.debug('entering agi:astCall:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
@@ -306,6 +306,12 @@ class astCall:
         #    return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
+        firstIntKeys =[]
+        if interrupKeys:
+            for ikey in interrupKeys:
+                firstIntKeys.append(ikey[0])
+        intKeys = str("".join(firstIntKeys))
+        log.debug('escape Digits: %s ' % intKeys)
         if self.call.isPaused():
             interkeydelay = 2
         else:
@@ -381,8 +387,6 @@ class astCall:
                         delay = float(delaybefore)/1000
                         log.debug('adding delay before of %s' % delay)
                         sequence.append(self.agi.wait,delay)
-                    intKeys = str("".join(interrupKeys))
-                    log.debug('escape Digits: %s ' % intKeys)
                     while len(ttsLocSeq):
                         promptLoc = ttsLocSeq.pop(0)
                         sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
@@ -406,7 +410,6 @@ class astCall:
                     delay = float(delaybefore)/1000
                     log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
                 sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at', escapeDigits=intKeys)
@@ -436,7 +439,6 @@ class astCall:
                     delay = float(delaybefore)/1000
                     log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
                 sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
@@ -459,7 +461,6 @@ class astCall:
                 delay = float(delaybefore)/1000
                 log.debug('adding delay before of %s' % delay)
                 sequence.append(self.agi.wait, delay)
-            intKeys = str("".join(interrupKeys))                
             while numPromptList:
                 prompt = numPromptList.pop(0)
                 log.debug(prompt)
@@ -491,6 +492,13 @@ class astCall:
             return d
         log.debug('agi:actionRecord called')
         log.debug(prompt)
+
+        firstIntKeys =[]
+        if interrupKeys:
+            for ikey in interrupKeys:
+                firstIntKeys.append(ikey[0])
+        intKeys = str("".join(firstIntKeys))
+        log.debug('escape Digits: %s ' % intKeys)
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
@@ -551,7 +559,6 @@ class astCall:
                 # TODO - only allow the first digit of each key value in the interrupt list
                 for intkey in dtmf:
                     interruptKeys.append(str(intkey))
-                intKeys = ''.join(interruptKeys)
                 result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
@@ -636,6 +643,7 @@ class astCall:
 
 
         def onError(reason):
+            log.debug('entering: actionPlay:onError')
             log.error(reason)
             return {'type': 'response', 'value': False}
         
@@ -674,6 +682,7 @@ class astCall:
     
 #routing for called agi scripts
 def onFailure(reason):
+    log.debug('entering: agi:onFailure')
     log.error(reason)
     return False
 
