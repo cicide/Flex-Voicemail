@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 
 from twisted.application import internet
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, error as tierror
 from starpy import fastagi
 from starpy import error as starpyError
 import utils, call, ami
@@ -59,6 +59,9 @@ class astCall:
         @param reason:
         @return:
         """
+        error = reason.trap(tierror.ConnectionDone)
+        if error:
+            log.debug('trapped an error: %s' % error)
         log.debug('entering agi:astCall:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
