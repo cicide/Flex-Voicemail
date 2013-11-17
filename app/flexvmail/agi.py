@@ -654,9 +654,8 @@ class astCall:
 
         def onError(reason):
             log.debug('entering: actionPlay:onError')
-            error = reason.trap(starpyError.AGICommandFailure)
-            log.debug(error.value)
-            if error.value[0] == 511:
+            log.debug(reason.value)
+            if reason.value[0] == 511:
                 log.debug('caller hung up the call - finish agi')
                 self.agi.finish()
                 self.hangup()

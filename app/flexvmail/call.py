@@ -42,6 +42,10 @@ class Call:
         self.pauseLen = 0.5
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
 
+    def hangup(self):
+        self.pbxCall.actionHangup()
+        #TODO - schedule destruction of this object
+
     def isPaused(self):
         if self.paused is True:
             log.debug('Caller %s is paused for dtmf collection' % self.user)
