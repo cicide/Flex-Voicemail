@@ -175,9 +175,12 @@ class astCall:
         d = self.agi.finish()
         if d:
             d.addCallbacks(self.onFinish,self.onError)
-            return d
         else:
-            return False
+            d = False
+        # drop the reference to the call object
+        self.call = None
+        return d
+
     
     def onFinish(self, result=None):
         """
@@ -503,7 +506,13 @@ class astCall:
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            log.error(reason)
+            error = reason.trap(starpyError.AGICommandFailure)
+            if error.value == (511, 'Command Not Permitted on a dead channel'):
+                log.debug('caller hung up the call - finish agi')
+                self.agi.finish()
+                self.hangup()
+            else:
+                log.debug(reason)
             return self.onError(reason)
 
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
@@ -645,12 +654,13 @@ class astCall:
 
         def onError(reason):
             log.debug('entering: actionPlay:onError')
-            log.error(reason)
-            log.error(reason.value)
-            log.error(reason.type)
-            log.error(reason.getErrorMessage())
             error = reason.trap(starpyError.AGICommandFailure)
-            log.debug(error)
+            if error.value == (511, 'Command Not Permitted on a dead channel'):
+                log.debug('caller hung up the call - finish agi')
+                self.agi.finish()
+                self.hangup()
+            else:
+                log.debug(reason)
             return {'type': 'response', 'value': False}
         
         log.debug('agi:actionPlay called')
