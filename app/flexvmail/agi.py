@@ -507,12 +507,16 @@ class astCall:
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            log.debug(reason)
+            #log.debug(reason)
             if reason.value[0] == 511:
                 log.debug('caller hung up the call - finish agi')
             else:
                 log.debug('some other reason..')
-            return self.onError(reason)
+            sequence = fastagi.InSequence()
+            log.debug('------------- Finishing agi call --------------')
+            sequence.append(self.agi.hangup)
+            sequence.append(self.agi.finish)
+            return sequence()
 
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
