@@ -32,6 +32,7 @@ DEFAULT CHARACTER SET = utf8;
 create table reply_to (
 id int(11) not NULL auto_increment COMMENT 'Unique id for the record',
 vm_id int(11) not NULL COMMENT 'vm which this record is a reply too',
+is_attached tinyint(1) COMMENT '0 - not attached, 1 - attached',
 primary key(id)
 ) engine = innodb
 DEFAULT CHARACTER SET = utf8;
