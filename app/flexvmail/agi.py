@@ -59,19 +59,19 @@ class astCall:
         @param reason:
         @return:
         """
-        error = reason.trap(tierror.ConnectionDone)
-        if error:
-            log.debug('trapped an error: %s' % error)
-            return False
-        else:
-            log.debug('entering agi:astCall:onError')
-            log.error(reason)
-            log.debug('terminating call due to error.')
-            sequence = fastagi.InSequence()
-            log.debug('------------- Finishing agi call --------------')
-            sequence.append(self.agi.hangup)
-            sequence.append(self.agi.finish)
-            return sequence()
+        #error = reason.trap(tierror.ConnectionDone)
+        #if error:
+        #    log.debug('trapped an error: %s' % error)
+        #    return False
+        #else:
+        log.debug('entering agi:astCall:onError')
+        log.error(reason)
+        log.debug('terminating call due to error.')
+        sequence = fastagi.InSequence()
+        log.debug('------------- Finishing agi call --------------')
+        sequence.append(self.agi.hangup)
+        sequence.append(self.agi.finish)
+        return sequence()
 
     def start(self):
         """
@@ -507,16 +507,7 @@ class astCall:
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            #log.debug(reason)
-            if reason.value[0] in (500, 511):
-                log.debug('caller hung up the call - finish agi')
-            else:
-                log.debug('some other reason..')
-            sequence = fastagi.InSequence()
-            log.debug('------------- Finishing agi call --------------')
-            sequence.append(self.agi.hangup)
-            sequence.append(self.agi.finish)
-            return sequence()
+            return self.onError(reason)
 
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
