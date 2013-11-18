@@ -508,7 +508,7 @@ class astCall:
         def onError(reason):
             log.debug('got error in agi:actionRecord')
             t = self.onError(reason)
-            return False
+            return {'type': 'response', 'value': False}
 
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
