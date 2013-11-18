@@ -1,8 +1,9 @@
 #!/usr/local/bin/python
 
 from twisted.application import internet
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, error as tierror
 from starpy import fastagi
+from starpy import error as starpyError
 import utils, call, ami
 from twisted.internet.defer import setDebugging
 from twisted.internet.threads import deferToThread 
@@ -58,10 +59,16 @@ class astCall:
         @param reason:
         @return:
         """
-        log.debug('entering agi:onError')
+        #error = reason.trap(tierror.ConnectionDone)
+        #if error:
+        #    log.debug('trapped an error: %s' % error)
+        #    return False
+        #else:
+        log.debug('entering agi:astCall:onError')
         log.error(reason)
         log.debug('terminating call due to error.')
         sequence = fastagi.InSequence()
+        log.debug('------------- Finishing agi call --------------')
         sequence.append(self.agi.hangup)
         sequence.append(self.agi.finish)
         return sequence()
@@ -95,22 +102,23 @@ class astCall:
         self.origtime = str(time.time())
         self.msg_id = '%s-%s' % (self.uid,self.threadid)
         self.args = {}
-        if 'agi_arg1' in self.agi.variables:
-            self.args[1] = self.agi.variables['agi_arg1']
-        if 'agi_arg2' in self.agi.variables:
-            self.args[2] = self.agi.variables['agi_arg2']
-        if 'agi_arg3' in self.agi.variables:
-            self.args[3] = self.agi.variables['agi_arg3']
-        if 'agi_arg4' in self.agi.variables:
-            self.args[4] = self.agi.variables['agi_arg4']
-        if 'agi_arg5' in self.agi.variables:
-            self.args[5] = self.agi.variables['agi_arg5']
-        if 'agi_arg6' in self.agi.variables:
-            self.args[6] = self.agi.variables['agi_arg6']
-        if 'agi_arg7' in self.agi.variables:
-            self.args[7] = self.agi.variables['agi_arg7']
-        if 'agi_arg8' in self.agi.variables:
-            self.args[8] = self.agi.variables['agi_arg8']
+        if 'agi_arg_1' in self.agi.variables:
+            self.args[1] = self.agi.variables['agi_arg_1']
+        if 'agi_arg_2' in self.agi.variables:
+            self.args[2] = self.agi.variables['agi_arg_2']
+        if 'agi_arg_3' in self.agi.variables:
+            self.args[3] = self.agi.variables['agi_arg_3']
+        if 'agi_arg_4' in self.agi.variables:
+            self.args[4] = self.agi.variables['agi_arg_4']
+        if 'agi_arg_5' in self.agi.variables:
+            self.args[5] = self.agi.variables['agi_arg_5']
+        if 'agi_arg_6' in self.agi.variables:
+            self.args[6] = self.agi.variables['agi_arg_6']
+        if 'agi_arg_7' in self.agi.variables:
+            self.args[7] = self.agi.variables['agi_arg_7']
+        if 'agi_arg_8' in self.agi.variables:
+            self.args[8] = self.agi.variables['agi_arg_8']
+        log.debug('args: %s' % self.args)
         newCall = call.newCall(self, self.uid)
         if newCall:
             self.call = newCall
@@ -118,14 +126,10 @@ class astCall:
                 #add any tests here
                 #log.debug('running TESTS, normal calls will fail')
                 #return self.runTests()
-                result = self.call.startCall(self.script)
+                result = self.call.startCall(self.script, self.args)
             else:
-                result = self.call.startCall(self.script)
+                result = self.call.startCall(self.script, self.args)
             if result:
-                log.debug('stopping call........................ not really')
-                #self.agi.finish()
-                #log.debug('Terminating call.')
-                #result.addCallbacks(self.onError,self.onError)
                 return result
             else:
                 return self.onError('nothing')
@@ -169,13 +173,16 @@ class astCall:
         @param result:
         @return:
         """
+        log.debug('------------- Finishing agi call --------------')
         d = self.agi.finish()
         if d:
             d.addCallbacks(self.onFinish,self.onError)
-            return d
         else:
-            return False
-    
+            d = False
+        # drop the reference to the call object
+        self.call = None
+        return d
+
     def onFinish(self, result=None):
         """
 
@@ -304,6 +311,12 @@ class astCall:
         #    return self.playPromptList(result, promptList=promptList, interrupKeys=interrupKeys)
         # Check for valid dtmf during prompt sequences
         log.debug('Checking for DTMF responses')
+        firstIntKeys =[]
+        if interrupKeys:
+            for ikey in interrupKeys:
+                firstIntKeys.append(ikey[0])
+        intKeys = str("".join(firstIntKeys))
+        log.debug('escape Digits: %s ' % intKeys)
         if self.call.isPaused():
             interkeydelay = 2
         else:
@@ -379,8 +392,6 @@ class astCall:
                         delay = float(delaybefore)/1000
                         log.debug('adding delay before of %s' % delay)
                         sequence.append(self.agi.wait,delay)
-                    intKeys = str("".join(interrupKeys))
-                    log.debug('escape Digits: %s ' % intKeys)
                     while len(ttsLocSeq):
                         promptLoc = ttsLocSeq.pop(0)
                         sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
@@ -404,7 +415,6 @@ class astCall:
                     delay = float(delaybefore)/1000
                     log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))
                 dtVal = int(dateTimeString)
                 sequence.append(self.agi.sayDateTime, dtVal, escapeDigits=intKeys, format='Q')
                 sequence.append(self.agi.streamFile, 'digits/at', escapeDigits=intKeys)
@@ -434,7 +444,6 @@ class astCall:
                     delay = float(delaybefore)/1000
                     log.debug('adding delay before of %s' % delay)
                     sequence.append(self.agi.wait,delay)
-                intKeys = str("".join(interrupKeys))
                 log.debug(promptLoc)
                 log.debug(intKeys)
                 sequence.append(self.agi.streamFile, str(promptLoc), escapeDigits=intKeys, offset=0)
@@ -457,7 +466,6 @@ class astCall:
                 delay = float(delaybefore)/1000
                 log.debug('adding delay before of %s' % delay)
                 sequence.append(self.agi.wait, delay)
-            intKeys = str("".join(interrupKeys))                
             while numPromptList:
                 prompt = numPromptList.pop(0)
                 log.debug(prompt)
@@ -490,10 +498,17 @@ class astCall:
         log.debug('agi:actionRecord called')
         log.debug(prompt)
 
+        firstIntKeys =[]
+        if dtmf:
+            for ikey in dtmf:
+                firstIntKeys.append(ikey[0])
+        intKeys = str("".join(firstIntKeys))
+        log.debug('escape Digits: %s ' % intKeys)
+
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            log.error(reason)
-            return self.onError(reason)
+            t = self.onError(reason)
+            return {'type': 'record', 'value': False, 'reason': 'hangup'}
 
         def onRecordSuccess(result, file_loc, folder, dtmf, retries, beep):
             log.debug('entering: agi:actionRecord:onRecordSuccess')
@@ -549,8 +564,7 @@ class astCall:
                 # TODO - only allow the first digit of each key value in the interrupt list
                 for intkey in dtmf:
                     interruptKeys.append(str(intkey))
-                intKeys = ''.join(interruptKeys)
-                result = self.agi.recordFile(tmp_file_loc, self.mediaType, intKeys, 300, beep=beep)
+                result = self.agi.recordFile(tmp_file_loc, self.mediaType, firstIntKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
                 return result            
@@ -634,7 +648,15 @@ class astCall:
 
 
         def onError(reason):
-            log.error(reason)
+            log.debug('entering: actionPlay:onError')
+            log.debug(reason.value)
+            if reason.value[0] == 511:
+                log.debug('caller hung up the call - finish agi')
+                self.agi.finish()
+                self.hangup()
+            else:
+                log.debug('Unknown error type: %s' % reason.value)
+                log.debug(reason)
             return {'type': 'response', 'value': False}
         
         log.debug('agi:actionPlay called')
@@ -672,6 +694,7 @@ class astCall:
     
 #routing for called agi scripts
 def onFailure(reason):
+    log.debug('entering: agi:onFailure')
     log.error(reason)
     return False
 

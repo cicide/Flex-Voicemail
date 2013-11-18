@@ -42,6 +42,10 @@ class Call:
         self.pauseLen = 0.5
         log.debug('call object instanced for %s' % self.pbxCall.getCidNum())
 
+    def hangup(self):
+        self.pbxCall.actionHangup()
+        #TODO - schedule destruction of this object
+
     def isPaused(self):
         if self.paused is True:
             log.debug('Caller %s is paused for dtmf collection' % self.user)
@@ -323,16 +327,21 @@ class Call:
                 log.debug('found a record result type')
                 duration = str(result['duration'])
                 keyVal = result['keyval']
+                log.debug('keyval: %s' % keyVal)
+                reason = result['reason']
+                log.debug('reason: %s' % reason)
+                vmFile = str(result['vmfile'])
                 if keyVal:
-                    returnKey = chr(keyVal)
+                    if keyVal > 0:
+                        returnKey = chr(keyVal)
+                    else:
+                        returnKey = False
                 else:
                     returnKey = False
-                reason = result['reason']
-                vmFile = str(result['vmfile'])
                 log.debug('vmFile set to: %s' % vmFile)
                 act = str(nextAction)
                 log.debug('act set to: %s' % act)
-                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile, key=returnKey, reason=reason, dur=duration)
+                actionRequest = self.wsApiHost.wsapiCall(act, None, None, vmfile=vmFile, key=returnKey, reason=reason, duration=duration)
                 actionRequest.addCallbacks(self.onActionResponse,self.onError)
                 return actionRequest
             elif resType == 'play':
@@ -381,13 +390,14 @@ class Call:
         log.error(reason)
         return False
 
-    def startCall(self, tree):
+    def startCall(self, tree, treeArgs):
         """
 
         @param tree:
         @return:
         """
         log.debug('call started')
+        log.debug(treeArgs)
         if not tree:
             log.error("no valid tree supplied")
             return False
@@ -396,10 +406,27 @@ class Call:
             self.cuid = self.pbxCall.getUid()
             self.user = self.callerId = self.pbxCall.getCidNum()
         method = 'startcall'
-        actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId, user=self.user, tree=tree)
-        actionRequest.addCallbacks(self.onActionResponse,self.onError)
+        if self.tree == 'leaveMessage':
+            if not treeArgs[1]:
+                log.debug('missing destination user')
+                return self.hangup()
+            else:
+                user = treeArgs[1]
+            if not treeArgs[2]:
+                msgType = 'unavailable'
+            elif treeArgs[2].lower() in ('b', 'busy'):
+                msgType = 'busy'
+            elif treeArgs[2].lower() in ('u', 'unavail', 'unavailable'):
+                msgType = 'unavailable'
+            else:
+                msgType = 'unavailable'
+            actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid=self.callerId,
+                                                     user=user, tree=tree, type=msgType)
+        else:
+            actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId,
+                                                     user=self.user, tree=tree)
+        actionRequest.addCallbacks(self.onActionResponse, self.onError)
         return actionRequest
-        #return self.onActionResponse(actionRequest)
 
 
 def handleMwi(request):

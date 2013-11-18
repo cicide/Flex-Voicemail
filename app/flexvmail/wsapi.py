@@ -82,6 +82,7 @@ class wsApiServer:
         return jsonResponse
     
     def genParameters(self, formedUri, apiMethod, callUniqueId, **kwargs):
+        log.debug('entering wsapi:wsApiServer:genParameters')
         def encodeArgs(uParams, kwargs):
             for key in kwargs:
                 uParams[key] = kwargs[key]
