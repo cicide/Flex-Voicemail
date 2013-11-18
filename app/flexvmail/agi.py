@@ -507,7 +507,7 @@ class astCall:
 
         def onError(reason):
             log.debug('got error in agi:actionRecord')
-            if error.value[0] == 511:
+            if reason.value[0] == 511:
                 log.debug('caller hung up the call - finish agi')
                 self.agi.finish()
                 self.hangup()
