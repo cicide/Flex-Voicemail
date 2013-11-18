@@ -408,15 +408,20 @@ class Call:
         method = 'startcall'
         if self.tree == 'leaveMessage':
             if not treeArgs[1]:
+                log.debug('missing destination user')
+                return self.hangup()
+            else:
+                user = treeArgs[1]
+            if not treeArgs[2]:
                 msgType = 'unavailable'
-            elif treeArgs[1].lower() in ('b', 'busy'):
+            elif treeArgs[2].lower() in ('b', 'busy'):
                 msgType = 'busy'
-            elif treeArgs[1].lower() in ('u', 'unavail', 'unavailable'):
+            elif treeArgs[2].lower() in ('u', 'unavail', 'unavailable'):
                 msgType = 'unavailable'
             else:
                 msgType = 'unavailable'
             actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid=self.callerId,
-                                                     user=self.user, tree=tree, type=msgType)
+                                                     user=user, tree=tree, type=msgType)
         else:
             actionRequest = self.wsApiHost.wsapiCall(None, method, self.cuid, callerid = self.callerId,
                                                      user=self.user, tree=tree)
