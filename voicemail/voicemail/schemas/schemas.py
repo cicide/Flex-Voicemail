@@ -80,15 +80,27 @@ class LoginSchema(CSRFSchema):
                     widget=deform.widget.PasswordWidget(size=20),
                     description='Enter a password')
 
+class ListSchema(CSRFSchema):
+    listname = colander.SchemaNode(colander.String(), 
+                   description="Login for the list")
+    name = colander.SchemaNode(colander.String(), 
+                   description='List name')
+    extension = colander.SchemaNode(colander.String(), 
+                    description='Extension')
+    pin = colander.SchemaNode(colander.String(), 
+              description='PIN')
+
+
 class UserSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String(), 
-                   description="Extension of the user")
+                   description="Login for the user")
     name = colander.SchemaNode(colander.String(), 
                    description='Full name')
     extension = colander.SchemaNode(colander.String(), 
                     description='Extension')
     pin = colander.SchemaNode(colander.String(), 
               description='PIN')
+
     
 class VMPrefSchema(CSRFSchema):
     deliver_vm = colander.SchemaNode(colander.Boolean(),
