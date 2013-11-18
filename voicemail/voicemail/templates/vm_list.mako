@@ -44,7 +44,7 @@
 					<td>
 						<a href="/vm/play/${vm.id}">Play</a>
 						<a href="/vm/download/${vm.id}">Download</a>
-						<a href="#">Delete</a>
+						<a href="/vm/delete/${vm.id}">Delete</a>
 					</td>
 				</tr>
 			%endfor

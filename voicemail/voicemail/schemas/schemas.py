@@ -8,6 +8,8 @@ from ..models.models import (
     DBSession,
     User,
     )
+import logging
+log = logging.getLogger(__name__)
 
 @colander.deferred
 def deferred_csrf_default(node, kw):

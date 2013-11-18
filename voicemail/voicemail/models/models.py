@@ -294,6 +294,10 @@ class Prompt(Base):
     onPrompt = "on_prompt"                                            # 81
     offPrompt = "off_prompt"                                          # 82
     vmMessage = "VM_Message"                                          # 83
+    newPrompt = "New_Prompt"                                          # 84
+    oldPrompt = "Old_Prompt"                                          # 85
+    messagePrompt = "Message_Prompt"                                  # 86
+    replyForwardMessage = "Reply_Forward_Message"                     # 87
     
 
     @staticmethod
@@ -326,6 +330,10 @@ class Prompt(Base):
                 listprompt.append({'uri':user.vm_prefs.vm_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 5:
                 listprompt.append({'uri':vm.path, 'delayafter':i.delay_after})
+                replied = vm.reply_to
+                while replied is not None and replied.is_attached:
+                    listprompt.append({'uri':replied.parentVoicemail.path, 'delayafter':i.delay_after})
+                    replied = replied.parentVoicemail.reply_to
             elif i.prompt_type == 6:
                 listprompt.append({'uri':user.vm_prefs.unavail_greeting, 'delayafter':i.delay_after})
             elif i.prompt_type == 7:
@@ -389,6 +397,7 @@ class ReplyTo(Base):
     __tablename__ = 'reply_to'
     id = Column(Integer, primary_key=True, autoincrement=True)
     vm_id = Column(Integer,  ForeignKey('voicemails.id'))
+    is_attached = Column(Boolean)
 
     parentVoicemail = relationship("Voicemail", uselist=False, foreign_keys=vm_id)
 
@@ -408,15 +417,16 @@ class UserSession(Base):
         state.read = []
         state.curmessage = 1
         state.uid = callid
-        for i in user.voicemails:
-            if i.status == 1:
-                continue
-            if i.is_read:
-                state.read.append(i.id)
-            else:
-                state.unread.append(i.id)
-        if len(state.unread) == 0:
-            state.message_type = "read"
+        if user:
+            for i in user.voicemails:
+                if i.status == 1:
+                    continue
+                if i.is_read:
+                    state.read.append(i.id)
+                else:
+                    state.unread.append(i.id)
+            if len(state.unread) == 0:
+                state.message_type = "read"
         self.saveState(state=state)
 
 
