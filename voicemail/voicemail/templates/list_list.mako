@@ -1,9 +1,10 @@
 <%inherit file="/home.mako" />
 <%namespace name="defs" file="/defs.mako"/>
-<%def name="title()">Voicemail Users</%def>
+<%def name="title()">List of Lists</%def>
 
 <%block name="subHeading">
 <a class="btn btn-small pull-right" href="/">Back</a>
+<a class="btn btn-small pull-right" href="/list/add">Add List</a>
 </%block>
 <%block name="DetailView">
 	<div id="details">
@@ -41,13 +42,6 @@
 			% endfor
 		</table>
 	</div>
-	<%include file="./delete_user.mako"/>
-	<script>
-		function showModal(userid,username){
-			$('#userid').val(userid);
-			$('#username').replaceWith(username);
-			$('#delete_modal').modal('show');
-		};
-	</script>
+	<%include file="./delete_list.mako"/>
 
 </%block>

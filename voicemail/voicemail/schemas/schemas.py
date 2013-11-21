@@ -44,6 +44,14 @@ def deferred_choices_widget(node,kw):
 def user_DoesExist(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
         raise colander.Invalid(node, 'Username already exist.!!')
+    if DBSession.query(User).filter_by(extension=appstruct['extension']).count() > 0:
+        raise colander.Invalid(node, 'Extension already assigned.!!')
+
+def list_DoesExist(node,appstruct):
+    if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
+        raise colander.Invalid(node, 'Listname already exist.!!')
+    if DBSession.query(User).filter_by(extension=appstruct['extension']).count() > 0:
+        raise colander.Invalid(node, 'Extension already assigned.!!')
     
 def CheckAuthentication(node,appstruct):
     if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0:
@@ -81,7 +89,7 @@ class LoginSchema(CSRFSchema):
                     description='Enter a password')
 
 class ListSchema(CSRFSchema):
-    listname = colander.SchemaNode(colander.String(), 
+    username = colander.SchemaNode(colander.String(), 
                    description="Login for the list")
     name = colander.SchemaNode(colander.String(), 
                    description='List name')

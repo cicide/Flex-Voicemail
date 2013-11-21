@@ -16,7 +16,7 @@ from ..models.models import (
 
 from ..schemas import (
     ListSchema, 
-    user_DoesExist,
+    list_DoesExist,
     VMPrefSchema,
     )
 
@@ -29,7 +29,7 @@ class ListsView(object):
     
     @view_config(route_name='add_list', permission='admin', renderer='add_list.mako')
     def add_list(self):
-        schema = ListSchema(validator = user_DoesExist).bind(request=self.request)
+        schema = ListSchema(validator = list_DoesExist).bind(request=self.request)
         form = deform.Form(schema, action=self.request.route_url('add_list'), buttons=('Add List','Cancel'))
         
         if 'Cancel' in self.request.params:
@@ -54,8 +54,8 @@ class ListsView(object):
             DBSession.flush()
             pref = VMPrefView(self.request)
             pref.create_vmpref(newlist)
-            return dict(form=form.render(appstruct={'success':'List created successfully'}))
-        return dict(form=form.render(appstruct={}))
+            return dict(form=form.render(appstruct={}), success=True, msg='List %s created successfully' % newlist.name)
+        return dict(form=form.render(appstruct={}), success=False)
     
     @view_config(route_name='edit_list', permission='admin', renderer='edit_list.mako')
     def edit_list(self):
@@ -72,21 +72,21 @@ class ListsView(object):
         if 'Save' in self.request.params:
             appstruct = None
             try:
-                if mylist.username != self.request.POST['listname']:
-                    schema.validator = user_DoesExist
+                if mylist.username != self.request.POST['username']:
+                    schema.validator = list_DoesExist
                 appstruct = form.validate(self.request.POST.items())
                 
             except deform.ValidationFailure, e:
                 log.exception('in form validated')
                 return {'form':e.render()}
             
-            mylist.username = appstruct['listname']
+            mylist.username = appstruct['username']
             mylist.name = appstruct['name']
             mylist.extension = appstruct['extension']
             mylist.pin = appstruct['pin']
             DBSession.add(mylist) 
             return HTTPFound(location =self.request.route_url('list_lists'))
-        return dict(form=form.render(appstruct=user.__dict__))
+        return dict(form=form.render(appstruct=mylist.__dict__))
     
     @view_config(route_name='list_lists', permission='admin',renderer = 'list_list.mako')
     def list_lists(self):
@@ -106,13 +106,13 @@ class ListsView(object):
                     'success': False, 'msg': 'Unable to remove %s ' % self.request.user.username,
                     'html': render('list_list.mako', {'lists': self.get_lists()}, self.request),
                 }
-        DBSession.query(UserRole).filter_by(user_id=listid).delete()
         list_vm = DBSession.query(UserVmPref).filter_by(user_id=listid).first()
-        DBSession.delete(mylist)
+        DBSession.query(UserRole).filter_by(user_id=listid).delete()
         DBSession.delete(list_vm)
+        DBSession.delete(mylist)
         #shutil.rmtree(user_vm.folder) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/24' 
         #shutil.rmtree(user_vm.folder.split(':/')[1])
         return {
-                    'success': True, 'msg': 'Removed %s ' % mylist.username,
+                    'success': True, 'msg': 'Deleted %s ' % mylist.username,
                     'html': render('list_list.mako', {'lists': self.get_lists()}, self.request),
                 }

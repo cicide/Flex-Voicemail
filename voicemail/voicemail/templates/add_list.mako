@@ -7,6 +7,6 @@
           ${form|n}
         %endif
     <script type="text/javascript">
-        deform.load()
+        deform.load();
     </script>
 </%block>

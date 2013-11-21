@@ -42,12 +42,5 @@
 		</table>
 	</div>
 	<%include file="./delete_user.mako"/>
-	<script>
-		function showModal(userid,username){
-			$('#userid').val(userid);
-			$('#username').replaceWith(username);
-			$('#delete_modal').modal('show');
-		};
-	</script>
 
 </%block>

@@ -100,7 +100,7 @@ class UsersView(object):
         return dict(users = self.get_users())
         
     def get_users(self):
-        return DBSession.query(User).all()
+        return DBSession.query(User).filter_by(is_list=0).all()
     
        
     
@@ -120,7 +120,7 @@ class UsersView(object):
         #shutil.rmtree(user_vm.folder) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/24' 
         #shutil.rmtree(user_vm.folder.split(':/')[1])
         return {
-                    'success': True, 'msg': 'Removed %s ' % user.username,
+                    'success': True, 'msg': 'Deleted %s ' % user.username,
                     'html': render('user_list.mako', {'users': self.get_users()}, self.request),
                 }
     

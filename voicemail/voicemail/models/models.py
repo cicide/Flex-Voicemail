@@ -48,7 +48,7 @@ user_groups = Table('user_groups', Base.metadata,
     Column('user_id', Integer, ForeignKey('users.id')),
     Column('group_id', Integer, ForeignKey('groups.id')))
 
-user_list = Table('userlist', Base.metadata,
+user_list = Table('user_list', Base.metadata,
       Column("id", Integer, primary_key=True, autoincrement=True),
       Column("list_id", Integer, ForeignKey('users.id')),
       Column("user_id", Integer, ForeignKey('users.id')))
