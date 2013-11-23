@@ -565,7 +565,7 @@ class astCall:
                 for intkey in dtmf:
                     interruptKeys.append(str(intkey))
                 # Convert the list of acceptable interrupt keys to a string of unique values
-                agiIntKeys = ''.join(list(set(firstIntKeys)))
+                agiIntKeys = str(''.join(list(set(firstIntKeys))))
                 result = self.agi.recordFile(tmp_file_loc, self.mediaType, agiIntKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
