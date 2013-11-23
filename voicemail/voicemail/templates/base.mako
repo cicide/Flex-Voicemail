@@ -8,6 +8,17 @@
     <link rel="stylesheet" href="${request.static_url('deform_bootstrap:static/chosen_bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="${request.static_url('deform:static/css/ui-lightness/jquery-ui-1.8.11.custom.css')}" type="text/css" media="screen" charset="utf-8" />
   	<link rel="stylesheet" href="${request.static_url('voicemail:static/css/flexvmail.css')}" type="text/css" media="screen" charset="utf-8" />
+    <!-- The javascript resources from Deform -->
+    <script src="${request.static_url('deform:static/scripts/jquery-1.7.2.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-1.8.18.custom.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-timepicker-addon-0.9.9.js')}"></script>
+    <script src="${request.static_url('deform:static/scripts/deform.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/deform_bootstrap.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap.min.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap-datepicker.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/bootstrap-typeahead.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery.form-2.96.js')}"></script>
+    <script src="${request.static_url('deform_bootstrap:static/jquery.maskedinput-1.3.js')}"></script>
   </head>
 
   <body>
@@ -40,7 +51,7 @@
 	      <div class="nav-collapse">
             <ul class="nav">
               <li><a href="${request.application_url}">Home</a></li>
-              <li><a href="${request.application_url}/about/">About</a></li>
+              <!--<li><a href="${request.application_url}/about/">About</a></li>-->
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -52,7 +63,7 @@
     </div>
     
       <footer>
-        <p>&copy; FlexVoicemail 2012</p>
+        <p>&copy; FlexVoicemail 2013</p>
         <p class="pull-right">
           small image
         </p>
@@ -60,16 +71,5 @@
 
     </div><!--/.fluid-container-->
 
-    <!-- The javascript resources from Deform -->
-    <script src="${request.static_url('deform:static/scripts/jquery-1.7.2.min.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-1.8.18.custom.min.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/jquery-ui-timepicker-addon-0.9.9.js')}"></script>
-    <script src="${request.static_url('deform:static/scripts/deform.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/deform_bootstrap.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/bootstrap.min.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/bootstrap-datepicker.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/bootstrap-typeahead.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/jquery.form-2.96.js')}"></script>
-    <script src="${request.static_url('deform_bootstrap:static/jquery.maskedinput-1.3.js')}"></script>
   </body>
 </html>

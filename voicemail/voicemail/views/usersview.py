@@ -84,7 +84,6 @@ class UsersView(object):
             user.extension = appstruct['extension']
             user.pin = appstruct['pin']
             DBSession.add(user) 
-            DBSession.flush()
             return HTTPFound(location =self.request.route_url('list_users', type='vmusers'))
         return dict(form=form.render(appstruct=user.__dict__))
     
@@ -101,7 +100,7 @@ class UsersView(object):
         return dict(users = self.get_users())
         
     def get_users(self):
-        return DBSession.query(User).all()
+        return DBSession.query(User).filter_by(is_list=0).all()
     
        
     
@@ -118,11 +117,10 @@ class UsersView(object):
         user_vm = DBSession.query(UserVmPref).filter_by(user_id=userid).first()
         DBSession.delete(user)
         DBSession.delete(user_vm)
-        DBSession.flush()
         #shutil.rmtree(user_vm.folder) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/24' 
-        shutil.rmtree(user_vm.folder.split(':/')[1])
+        #shutil.rmtree(user_vm.folder.split(':/')[1])
         return {
-                    'success': True, 'msg': 'Removed %s ' % user.username,
+                    'success': True, 'msg': 'Deleted %s ' % user.username,
                     'html': render('user_list.mako', {'users': self.get_users()}, self.request),
                 }
     
@@ -142,7 +140,6 @@ class UsersView(object):
                 user_role = DBSession.query(UserRole).filter_by(user_id=userid, role_name='Admin').first()
                 DBSession.delete(user_role)
                 msg = "Admin role removed from user."
-            DBSession.flush()
             return {
                     'success': True, 'msg': msg,
                     'html': render('manage_roles.mako', {'users': self.get_users()}, self.request),

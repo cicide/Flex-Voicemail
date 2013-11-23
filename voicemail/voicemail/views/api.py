@@ -36,6 +36,8 @@ import deform
 import six
 import inspect
 from bag.web.pyramid.flash_msg import FlashMessage
+import json
+import requests
 
 import logging
 log = logging.getLogger(__name__)
@@ -93,6 +95,7 @@ def startCall(request):
     callerid = request.GET.get('callerid', None)
     tree = request.GET.get('tree', None)
     pkey = request.GET.get('pkey', None)
+    type = request.GET.get('type', None)
 
 
     if (extension is None and (tree == "leaveMessage" or tree == "accessMenu")) \
@@ -111,23 +114,40 @@ def startCall(request):
 
     user_session = None
     if tree == "leaveMessage":
-        if user.vm_prefs.vm_greeting:
-            prompt = Prompt.getByName(name=Prompt.userGreeting)
+        user_session = getUserSession(callid, None)
+        state = user_session.getCurrentState()
+        if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
+            prompt = Prompt.userTmpGreeting
+        elif user.vm_prefs.busy_greeting and type is not None and type == "busy":
+            prompt = Prompt.userBusyGreeting
+        elif user.vm_prefs.unavail_greeting and type is not None and type == "unavailable":
+            prompt = Prompt.userUnavailGreeting
+        elif user.vm_prefs.vm_greeting:
+            prompt = Prompt.userGreeting
         elif user.vm_prefs.vm_name_recording is not None:
-            prompt = Prompt.getByName(name=Prompt.userNameRecording)
+            prompt = Prompt.userNameRecording
         else:
-            prompt = Prompt.getByName(name=Prompt.userLeaveMessage)
+            prompt = Prompt.userLeaveMessage
 
-        return createReturnDict(request,
-            action="record",
-            prompt=prompt.getFullPrompt(user=user, param=user.extension),
-            nextaction=request.route_url(
+        state.action = "record"
+        state.menu="leavemessage"
+        state.step="0"
+        state.nextaction = request.route_url(
                 'savemessage',
-                _query={'user':extension, 'uid':callid,
-                        'callerid':callerid}),
-            invalidaction=request.route_url('invalidmessage'),
-            dtmf=['#', ],
-            folder=user.vm_prefs.getVmFolder(),
+                _query={'user':extension, 'uid':callid, 'callerid':callerid,
+                        'callerid':callerid, 'menu':state.menu, 'step':state.step})
+        state.invalidaction=request.route_url('invalidmessage')
+        state.dtmf=['#', ]
+        state.folder=user.vm_prefs.getVmFolder()
+        user_session.saveState(state)
+        DBSession.add(user_session)
+        return createReturnDict(request,
+            action=state.action,
+            dtmf=state.dtmf,
+            folder=state.folder,
+            nextaction=state.nextaction,
+            invalidaction=state.invalidaction,
+            prompt=Prompt.getByName(name=prompt).getFullPrompt(user=user, param=user.extension)
         )
     elif tree == "loginMenu":
         prompt = Prompt.getByName(name=Prompt.loginWelcomeMessage)
@@ -138,34 +158,12 @@ def startCall(request):
                 'handlelogin',
                 _query={'menu': 'login', 'callerid':callerid, 'uid':callid}),
             invalidaction=request.route_url('invalidmessage'),
+            dtmf=['!', '*7', '#'],
+            maxlength = 6
         )
 
     elif tree == "accessMenu":
-        user_session = getUserSession(callid, user)
-        log.debug("UserSession created for a user Session %s" % user_session)
-        onOffPrompt = None
-        if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
-            onOffPrompt = Prompt.onPrompt
-        else:
-            onOffPrompt = Prompt.offPrompt
-            
-        retPrompt = combinePrompts(
-            user, None, None, Prompt.loginLoggedIn,
-            onOffPrompt, Prompt.vmSummary, Prompt.activityMenu)
-        state = user_session.getCurrentState()
-        state.menu = "main"
-        state.nextaction=request.route_url(
-                'handlekey',
-                _query={'user':extension, 'menu':'main', 'uid':callid})
-        state.dtmf=['1', '2', '3', '5', '7', '*4']
-        user_session.saveState(state)
-        return createReturnDict(request,
-            action="play",
-            prompt=retPrompt,
-            invalidaction=request.route_url('invalidmessage'),
-            nextaction=state.nextaction,
-            dtmf=state.dtmf
-            )
+        return returnLoggedIn(request, user, callid, None)
 
     log.debug("Invalid Request")
     return returnPrompt(name=Prompt.invalidRequest)
@@ -201,6 +199,8 @@ def handleLogin(request):
                     'handlelogin',
                     _query={'callerid':callerid, 'uid':callid, 'cnt':count}),
                 invalidaction=request.route_url('invalidmessage'),
+                dtmf=['!', '*7', '#'],
+                maxlength = 6
             )
         else:
             return createReturnDict(request,
@@ -217,6 +217,8 @@ def handleLogin(request):
                  'handlelogin',
                  _query={'uid':callid, 'callerid':callerid, 'user':key}),
              invalidaction=request.route_url('invalidmessage'),
+             dtmf=['!', '*7', '#'],
+             maxlength = 6
          )
     else:
         log.debug("Checking username for a user %s password %s", extension, key)
@@ -232,6 +234,8 @@ def handleLogin(request):
                         'handlelogin',
                         _query={'uid':callid, 'user':extension, 'callerid':callerid, 'cnt':count}),
                     invalidaction=request.route_url('invalidmessage'),
+                    dtmf=['!', '*7', '#'],
+                    maxlength = 6
                 )
             else:
                 prompt = Prompt.getByName(Prompt.loginInvalidPassword)
@@ -241,15 +245,7 @@ def handleLogin(request):
                     nextaction="agi:hangup",
                 )
         else:
-            prompt = Prompt.getByName(Prompt.loginLoggedIn)
-            return createReturnDict(request,
-                action="play",
-                prompt=prompt.getFullPrompt(user=user),
-                nextaction=request.route_url(
-                    'startcall',
-                    _query={'tree': 'accessMenu', 'uid':callid, 'callerid':callerid, 'user':extension}),
-                invalidaction=request.route_url('invalidmessage'),
-            )
+            return returnLoggedIn(request, user, callid, Prompt.loginLoggedIn)
         
 
 
@@ -260,11 +256,15 @@ def saveMessage(request):
     callerid = request.GET.get('callerid', None)
     vmfile = request.GET.get('vmfile', None)
     duration = request.GET.get('duration', 0)
+    menu = request.GET.get('menu', None)
+    step = request.GET.get('step', None)
+    key = request.GET.get('key', None)
+    reason = request.GET.get('reason', None)
 
-    if(not extension or not callid or not callerid or not vmfile):
+    if(not extension or not callid or not callerid):
         log.debug(
-            "Invalid parameters extension %s callid %s callerid %s vmfile %s",
-            extension, callid, callerid, vmfile)
+            "Invalid parameters extension %s callid %s callerid %s vmfile %s uid %s",
+            extension, callid, callerid, vmfile, uid)
         return returnPrompt(name=Prompt.invalidRequest)
 
     user = DBSession.query(User).filter_by(extension=extension).first()
@@ -276,24 +276,67 @@ def saveMessage(request):
             extension, callid, callerid, vmfile, duration)
         return retdict
 
-    # time to create a voicemail for this user
-    v = Voicemail()
-    v.cid_number = callerid
-    # Altered because vmfile already have filepath and
-    # hence getting vm listed in our web app.
-    v.path = vmfile
-    v.create_date = datetime.datetime.utcnow()
-    v.is_read = False
-    v.status = 0
-    v.duration = duration
-    v.user = user
+    user_session = getUserSession(callid, None)
+    state = user_session.getCurrentState()
+    if not key or (key == "False" and reason != 'hangup'):
+        return stillThereLoop(request, None, user_session)
+    else:
+        state.dtmf = None
+        state.nextaction = None
+        state.retryCount = 0
 
-    DBSession.add(v)
-    DBSession.flush()
-    session.refresh(user)
-    postMWI(request, user)
+    prompt = None
+    if key == "False" and reason == "hangup" and vmfile:
+        deliverMessage(request, user, user.extension, callerid, vmfile, duration)
+        return returnPrompt(name=Prompt.messageSaved)
 
-    return returnPrompt(name=Prompt.messageSaved)
+    if step == "0":
+        prompt = Prompt.getByName(name=Prompt.rsfMenuRecord).getFullPrompt()
+        state.menu="leavemessage"
+        state.step="1"
+        state.dtmf=['1', '23', '*3', '#']
+        _query={'user': extension, 'menu': state.menu, 'callerid': callerid, 'uid': callid, 'step': state.step, 'vmfile': vmfile, 'duration':duration}
+        state.nextaction=request.route_url('savemessage', _query=_query)
+        state.action="play"
+    elif step == "1":
+        if key == "1":
+            prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow).getFullPrompt()
+            state.action = "record"
+            state.menu="leavemessage"
+            state.step="0"
+            state.nextaction = request.route_url(
+                    'savemessage',
+                    _query={'user':extension, 'uid':callid, 'callerid':callerid,
+                            'callerid':callerid, 'menu':state.menu, 'step':state.step})
+            state.invalidaction=request.route_url('invalidmessage')
+            state.dtmf=['#', ]
+            state.folder=user.vm_prefs.getVmFolder()
+        elif key == "23":
+            promptMsg = {'uri':vmfile, 'delayafter' : 10}
+            prompt = combinePrompts(None, None, None, promptMsg, Prompt.rsfRecordStillThere)
+            state.menu='leavemessage'
+            state.step='1'
+            _query={'user': extension, 'menu': state.menu, 'uid': callid, 'callerid':callerid, 'vmfile':vmfile, 'step': state.step, 'duration':duration}
+            state.nextaction=request.route_url( 'savemessage', _query=_query)
+            state.dtmf=['1', '23', '*3', '*7', '#']                
+            state.action="play"
+        elif key == "*3":
+            return returnPrompt(name=Prompt.rsfMessageDeleted)
+        elif key == "#":
+            deliverMessage(request, user, None, callerid, vmfile, duration)
+            return returnPrompt(name=Prompt.messageSaved)
+
+    user_session.saveState(state)
+    return createReturnDict(
+        request,
+        action=state.action,
+        nextaction=state.nextaction,
+        folder=state.folder,
+        prompt=prompt,
+        invalidaction=state.invalidaction,
+        dtmf=state.dtmf,
+        maxlength=state.maxlength
+    )
 
 
 @view_config(route_name='handlekey', renderer='json')
@@ -420,7 +463,7 @@ def handleKey(request):
             return doPersonalGreeting(request, callid, user, menu, key, step=step, type=msgtype, state=state, user_session=user_session) 
     elif menu == "record":
         if step == 'record':
-            prompt = Prompt.getByName(name=Prompt.rsfMenuRecord)
+            prompt = Prompt.getByName(name=Prompt.rsfMenuRecord).getFullPrompt(user=user)
             state.menu='record'
             state.step='approve'
             _query={'user': extension, 'menu': state.menu, 'uid': callid, 'step': state.step, 'type': msgtype, 'vmfile': vmfile}
@@ -431,7 +474,7 @@ def handleKey(request):
             state.action="play"
         elif step == 'approve':
             if key == "1":
-                prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
+                prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow).getFullPrompt(user=user)
                 state.menu='record'
                 state.step='record'
                 state.action="record"
@@ -456,7 +499,7 @@ def handleKey(request):
                 # TODO suspect next action here. Check this with Chris
                 # Not deleting the file 
                 # TODO to create a cron to delete
-                prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted)
+                prompt = Prompt.getByName(name=Prompt.rsfMessageDeleted).getFullPrompt(user=user)
                 state.menu='record'
                 state.step='approve'
                 state.nextaction=request.route_url( 'handlekey', 
@@ -466,6 +509,8 @@ def handleKey(request):
                 promptFirst = Prompt.rsfApprovedMessage
                 if msgtype == 'fwd' or msgtype == 'send':
                     promptSecond = Prompt.sendInputList
+                    if msgtype == 'fwd':
+                        promptSecond = Prompt.rsfCreateForward
                     prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
                     state.menu = 'send'
                     state.step = 'input'
@@ -476,100 +521,31 @@ def handleKey(request):
                     state.dtmf=['!', '*7', '#']
                     state.maxlength = 6
                     state.action="play"
-                elif msgtype == 'reply':
-                    promptSecond = Prompt.rsfCreateForward
-                    prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
-                    state.menu = 'record'
-                    state.step = 'reply'
-                    state.action="play"
+                elif msgtype == 'reply' or msgtype == "replyWithout":
+                    curvm = DBSession.query(Voicemail).filter_by(id=vmid).first()
+                    deliverMessage(request, None, curvm.cid_number, user.extension, vmfile, duration, curvm, "attached" if msgtype == "reply" else None)
+
+                    # TODO this should go back to playing the nxt message. Check with Chris
+                    prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
+                    state.menu='main'
+                    state.step = None
+                    state.action = 'play'
                     state.nextaction=request.route_url(
                         'handlekey',
-                        _query={'user': extension, 'menu': state.menu, 'uid': callid, 'vmfile':vmfile, 'vmid':vmid, 'step': state.step, 'msgtype': msgtype}
-                    )
-                    state.dtmf=['0', '*7', '#']
-        elif step == 'reply':
-            if key == '0':
-                #
-                # TODO - Delete cron job
-                # TODO - this needs to go to the nextMessage here and not the main menu
-                prompt = combinePrompts(user, None, None, Prompt.rsfCancelled, Prompt.activityMenu)
-                state.menu='main'
-                state.step=None
-                state.nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user':extension, 'menu':state.menu, 'uid':callid})
-                state.dtmf=['1', '2', '3', '5', '7', '*4']
-                state.action="play"
-            elif key == '#':
-                curvm = DBSession.query(Voicemail).filter_by(id=vmid).first()
-                # Deliver the reply to the user who send it to us
-                tuser = DBSession.query(User).filter_by(extension=curvm.cid_number).first()
-                if tuser:
-                    v = Voicemail()
-                    v.cid_number = user.extension
-                    v.path = vmfile
-                    v.create_date = datetime.datetime.utcnow()
-                    v.is_read = False
-                    v.status = 0
-                    v.duration = duration
-                    v.user = tuser
-                    reply_to = ReplyTo()
-                    reply_to.parentVoicemail = curvm
-                    v.reply_to = reply_to
-
-                    DBSession.add(v)
-                    session.refresh(tuser)
-                    postMWI(request, tuser)
-                        
-                # TODO this should go back to playing the nxt message. Check with Chris
-                prompt = combinePrompts(user, None, None, Prompt.rsfDelivered, Prompt.activityMenu)
-                state.menu='main'
-                state.step = None
-                state.action = 'play'
-                state.nextaction=request.route_url(
-                    'handlekey',
-                    _query={'user':extension, 'menu':state.menu, 'uid':callid})
-                state.dtmf=['1', '2', '3', '5', '7', '*4']
+                        _query={'user':extension, 'menu':state.menu, 'uid':callid})
+                    state.dtmf=['1', '2', '3', '5', '7', '*4']
     elif menu == "send":
         if key == '#':
             # done entering list
             if state.destlist and len(state.destlist):
                 # process list - deliver messages
                 for i in state.destlist:
-                    tuser = DBSession.query(User).filter_by(extension=i).first()
-                    if tuser and tuser.is_list:
-                        for j in tuser.members:
-                            vuser = DBSession.query(User).filter_by(extension=j).first() 
-                            v = Voicemail()
-                            v.cid_number = user.extension
-                            v.path = vmfile
-                            v.create_date = datetime.datetime.utcnow()
-                            v.is_read = False
-                            v.status = 0
-                            v.duration = duration
-                            v.user = vuser
-                            DBSession.add(v)
-                            DBSession.flush()
-                            session.refresh(vuser)
-                            postMWI(request, vuser)
-                    else:
-                        v = Voicemail()
-                        v.cid_number = user.extension
-                        v.path = vmfile
-                        v.create_date = datetime.datetime.utcnow()
-                        v.is_read = False
-                        v.status = 0
-                        v.duration = duration
-                        v.user = tuser
-                        DBSession.add(v)
-                        DBSession.flush()
-                        session.refresh(tuser)
-                        postMWI(request, tuser)
+                    deliverMessage(request, None, i, user.extension, vmfile, duration)
                       
                 listcount = len(state.destlist)
                 # TODO should the next step be play next message or go to main menu
                 # TODO check with Chris
-                prompt = Prompt.getByName(name=Prompt.sendApprovedCount)
+                prompt = Prompt.getByName(name=Prompt.sendApprovedCount).getFullPrompt(user=user, param=listcount)
                 state.menu='main'
                 state.step = None
                 state.nextaction=request.route_url(
@@ -705,7 +681,7 @@ def handleKey(request):
             # Toggle auto-login on/off
             # TODO - No idea what this is 
             # placeholder returns to main Menu
-            prompt = Prompt.getByName(name=Prompt.activityMenu)
+            prompt = Prompt.getByName(name=Prompt.activityMenu).getFullPrompt(user=user)
             state.menu='main'
             state.step=None
             state.nextaction=request.route_url(
@@ -718,7 +694,7 @@ def handleKey(request):
         # Administer Lists
         if step == 'start':
             if key == '1':
-                prompt = Prompt.getByName(name=Prompt.mailListName)
+                prompt = Prompt.getByName(name=Prompt.mailListName).getFullPrompt(user=user)
                 state.menu = 'listadmin'
                 state.step='recordname'
                 state.nextaction=request.route_url(
@@ -743,7 +719,7 @@ def handleKey(request):
         elif step == 'approve':
             if key == '1':
                 # re-record
-                prompt = Prompt.getByName(name=Prompt.mailListName)
+                prompt = Prompt.getByName(name=Prompt.mailListName).getFullPrompt(user=user)
                 state.menu = 'listadmin'
                 state.step='recordname'
                 state.nextaction=request.route_url(
@@ -815,7 +791,7 @@ def handleKey(request):
                 state.action="play"
         elif step == 'codeapprove':
             if key == '0':
-                prompt = Prompt.getByName(name=Prompt.mailListMenu)
+                prompt = Prompt.getByName(name=Prompt.mailListMenu).getFullPrompt(user=user)
                 state.menu = 'listadmin'
                 state.step = 'start'
                 state.nextaction=request.route_url(
@@ -842,7 +818,7 @@ def handleKey(request):
         # Need to test this. I think this is done
         if step == 'firstpass':
             if len(key) < 4:
-                prompt = Prompt.getByName(name=Prompt.passwordNew)
+                prompt = Prompt.getByName(name=Prompt.passwordNew).getFullPrompt(user=user)
                 state.menu = 'password'
                 state.step = 'firstpass'
                 state.nextaction=request.route_url(
@@ -880,7 +856,7 @@ def handleKey(request):
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
                 state.action="play"
             else:
-                prompt = Prompt.getByName(name=Prompt.passwordReEnter)
+                prompt = Prompt.getByName(name=Prompt.passwordReEnter).getFullPrompt(user=user)
                 state.menu = 'password'
                 state.step = 'secondpass'
                 state.nextaction=request.route_url(
@@ -950,69 +926,108 @@ def handleKey(request):
                 state.action="play"
                 prompt = combinePrompts(user, None, None, promptFirst, promptSecond)
     elif menu == "vmaccess":
-        if key == "0":
-            return getMessage(
-                request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
-        if key == "1":
-            # TODO Need to figure the fwd/reply scenario
-            # forward / reply to the message
-            prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow)
-            state.menu = 'record'
-            state.step = 'record'
-            state.nextaction=request.route_url(
-                'handlekey',
-                _query={'user': extension, 'menu': state.menu, 'uid': callid, 'vmid':vmid, 'type':'reply', 'step': state.step}
-            )
-            state.dtmf=['#']
-            state.action="record"
-            state.folder=user.vm_prefs.getVmFolder()
-        elif key == "*3":
-            # delete the message
-            v = DBSession.query(Voicemail).filter_by(id = vmid).first()
-            v.status = 1
-            v.deleted_on = datetime.datetime.utcnow()
-            DBSession.add(v)
-            state.nextMessage()
-            state.menu='vmaccess'
-            state.step=None
-            return getMessage(
-                request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
-        elif key == "#":
-            # skip message
-            v = DBSession.query(Voicemail).filter_by(id = vmid).first()
-            v.is_read = 1
-            v.read_on = datetime.datetime.utcnow()
-            DBSession.add(v)
-            state.nextMessage()
-            state.menu='vmaccess'
-            state.step=None
-            return getMessage(
-                request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
-        elif key == "23":
-            # play header
-            state.mode = "Header"
-            return getMessage(
-                request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1, msgType="Header")
-        elif key == "4":
-            # rewind. Handled in asterisk
-            return returnPrompt(name=Prompt.invalidRequest)
-        elif key == "5":
-            # toggle pause/play. Handled in asterisk
-            return returnPrompt(name=Prompt.invalidRequest)
-        elif key == "6":
-            # advance . Handled in asterisk
-            return returnPrompt(name=Prompt.invalidRequest)
-        elif key == "44":
-            state.previousMessage()
-            state.menu='vmaccess'
-            state.step=None
-            return getMessage(
-                request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
+        if step == "fwdreply":
+            if key == "2" or key == "7" or key == "19":
+                prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow).getFullPrompt(user=user)
+                if key == "2":
+                    type = 'fwd'
+                elif key == "7":
+                    type = 'reply'
+                elif key == "19":
+                    type = 'replyWithout'
+                state.menu = 'record'
+                state.step = 'record'
+                state.action="record"
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': state.menu, 'uid': callid, 'vmid':vmid, 'type':type, 'step': state.step}
+                )
+                state.dtmf=['#']
+                state.folder=user.vm_prefs.getVmFolder()
+            elif key == "4":
+                type = 'send'
+                prompt = Prompt.getByName(name=Prompt.rsfInputRecordNow).getFullPrompt(user=user)
+                state.menu = 'record'
+                state.step = 'record'
+                state.nextaction = request.route_url(
+                        'handlekey',
+                        _query={'user': extension, 'menu': state.menu, 'uid': callid, 'type':send, 'step': state.step}
+                    )
+                state.dtmf = ['#']
+                state.action = "record"
+                state.folder = user.vm_prefs.getVmFolder()
         else:
-            log.debug(
-                "Invalid Input with extension %s key %s vmid %s menu %s",
-                extension, key, vmid, menu)
-            return returnPrompt(name=Prompt.invalidRequest)
+            if key == "0":
+                return getMessage(
+                    request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
+            if key == "1":
+                # TODO Need to figure the fwd/reply scenario
+                # forward / reply to the message
+                prompt = Prompt.getByName(name=Prompt.replyForwardMessage).getFullPrompt()
+                state.menu = 'vmaccess'
+                state.step = 'fwdreply'
+                state.dtmf = ['2', '4', '7', '19',]
+                state.action="play"
+                state.nextaction=request.route_url(
+                    'handlekey',
+                    _query={'user': extension, 'menu': state.menu, 'uid': callid, 'vmid':vmid, 'step': state.step}
+                )
+            elif key == "*3":
+                # delete the message
+                v = DBSession.query(Voicemail).filter_by(id = vmid).first()
+                if v.status == 0:
+                    v.status = 1
+                    v.deleted_on = datetime.datetime.utcnow()
+                else:
+                    v.status = 0
+                    v.deleted_on = None
+                DBSession.add(v)
+                state.nextMessage()
+                state.menu='vmaccess'
+                state.step=None
+                return getMessage(
+                    request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
+            elif key == "#":
+                # skip message
+                v = DBSession.query(Voicemail).filter_by(id = vmid).first()
+                v.is_read = 1
+                v.read_on = datetime.datetime.utcnow()
+                DBSession.add(v)
+                state.nextMessage()
+                state.menu='vmaccess'
+                state.step=None
+                return getMessage(
+                    request=request, menu="vmaccess", user=user, state=state, user_session=user_session)
+            elif key == "23":
+                # play header
+                state.mode = "Header"
+                return getMessage(
+                    request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1, msgType="Header")
+            elif key == "4":
+                # rewind. Handled in asterisk
+                return returnPrompt(name=Prompt.invalidRequest)
+            elif key == "5":
+                # toggle pause/play. Handled in asterisk
+                return returnPrompt(name=Prompt.invalidRequest)
+            elif key == "6":
+                # advance . Handled in asterisk
+                return returnPrompt(name=Prompt.invalidRequest)
+            elif key == "44":
+                state.previousMessage()
+                state.menu='vmaccess'
+                state.step=None
+                return getMessage(
+                    request=request, menu="vmaccess", user=user, state=state, user_session=user_session, repeat=1)
+            else:
+                log.debug(
+                    "Invalid Input with extension %s key %s vmid %s menu %s",
+                    extension, key, vmid, menu)
+                return returnPrompt(name=Prompt.invalidRequest)
+    if state.menu != "main":
+        if "*7" not in state.dtmf:
+            state.dtmf.append("*7")
+    if "*4" not in state.dtmf:
+        state.dtmf.append("*4")
     user_session.saveState(state)
     return createReturnDict(
         request,
@@ -1037,12 +1052,23 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
             (state.unread, state.read, state.message_type, state.curmessage))
 
     msgToGet = None
+    messagePrompt = None
+    typePrompt = None
     if state.curmessage == 1:
         prompt = Prompt.firstMessage
-    elif state.curmessage == len(state.unread):
+        messagePrompt = Prompt.messagePrompt
+    elif (state.message_type == "Unread" and state.curmessage == len(state.unread)) or \
+         (state.message_type == "read" and state.curmessage == len(state.read)):
         prompt = Prompt.lastMessage
+        messagePrompt = Prompt.messagePrompt
     else:
         prompt = Prompt.nextMessage
+
+    if messagePrompt:
+        if state.message_type == "Unread":
+            typePrompt = Prompt.newPrompt
+        else:
+            typePrompt = Prompt.oldPrompt
 
     if state.message_type == "Unread" and state.curmessage <= len(state.unread): #unread messages
         msgToGet = state.unread[state.curmessage - 1]
@@ -1054,11 +1080,13 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
     if repeat:
         prompt = None
 
+    promptHeader = None
+    promptVM = None
     if msgToGet:
         v = DBSession.query(Voicemail).filter_by(id=msgToGet).first()
+        promptHeader = Prompt.vmMessageHeader
+        promptVM = Prompt.vmMessage
 
-    promptHeader = Prompt.vmMessageHeader
-    promptVM = Prompt.vmMessage
     if msgType:
         promptType = msgType
     else:
@@ -1067,16 +1095,25 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
         promptVM = None
     elif promptType == "VM":
         promptHeader = None
-    retPrompt = combinePrompts(user, v, state.curmessage, prompt, promptHeader, promptVM, Prompt.postMessage)
 
-    state.menu='vmaccess'
-    state.step = None
-    state.nextaction = request.route_url(
-            'handlekey',
-            _query={
-                'user':user.extension, 'menu': state.menu, 'vmid': v.id, 'uid':state.uid})
-    state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44']
-    state.action = "play"
+    if v is not None:
+        retPrompt = combinePrompts(user, v, state.curmessage, prompt, typePrompt, messagePrompt, promptHeader, promptVM, Prompt.postMessage)
+        state.menu='vmaccess'
+        state.step = None
+        state.nextaction = request.route_url(
+                'handlekey',
+                _query={
+                    'user':user.extension, 'menu': state.menu, 'vmid': v.id, 'uid':state.uid})
+        state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44', '*7', '*4']
+        state.action = "play"
+    else:
+        state.action = "play"
+        state.menu = "main"
+        state.nextaction=request.route_url(
+                'handlekey',
+                _query={'user':user.extension, 'menu':'main', 'uid':state.uid})
+        state.dtmf=['1', '2', '3', '5', '7', '*7', '*4']
+        retPrompt = combinePrompts(user, v, state.curmessage, prompt, Prompt.activityMenu)
     user_session.saveState(state)
     return createReturnDict(request,
         action=state.action,
@@ -1185,11 +1222,13 @@ def stillThereLoop(request=None, user=None, user_session=None ):
     retPrompt = combinePrompts(user, None, None, Prompt.stillThere, extraPrompt)
 
     return createReturnDict(request,
-        action="play",
+        action=state.action,
         prompt=retPrompt,
         nextaction=state.nextaction,
-        invalidaction=request.route_url('invalidmessage'),
+        invalidaction=state.invalidaction,
         dtmf=state.dtmf,
+        folder=state.folder,
+        maxlength=state.maxlength
         )
 
 def combinePrompts(user, vm, number, *p):
@@ -1246,8 +1285,8 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
         state.nextaction=request.route_url(
             'handlekey',
             _query={'user': extension, 'type':type, 'menu': state.menu, 'uid':callid, 'step':state.step})
-        state.dtmf=['1', '23', '#']
-        state.action="record"
+        state.dtmf=['1', '23', '#', '*7', '*4']
+        state.action="play"
         state.folder=user.vm_prefs.getGreetingFolder()
     elif step == '1':
         if key == '1':
@@ -1259,7 +1298,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
                     'handlekey',
                     _query={'user':extension, 'uid':callid,
                             'type':type, 'menu':state.menu, 'step':state.step})
-            state.dtmf=['1', '23', '#', ]
+            state.dtmf=['1', '23', '#','*7', '*4' ]
             state.folder=user.vm_prefs.getGreetingFolder()
         elif key == '23':
             retPrompt =  {'uri':vmfile, 'delayafter':10}
@@ -1270,7 +1309,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
                     'handlekey',
                     _query={'user':extension, 'uid':callid,'vmfile':vmfile,
                             'type':type, 'menu':state.menu, 'step':state.step})
-            state.dtmf=['1', '23', '#' ]
+            state.dtmf=['1', '23', '#', '*7', '*4']
         elif key == '#':
             if type == "unavail":
                 user.vm_prefs.unavail_greeting = vmfile
@@ -1297,6 +1336,55 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
         invalidaction=state.invalidaction
     )
 
+def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=None, attached=None):
+    tuser = user
+    if not tuser:
+        tuser = DBSession.query(User).filter_by(extension=extension).first()
+    if tuser and tuser.is_list:
+        for j in tuser.members:
+            vuser = DBSession.query(User).filter_by(extension=j).first() 
+            v = Voicemail()
+            v.cid_number = cid_number
+            v.path = vmfile
+            v.create_date = datetime.datetime.utcnow()
+            v.is_read = False
+            v.status = 0
+            v.duration = duration
+            v.user = vuser
+            if vm:
+                reply_to = ReplyTo()
+                reply_to.parentVoicemail = vm
+                reply_to.is_attached = False
+                if attached == "attached":
+                    reply_to.is_attached = True
+                v.reply_to = reply_to
+            DBSession.add(v)
+            DBSession.flush()
+            DBSession.refresh(vuser)
+            postMWI(request, vuser)
+    else:
+        v = Voicemail()
+        v.cid_number = cid_number
+        v.path = vmfile
+        v.create_date = datetime.datetime.utcnow()
+        v.is_read = False
+        v.status = 0
+        v.duration = duration
+        v.user = tuser
+        if vm:
+            reply_to = ReplyTo()
+            reply_to.parentVoicemail = vm
+            reply_to.is_attached = False
+            if attached == "attached":
+                reply_to.is_attached = True
+            v.reply_to = reply_to
+        DBSession.add(v)
+        DBSession.flush()
+        DBSession.refresh(tuser)
+        postMWI(request, tuser)
+
+
+
 def postMWI(request, user):
     unread = 0
     read = 0
@@ -1308,8 +1396,40 @@ def postMWI(request, user):
 
     data = {'user':user.extension, 'new':unread, 'old':read} 
     pdata = json.dumps(data)
-    header = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     url = request.registry.settings['mwi.url']
-    r = requests.post(url, data=pdata, headers=headers)
-    if r.status_code != 200:
-        log.debug("Error in posting MWI to %s: %s %s", url, pdata, headers)
+    try:
+        r = requests.post(url, data=pdata, headers=headers)
+        if r.status_code != 200:
+            log.debug("Error in posting MWI to %s: %s %s", url, pdata, headers)
+    except Exception , e:
+        log.exception("Could not post to MWI")
+
+
+def returnLoggedIn(request, user, callid, promptBefore):
+    user_session = getUserSession(callid, user)
+    log.debug("UserSession created for a user Session %s" % user_session)
+    onOffPrompt = None
+    if user.vm_prefs.tmp_greeting and user.vm_prefs.is_tmp_greeting_on:
+        onOffPrompt = Prompt.onPrompt
+    else:
+        onOffPrompt = Prompt.offPrompt
+        
+    retPrompt = combinePrompts(
+        user, None, None, Prompt.loginLoggedIn,
+        onOffPrompt, Prompt.vmSummary, Prompt.activityMenu)
+    state = user_session.getCurrentState()
+    state.menu = "main"
+    state.nextaction=request.route_url(
+            'handlekey',
+            _query={'user':user.extension, 'menu':'main', 'uid':callid})
+    state.dtmf=['1', '2', '3', '5', '7', '*4']
+    state.action = "play"
+    user_session.saveState(state)
+    return createReturnDict(request,
+        action=state.action,
+        prompt=retPrompt,
+        invalidaction=request.route_url('invalidmessage'),
+        nextaction=state.nextaction,
+        dtmf=state.dtmf
+        )

@@ -23,12 +23,7 @@ class VMPrefView(object):
         self.request = request
     
     def create_vmpref(self,user):
-        dirname = os.path.dirname
-        SITE_ROOT = dirname(dirname(dirname(dirname(__file__))))
-        path = os.path.join(SITE_ROOT,'app/etc/flexvmail.conf')
-        config = ConfigParser.ConfigParser()
-        config.read(path)
-        vm_dir = config.get("sounds", 'vm_dir')
+        vm_dir = self.request.registry.settings['vm_dir']
         directory = os.path.join(vm_dir,str(user.id))
         if not os.path.exists(directory):
             os.makedirs(directory)

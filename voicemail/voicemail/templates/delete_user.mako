@@ -5,7 +5,7 @@
 		<h3>Delete user <span id="username"></span> </h3>  
 		</div>  
 		<div class="modal-body">  
-		<p>Are you sure to delete..!!</p>
+		<p>Please Confirm? This cannot be undone</p>
 		<input type="hidden" name="userid" id="userid" value=""/>                
 	</div>  
 	<div class="modal-footer">  
@@ -23,4 +23,9 @@
 	  			window.setTimeout(function(){location.reload()},5000)
 			}, 'json');
 		}
+    function showModal(userid,username){
+        $('#userid').val(userid);
+        $('#username').replaceWith(username);
+        $('#delete_modal').modal('show');
+    };
 </script>

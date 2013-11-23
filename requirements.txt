@@ -6,4 +6,5 @@ pyramid_beaker
 deform
 bag
 twisted
-starpy
+#starpy
+requests
