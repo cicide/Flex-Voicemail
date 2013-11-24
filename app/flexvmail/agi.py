@@ -564,7 +564,9 @@ class astCall:
                 # TODO - only allow the first digit of each key value in the interrupt list
                 for intkey in dtmf:
                     interruptKeys.append(str(intkey))
-                result = self.agi.recordFile(tmp_file_loc, self.mediaType, firstIntKeys, 300, beep=beep)
+                # Convert the list of acceptable interrupt keys to a string of unique values
+                agiIntKeys = str(''.join(list(set(firstIntKeys))))
+                result = self.agi.recordFile(tmp_file_loc, self.mediaType, agiIntKeys, 300, beep=beep)
                 result.addCallback(onRecordSuccess, tmp_file_loc, folder, dtmf, retries, beep).addErrback(onError)
                 log.debug(result)
                 return result            
