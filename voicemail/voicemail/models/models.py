@@ -437,13 +437,6 @@ class UserSession(Base):
             s.__dict__[i] = cdata.get(i, None)
         return s
     
-    def setStillThere(self, nextaction, dtmf, stillTherePrompt):
-        s = self.getCurrentState()
-        s.nextaction = nextaction
-        s.dtmf = dtmf
-        s.stillTherePrompt = stillTherePrompt
-        self.saveState(s)
-
 
     def saveState(self, state):
         self.last_updated = datetime.datetime.utcnow()
@@ -473,6 +466,7 @@ class State():
         self.folder = None
         self.mode = "Full"
 
+
     def previousMessage(self):
         self.curmessage = self.curmessage - 1
         if self.message_type == "read":
@@ -484,11 +478,16 @@ class State():
             state.curmessage = 1
 
 
+    def reset(self):
+        self.curmessage = 0
+        self.message_type = "unread"
+        if len(self.unread) == 0:
+            self.message_type = "read"
+
+
     def nextMessage(self):
         self.curmessage = self.curmessage + 1
         if self.message_type == "Unread":
             if self.curmessage > len(self.unread):
                 self.message_type = "read"
                 self.curmessage = 1
-
-

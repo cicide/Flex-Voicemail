@@ -545,7 +545,7 @@ def handleKey(request):
                 listcount = len(state.destlist)
                 # TODO should the next step be play next message or go to main menu
                 # TODO check with Chris
-                prompt = Prompt.getByName(name=Prompt.sendApprovedCount).getFullPrompt(user=user, param=listcount)
+                prompt = combinePrompts(user, None, listcount, Prompt.sendApprovedCount, Prompt.activityMenu)
                 state.menu='main'
                 state.step = None
                 state.nextaction=request.route_url(
@@ -932,9 +932,9 @@ def handleKey(request):
                 if key == "2":
                     type = 'fwd'
                 elif key == "7":
-                    type = 'reply'
-                elif key == "19":
                     type = 'replyWithout'
+                elif key == "19":
+                    type = 'reply'
                 state.menu = 'record'
                 state.step = 'record'
                 state.action="record"
@@ -1107,6 +1107,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
         state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44', '*7', '*4']
         state.action = "play"
     else:
+        state,reset()
         state.action = "play"
         state.menu = "main"
         state.nextaction=request.route_url(
