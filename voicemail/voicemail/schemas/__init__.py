@@ -5,4 +5,5 @@ from .schemas import (LoginSchema,
                       list_DoesExist,
                       VMPrefSchema,
                       CheckAuthentication,
+                      ListUserAddSchema,
                       )

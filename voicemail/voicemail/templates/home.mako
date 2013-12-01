@@ -5,7 +5,6 @@
 <%block name="body_content">
 <script> 
     function newAlert (success, message) {
-        alert("called here1" + success + " " + message);
         if (success == true ){
             $("#alert-area").append($("<div class='alert alert-success alert-message'><a class='close' data-dismiss='alert'>×</a><strong>Success! </strong>"+message+"</div>"));
         }
@@ -18,7 +17,6 @@
 
     %if success:
     $(function(){
-        alert("called here");
         newAlert(true, "${msg}");
         });
     %endif
@@ -40,6 +38,7 @@
                 <%block name="subHeading"/>
             </h3>
             <div class="DetailView">
+                ${defs.flash_messages()}  
                 <%block name="DetailView"/>
             </div>
         </div>

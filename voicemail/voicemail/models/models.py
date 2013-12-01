@@ -10,7 +10,7 @@ from sqlalchemy import (
 
 import datetime
 import time
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, mapper
 
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -53,6 +53,10 @@ user_list = Table('user_list', Base.metadata,
       Column("list_id", Integer, ForeignKey('users.id')),
       Column("user_id", Integer, ForeignKey('users.id')))
 
+class UserList(object):
+    pass
+
+mapper(UserList, user_list)
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
