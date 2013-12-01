@@ -1107,7 +1107,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
         state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44', '*7', '*4']
         state.action = "play"
     else:
-        state,reset()
+        state.reset()
         state.action = "play"
         state.menu = "main"
         state.nextaction=request.route_url(
@@ -1292,7 +1292,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     elif step == '1':
         if key == '1':
             retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
-            state.action="record",
+            state.action="record"
             state.menu='personal'
             state.step='1'
             state.nextaction=request.route_url(
