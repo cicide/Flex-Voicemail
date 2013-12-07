@@ -404,14 +404,14 @@ class Call:
         else:
             self.tree = tree
             self.cuid = self.pbxCall.getUid()
-            self.user = self.callerId = self.pbxCall.getCidNum()
+            self.callerId = self.pbxCall.getCidNum()
         method = 'startcall'
         if self.tree == 'leaveMessage':
             if not treeArgs[1]:
                 log.debug('missing destination user')
                 return self.hangup()
             else:
-                user = treeArgs[1]
+                self.user = treeArgs[1]
             if not treeArgs[2]:
                 msgType = 'unavailable'
             elif treeArgs[2].lower() in ('b', 'busy'):
