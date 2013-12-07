@@ -10,7 +10,7 @@ from sqlalchemy import (
 
 import datetime
 import time
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, mapper
 
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -53,6 +53,10 @@ user_list = Table('user_list', Base.metadata,
       Column("list_id", Integer, ForeignKey('users.id')),
       Column("user_id", Integer, ForeignKey('users.id')))
 
+class UserList(object):
+    pass
+
+mapper(UserList, user_list)
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -437,13 +441,6 @@ class UserSession(Base):
             s.__dict__[i] = cdata.get(i, None)
         return s
     
-    def setStillThere(self, nextaction, dtmf, stillTherePrompt):
-        s = self.getCurrentState()
-        s.nextaction = nextaction
-        s.dtmf = dtmf
-        s.stillTherePrompt = stillTherePrompt
-        self.saveState(s)
-
 
     def saveState(self, state):
         self.last_updated = datetime.datetime.utcnow()
@@ -473,6 +470,7 @@ class State():
         self.folder = None
         self.mode = "Full"
 
+
     def previousMessage(self):
         self.curmessage = self.curmessage - 1
         if self.message_type == "read":
@@ -484,11 +482,16 @@ class State():
             state.curmessage = 1
 
 
+    def reset(self):
+        self.curmessage = 0
+        self.message_type = "unread"
+        if len(self.unread) == 0:
+            self.message_type = "read"
+
+
     def nextMessage(self):
         self.curmessage = self.curmessage + 1
         if self.message_type == "Unread":
             if self.curmessage > len(self.unread):
                 self.message_type = "read"
                 self.curmessage = 1
-
-

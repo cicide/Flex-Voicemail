@@ -39,6 +39,13 @@ from bag.web.pyramid.flash_msg import FlashMessage
 import json
 import requests
 
+import smtplib
+import os
+
+# Here are the email package modules we'll need
+from email.mime.audio import MIMEAudio
+from email.mime.multipart import MIMEMultipart
+COMMASPACE = ', '
 import logging
 log = logging.getLogger(__name__)
 
@@ -545,7 +552,7 @@ def handleKey(request):
                 listcount = len(state.destlist)
                 # TODO should the next step be play next message or go to main menu
                 # TODO check with Chris
-                prompt = Prompt.getByName(name=Prompt.sendApprovedCount).getFullPrompt(user=user, param=listcount)
+                prompt = combinePrompts(user, None, listcount, Prompt.sendApprovedCount, Prompt.activityMenu)
                 state.menu='main'
                 state.step = None
                 state.nextaction=request.route_url(
@@ -932,9 +939,9 @@ def handleKey(request):
                 if key == "2":
                     type = 'fwd'
                 elif key == "7":
-                    type = 'reply'
-                elif key == "19":
                     type = 'replyWithout'
+                elif key == "19":
+                    type = 'reply'
                 state.menu = 'record'
                 state.step = 'record'
                 state.action="record"
@@ -1107,6 +1114,7 @@ def getMessage(request, menu, user, state=None, vmid=None,user_session=None, rep
         state.dtmf=['0', '1', '*3', '#', '23', '4', '5', '6', '44', '*7', '*4']
         state.action = "play"
     else:
+        state.reset()
         state.action = "play"
         state.menu = "main"
         state.nextaction=request.route_url(
@@ -1291,7 +1299,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
     elif step == '1':
         if key == '1':
             retPrompt = Prompt.getByName(Prompt.greetingsRecordMenu).getFullPrompt(user=user)
-            state.action="record",
+            state.action="record"
             state.menu='personal'
             state.step='1'
             state.nextaction=request.route_url(
@@ -1340,17 +1348,34 @@ def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=No
     tuser = user
     if not tuser:
         tuser = DBSession.query(User).filter_by(extension=extension).first()
+    email_with_attachment = []
+    email_message = []
+    sms_message = []
+    subject = "New Voicemail"
+    time_message = datetime.datetime.utcnow()
+    preamble = 'Voicemail received from %s on %s duration %d seconds' % (cid_number, time_message, duration)
+    smtphost = request.registry.settings['smtp_host']
+    mail_from = request.registry.settings['mail_from']
+    file = vmfile[6:] # remove file:/
     if tuser and tuser.is_list:
         for j in tuser.members:
             vuser = DBSession.query(User).filter_by(extension=j).first() 
             v = Voicemail()
             v.cid_number = cid_number
             v.path = vmfile
-            v.create_date = datetime.datetime.utcnow()
+            v.create_date = time_message
             v.is_read = False
             v.status = 0
             v.duration = duration
             v.user = vuser
+            if vuser.vm_prefs.deliver_vm == 1:
+                if vuser.vm_prefs.email:
+                    if vuser.vm_prefs.attach_vm == 1:
+                        email_with_attachement.append(vuser.vm_prefs.email)
+                    else:
+                        email_message.append(vuser.vm_prefs.email)
+                if vuser_vm_prefs.sms_addr:
+                    sms_message.append(vuser.vm_prefs.email)
             if vm:
                 reply_to = ReplyTo()
                 reply_to.parentVoicemail = vm
@@ -1366,11 +1391,19 @@ def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=No
         v = Voicemail()
         v.cid_number = cid_number
         v.path = vmfile
-        v.create_date = datetime.datetime.utcnow()
+        v.create_date = time_message
         v.is_read = False
         v.status = 0
         v.duration = duration
         v.user = tuser
+        if tuser.vm_prefs.deliver_vm == 1:
+            if tuser.vm_prefs.email:
+                if tuser.vm_prefs.attach_vm == 1:
+                    email_with_attachement.append(tuser.vm_prefs.email)
+                else:
+                    email_message.append(tuser.vm_prefs.email)
+            if tuser_vm_prefs.sms_addr:
+                sms_message.append(tuser.vm_prefs.email)
         if vm:
             reply_to = ReplyTo()
             reply_to.parentVoicemail = vm
@@ -1382,6 +1415,12 @@ def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=No
         DBSession.flush()
         DBSession.refresh(tuser)
         postMWI(request, tuser)
+    if len(email_message) != 0:
+        sendEmail(request, subject, mail_from, email_message, None, preamble, smtphost)
+    if len(email_with_attachment) != 0:
+        sendEmail(request, subject, mail_from, email_with_attachment, file, preamble, smtphost)
+    if len(sms_message) != 0:
+        sendEmail(request, subject, mail_from, sms_message, None, preamble, smtphost)
 
 
 
@@ -1433,3 +1472,28 @@ def returnLoggedIn(request, user, callid, promptBefore):
         nextaction=state.nextaction,
         dtmf=state.dtmf
         )
+
+def sendEmail(request, subject, mail_from, list_of_recipients, file, preamble, smtphost):
+    # Create the container (outer) email message.
+    msg = MIMEMultipart()
+    msg['Subject'] = subject
+    me = mail_from
+    # family = the list of all recipients' email addresses
+    family = list_of_recipients
+    msg['From'] = me
+    msg['BCC'] = COMMASPACE.join(family)
+    msg.preamble = preamble
+    if file:
+        # Open the files in binary mode.  Let the MIMEAudio class automatically
+        # guess the specific audio type.
+        fp = open(file, 'rb')
+        wav = MIMEAudio(fp.read())
+        fp.close()
+        wav.add_header('Content-Disposition', 'attachment', filename=os.path.basename(file))
+        msg.attach(wav)
+
+    # Send the email via our own SMTP server.
+    s = smtplib.SMTP(smtphost)
+    s.sendmail(me, family, msg.as_string())
+    s.quit()
+

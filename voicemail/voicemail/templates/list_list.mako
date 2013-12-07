@@ -33,8 +33,10 @@
 				        <a class="btn btn-small" href="/list/edit/${mylist.id}">Edit</a>
 				        %if user == request.user:
 				        	<div class="btn btn-small disabled">Delete</div>
+				        	<div class="btn btn-small disabled">Users</div>
 				        %else:
 				        	<div class="btn btn-small" onclick="showModal('${mylist.id}','${mylist.username}')">Delete</div>
+				        	<a class="btn btn-small" href="/list/users/${mylist.id}">Users</a>
 				        %endif
 				    </div>
     			</td>

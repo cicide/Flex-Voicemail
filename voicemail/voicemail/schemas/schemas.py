@@ -127,3 +127,13 @@ class VMPrefSchema(CSRFSchema):
                     description="VM Name Recording", missing=None,
                     validator = checkUploadFile)
 
+class ListUserAddSchema(CSRFSchema):
+    widget = deform.widget.AutocompleteInputWidget(
+          size=30,
+          min_length=1,
+          values = '/list/users')
+    sext = colander.SchemaNode(
+        colander.String(),
+        validator=colander.Length(max=30),
+        widget = widget,
+        description='Enter an Extension')
