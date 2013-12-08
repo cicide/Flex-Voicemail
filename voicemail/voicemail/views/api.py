@@ -1294,7 +1294,7 @@ def doPersonalGreeting(request, callid, user, menu, key, step, type, state, user
             'handlekey',
             _query={'user': extension, 'type':type, 'menu': state.menu, 'uid':callid, 'step':state.step})
         state.dtmf=['1', '23', '#', '*7', '*4']
-        state.action="play"
+        state.action="record"
         state.folder=user.vm_prefs.getGreetingFolder()
     elif step == '1':
         if key == '1':
