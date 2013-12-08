@@ -1415,12 +1415,15 @@ def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=No
         DBSession.flush()
         DBSession.refresh(tuser)
         postMWI(request, tuser)
-    if len(email_message) != 0:
-        sendEmail(request, subject, mail_from, email_message, None, preamble, smtphost)
-    if len(email_with_attachment) != 0:
-        sendEmail(request, subject, mail_from, email_with_attachment, file, preamble, smtphost)
-    if len(sms_message) != 0:
-        sendEmail(request, subject, mail_from, sms_message, None, preamble, smtphost)
+    try:
+        if len(email_message) != 0:
+            sendEmail(request, subject, mail_from, email_message, None, preamble, smtphost)
+        if len(email_with_attachment) != 0:
+            sendEmail(request, subject, mail_from, email_with_attachment, file, preamble, smtphost)
+        if len(sms_message) != 0:
+            sendEmail(request, subject, mail_from, sms_message, None, preamble, smtphost)
+    except Exception,e:
+        log.exception("Could not send the email")
 
 
 
