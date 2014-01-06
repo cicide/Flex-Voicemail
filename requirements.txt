@@ -1,4 +1,4 @@
-pyramid
+pyramid==1.4.2
 sqlalchemy
 zope.sqlalchemy
 mysql-python
