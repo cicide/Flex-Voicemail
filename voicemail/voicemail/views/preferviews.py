@@ -25,8 +25,13 @@ class VMPrefView(object):
     def create_vmpref(self,user):
         vm_dir = self.request.registry.settings['vm_dir']
         directory = os.path.join(vm_dir,str(user.id))
+        name_directory = os.path.join(directory, "name")
+        greeting_directory = os.path.join(directory, "greeting")
         if not os.path.exists(directory):
             os.makedirs(directory)
+            os.makedirs(name_directory)
+            os.makedirs(greeting_directory)
+
         vmpref = DBSession.query(UserVmPref).filter_by(id=user.id).first()
         if vmpref is None:
             file_location = os.path.join('file://','/'.join(directory.split('/')[1:]))#file path starts with 'file://' is required in agi.py.  
