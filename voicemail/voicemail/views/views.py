@@ -64,7 +64,9 @@ def login(request):
         login = appstruct['username']
         password = appstruct['password']
         came_from = appstruct['came_from']
-        user = DBSession.query(User).filter_by(username=login, pin = password).first()
+        user = DBSession.query(User).filter_by(extension=login, pin = password).first()
+        if not user:
+            user = DBSession.query(User).filter_by(username=login, pin = password).first()
         if user:
             headers = remember(request, user.id)
             user.last_login = datetime.datetime.utcnow()

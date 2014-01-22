@@ -60,7 +60,7 @@ mapper(UserList, user_list)
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(Unicode(100), nullable=False, unique=True)
+    username = Column(Unicode(100))
     name = Column(Unicode(80), nullable=False)
     extension = Column(String(10), nullable=False, unique=True)
     pin = Column(String(10), nullable=False, unique=True)

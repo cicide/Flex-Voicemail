@@ -45,7 +45,7 @@ class ListsView(object):
                 log.exception('in form validated')
                 return {'form':e.render()}
 
-            newlist = User(username=appstruct['username'], 
+            newlist = User(username=appstruct['username'] if appstruct['username'] and appstruct['username'] != 'None' else None, 
                            name=appstruct['name'], 
                            extension=appstruct['extension'], 
                            pin=appstruct['pin'], 
@@ -74,7 +74,7 @@ class ListsView(object):
         if 'Save' in self.request.params:
             appstruct = None
             try:
-                if mylist.username != self.request.POST['username']:
+                if mylist.extension != self.request.POST['extension']:
                     schema.validator = list_DoesExist
                 appstruct = form.validate(self.request.POST.items())
                 
@@ -82,7 +82,7 @@ class ListsView(object):
                 log.exception('in form validated')
                 return {'form':e.render()}
             
-            mylist.username = appstruct['username']
+            mylist.username = appstruct['username'] if appstruct['username'] and appstruct['username'] != 'None' else None
             mylist.name = appstruct['name']
             mylist.extension = appstruct['extension']
             mylist.pin = appstruct['pin']
@@ -106,7 +106,7 @@ class ListsView(object):
         mylist = DBSession.query(User).get(listid)
         if mylist.id == self.request.user.id:
             return {
-                    'success': False, 'msg': 'Unable to remove %s ' % self.request.user.username,
+                    'success': False, 'msg': 'Unable to remove %s ' % self.request.user.extension,
                     'html': render('list_list.mako', {'lists': self.get_lists()}, self.request),
                 }
         list_vm = DBSession.query(UserVmPref).filter_by(user_id=listid).first()
@@ -117,7 +117,7 @@ class ListsView(object):
         #shutil.rmtree(user_vm.folder) #As it gives error : OSError: [Errno 2] No such file or directory: 'file://var/spool/asterisk/appvm/24' 
         #shutil.rmtree(user_vm.folder.split(':/')[1])
         return {
-                    'success': True, 'msg': 'Deleted %s ' % mylist.username,
+                    'success': True, 'msg': 'Deleted %s ' % mylist.extension,
                     'html': render('list_list.mako', {'lists': self.get_lists()}, self.request),
                 }
 

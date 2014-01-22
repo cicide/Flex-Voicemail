@@ -42,19 +42,22 @@ def deferred_choices_widget(node,kw):
     return deform.widget.SelectWidget(values=choices)
 
 def user_DoesExist(node,appstruct):
-    if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
-        raise colander.Invalid(node, 'Username already exist.!!')
+    if appstruct.get('username'):
+        if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
+            raise colander.Invalid(node, 'Username already exist.!!')
     if DBSession.query(User).filter_by(extension=appstruct['extension']).count() > 0:
         raise colander.Invalid(node, 'Extension already assigned.!!')
 
 def list_DoesExist(node,appstruct):
-    if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
-        raise colander.Invalid(node, 'Listname already exist.!!')
+    if appstruct.get('username'):
+        if DBSession.query(User).filter_by(username=appstruct['username']).count() > 0:
+            raise colander.Invalid(node, 'Listname already exist.!!')
     if DBSession.query(User).filter_by(extension=appstruct['extension']).count() > 0:
         raise colander.Invalid(node, 'Extension already assigned.!!')
     
 def CheckAuthentication(node,appstruct):
-    if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0:
+    if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0 and
+       DBSession.query(User).filter_by(extension=appstruct['username'], pin=appstruct['password']).count() == 0:
         raise colander.Invalid(node, 'Invalid Username or password')
     
 def checkUploadFile(node,data):
@@ -90,7 +93,7 @@ class LoginSchema(CSRFSchema):
 
 class ListSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String(), 
-                   description="Login for the list")
+                   description="Login for the list", missing=None)
     name = colander.SchemaNode(colander.String(), 
                    description='List name')
     extension = colander.SchemaNode(colander.String(), 
@@ -101,7 +104,7 @@ class ListSchema(CSRFSchema):
 
 class UserSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String(), 
-                   description="Login for the user")
+                   description="Login for the user", mission=None)
     name = colander.SchemaNode(colander.String(), 
                    description='Full name')
     extension = colander.SchemaNode(colander.String(), 

@@ -2,7 +2,7 @@ create table users (
 id int(11) not NULL auto_increment COMMENT 'Unique id for the user in the vm system',
 extension varchar(10) not  NULL Comment 'Extension in the asterisk system',
 pin varchar(10) not NULL Comment 'Pin for the user to access the VM',
-username varchar(100) UNIQUE not NULL  Comment 'login user id  could be email',
+username varchar(100) Comment 'login user id  could be email',
 name varchar(80) Comment 'Name of the user',
 create_date datetime NOT NULL COMMENT 'When the user was created',
 last_login datetime COMMENT 'When the user last logged in',
