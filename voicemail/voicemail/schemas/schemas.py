@@ -104,7 +104,7 @@ class ListSchema(CSRFSchema):
 
 class UserSchema(CSRFSchema):
     username = colander.SchemaNode(colander.String(), 
-                   description="Login for the user", mission=None)
+                   description="Login for the user", missing=None, default=None)
     name = colander.SchemaNode(colander.String(), 
                    description='Full name')
     extension = colander.SchemaNode(colander.String(), 
