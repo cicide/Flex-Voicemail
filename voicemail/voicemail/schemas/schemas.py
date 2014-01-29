@@ -56,8 +56,8 @@ def list_DoesExist(node,appstruct):
         raise colander.Invalid(node, 'Extension already assigned.!!')
     
 def CheckAuthentication(node,appstruct):
-    if DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0 and
-       DBSession.query(User).filter_by(extension=appstruct['username'], pin=appstruct['password']).count() == 0:
+    if (DBSession.query(User).filter_by(username=appstruct['username'], pin=appstruct['password']).count() == 0) and \
+       (DBSession.query(User).filter_by(extension=appstruct['username'], pin=appstruct['password']).count() == 0):
         raise colander.Invalid(node, 'Invalid Username or password')
     
 def checkUploadFile(node,data):
