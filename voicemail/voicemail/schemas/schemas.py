@@ -111,6 +111,10 @@ class UserSchema(CSRFSchema):
                     description='Extension')
     pin = colander.SchemaNode(colander.String(), 
               description='PIN')
+    admin = colander.SchemaNode(
+                colander.Boolean(),
+                description='Check to make admin',
+                widget=deform.widget.CheckboxWidget())
 
     
 class VMPrefSchema(CSRFSchema):
