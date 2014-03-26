@@ -1399,7 +1399,7 @@ def deliverMessage(request, user, extension, cid_number, vmfile, duration, vm=No
         if tuser.vm_prefs.deliver_vm == 1:
             if tuser.vm_prefs.email:
                 if tuser.vm_prefs.attach_vm == 1:
-                    email_with_attachement.append(tuser.vm_prefs.email)
+                    email_with_attachment.append(tuser.vm_prefs.email)
                 else:
                     email_message.append(tuser.vm_prefs.email)
             if tuser_vm_prefs.sms_addr:
